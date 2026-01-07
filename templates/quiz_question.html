@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Question - AAFS AI{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="quiz-question-card glass-card">
+        <div class="quiz-progress">
+            <span>Question {{ current }} of {{ total }}</span>
+        </div>
+        
+        <h2 class="question-title">{{ question.question_text }}</h2>
+        
+        <form method="POST" action="{{ url_for('quiz_question') }}" id="quizForm">
+            <input type="hidden" name="question_id" value="{{ question.id }}">
+            
+            <div class="quiz-options" id="quizOptions">
+                <label class="quiz-option">
+                    <input type="radio" name="answer" value="A" required {% if previous_answer == 'A' %}checked{% endif %}>
+                    <span class="option-label">A) {{ question.option_a }}</span>
+                </label>
+                
+                <label class="quiz-option">
+                    <input type="radio" name="answer" value="B" required {% if previous_answer == 'B' %}checked{% endif %}>
+                    <span class="option-label">B) {{ question.option_b }}</span>
+                </label>
+                
+                {% if question.option_c %}
+                <label class="quiz-option">
+                    <input type="radio" name="answer" value="C" required {% if previous_answer == 'C' %}checked{% endif %}>
+                    <span class="option-label">C) {{ question.option_c }}</span>
+                </label>
+                {% endif %}
+                
+                {% if question.option_d %}
+                <label class="quiz-option">
+                    <input type="radio" name="answer" value="D" required {% if previous_answer == 'D' %}checked{% endif %}>
+                    <span class="option-label">D) {{ question.option_d }}</span>
+                </label>
+                {% endif %}
+            </div>
+            
+            <!-- Instant Feedback Area -->
+            <div id="instantFeedback" class="instant-feedback" style="display: none;">
+                <div class="feedback-message" id="feedbackMessage"></div>
+            </div>
+            
+            <div class="quiz-actions">
+                <button type="button" id="checkAnswerBtn" class="btn-secondary" style="display: none;">Check Answer</button>
+                {% if is_last %}
+                <button type="submit" class="btn-primary" id="submitBtn">Finish Quiz</button>
+                {% else %}
+                <button type="submit" class="btn-primary" id="submitBtn">Next Question</button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.quiz-question-card {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 40px;
+}
+
+.quiz-progress {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+.question-title {
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+    color: var(--text-main);
+    line-height: 1.6;
+}
+
+.quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.quiz-option {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg-secondary);
+}
+
+.quiz-option:hover {
+    border-color: var(--primary-color);
+    background: var(--hover-bg);
+}
+
+.quiz-option input[type="radio"] {
+    margin-right: 12px;
+    cursor: pointer;
+}
+
+.option-label {
+    flex: 1;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.quiz-actions {
+    text-align: center;
+}
+
+.btn-primary {
+    padding: 12px 30px;
+    font-size: 1rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+.btn-secondary {
+    padding: 12px 30px;
+    font-size: 1rem;
+    background: var(--bg-secondary);
+    color: var(--text-main);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-right: 10px;
+}
+
+.btn-secondary:hover {
+    background: var(--hover-bg);
+}
+
+.instant-feedback {
+    margin: 20px 0;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.feedback-message {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.feedback-correct {
+    background: #d4edda;
+    color: #155724;
+    border: 2px solid #c3e6cb;
+}
+
+.feedback-incorrect {
+    background: #f8d7da;
+    color: #721c24;
+    border: 2px solid #f5c6cb;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('quizForm');
+    const options = document.querySelectorAll('input[name="answer"]');
+    const checkBtn = document.getElementById('checkAnswerBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const feedbackDiv = document.getElementById('instantFeedback');
+    const feedbackMessage = document.getElementById('feedbackMessage');
+    const questionId = {{ question.id }};
+    
+    let answerChecked = false;
+    
+    // Show check button when answer is selected
+    options.forEach(option => {
+        option.addEventListener('change', function() {
+            if (!answerChecked) {
+                checkBtn.style.display = 'inline-block';
+            }
+        });
+    });
+    
+    // Check answer button
+    checkBtn.addEventListener('click', function() {
+        const selectedAnswer = document.querySelector('input[name="answer"]:checked');
+        if (!selectedAnswer) {
+            alert('Please select an answer first.');
+            return;
+        }
+        
+        // Send AJAX request to check answer
+        fetch('{{ url_for("quiz_question") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                question_id: questionId,
+                answer: selectedAnswer.value
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            answerChecked = true;
+            checkBtn.style.display = 'none';
+            
+            if (data.correct) {
+                feedbackDiv.className = 'instant-feedback feedback-correct';
+                feedbackMessage.textContent = '✓ Correct! Well done.';
+            } else {
+                feedbackDiv.className = 'instant-feedback feedback-incorrect';
+                feedbackMessage.textContent = '✗ Incorrect. The correct answer is ' + data.correct_answer + '.';
+            }
+            
+            feedbackDiv.style.display = 'block';
+            
+            // Disable options after checking
+            options.forEach(opt => {
+                opt.disabled = true;
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+    
+    // Prevent form submission if answer not checked (optional)
+    form.addEventListener('submit', function(e) {
+        if (!answerChecked && !confirm('You haven\'t checked your answer. Continue anyway?')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}
+

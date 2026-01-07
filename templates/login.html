@@ -70,7 +70,20 @@
             height: 300px;
             margin: 0 auto 40px;
             background: transparent;
-            /* Placeholder for future mascot image */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .robot-svg {
+            width: 100%;
+            height: 100%;
+            animation: float-robot 3s ease-in-out infinite;
+        }
+
+        @keyframes float-robot {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
         }
 
         /* Speech Bubble with Typewriter Effect */
@@ -677,7 +690,37 @@
         <div class="bg-orb bg-orb-2"></div>
 
         <!-- Robot Mascot Image - STATIC -->
-        <div class="mascot-image"></div>
+        <div class="mascot-image">
+            <svg class="robot-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <!-- Robot Head -->
+                <rect x="50" y="30" width="100" height="80" rx="10" fill="#6366f1" stroke="#8b5cf6" stroke-width="2"/>
+                <!-- Eyes -->
+                <circle cx="75" cy="60" r="8" fill="#ffffff"/>
+                <circle cx="125" cy="60" r="8" fill="#ffffff"/>
+                <circle cx="75" cy="60" r="4" fill="#0f172a"/>
+                <circle cx="125" cy="60" r="4" fill="#0f172a"/>
+                <!-- Antenna -->
+                <rect x="95" y="20" width="10" height="15" rx="2" fill="#8b5cf6"/>
+                <circle cx="100" cy="20" r="4" fill="#fbbf24"/>
+                <!-- Mouth -->
+                <rect x="80" y="80" width="40" height="8" rx="4" fill="#ffffff"/>
+                <!-- Body -->
+                <rect x="60" y="110" width="80" height="70" rx="10" fill="#6366f1" stroke="#8b5cf6" stroke-width="2"/>
+                <!-- Chest Panel -->
+                <rect x="75" y="125" width="50" height="30" rx="5" fill="#8b5cf6" opacity="0.3"/>
+                <circle cx="90" cy="140" r="3" fill="#ffffff"/>
+                <circle cx="110" cy="140" r="3" fill="#ffffff"/>
+                <!-- Arms -->
+                <rect x="30" y="120" width="25" height="15" rx="5" fill="#6366f1"/>
+                <rect x="145" y="120" width="25" height="15" rx="5" fill="#6366f1"/>
+                <!-- Hands -->
+                <circle cx="42" cy="135" r="6" fill="#8b5cf6"/>
+                <circle cx="158" cy="135" r="6" fill="#8b5cf6"/>
+                <!-- Legs -->
+                <rect x="70" y="180" width="20" height="20" rx="5" fill="#6366f1"/>
+                <rect x="110" y="180" width="20" height="20" rx="5" fill="#6366f1"/>
+            </svg>
+        </div>
 
         <!-- Speech Bubble with Typewriter -->
         <div class="speech-bubble">

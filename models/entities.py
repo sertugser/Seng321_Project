@@ -11,26 +11,21 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), default='Student') 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # --- Profile Information Fields ---
-    bio = db.Column(db.Text, nullable=True)
-    profile_image = db.Column(db.String(150), nullable=True, default='default_avatar.png')
-    university = db.Column(db.String(200), nullable=True)
-    grade = db.Column(db.String(50), nullable=True) # Changed from school_grade for consistency
-    teacher = db.Column(db.String(150), nullable=True)
-    phone = db.Column(db.String(20), nullable=True)
-    education_status = db.Column(db.String(100), default='Active Student')
-
-    # --- AI Settings Fields ---
-    ai_tone = db.Column(db.String(50), default='balanced')
-    ai_speed = db.Column(db.Float, default=1.0)
-    ai_reports = db.Column(db.Boolean, default=True)
-
-    # Relationships
     submissions = db.relationship('Submission', backref='student', lazy=True)
-    # Add relationships for goals and quizzes if they aren't backref'd yet
-    goals = db.relationship('LearningGoal', backref='user', lazy=True)
-    quizzes = db.relationship('Quiz', backref='user', lazy=True)
+
+    # Optional profile fields (added for profile & settings pages)
+    profile_image = db.Column(db.String(200), nullable=True)
+    bio = db.Column(db.Text, nullable=True)
+    university = db.Column(db.String(120), nullable=True)
+    grade = db.Column(db.String(50), nullable=True)
+    teacher = db.Column(db.String(120), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
+    education_status = db.Column(db.String(80), nullable=True)
+
+    # Optional AI preference fields (used on settings page)
+    ai_tone = db.Column(db.String(20), nullable=True)
+    ai_speed = db.Column(db.Float, nullable=True)
+    weekly_report = db.Column(db.Boolean, default=True)
 
     def __repr__(self):
         return f'<User {self.username}>'
@@ -91,3 +86,16 @@ class Quiz(db.Model):
     quiz_title = db.Column(db.String(100), nullable=False)
     score = db.Column(db.Float, nullable=False)
     date_taken = db.Column(db.DateTime, default=datetime.utcnow)
+
+# --- 7. Question Entity ---
+class Question(db.Model):
+    __tablename__ = 'questions'
+    id = db.Column(db.Integer, primary_key=True)
+    question_text = db.Column(db.Text, nullable=False)
+    option_a = db.Column(db.String(200), nullable=False)
+    option_b = db.Column(db.String(200), nullable=False)
+    option_c = db.Column(db.String(200), nullable=True)
+    option_d = db.Column(db.String(200), nullable=True)
+    correct_answer = db.Column(db.String(1), nullable=False)  # 'A', 'B', 'C', or 'D'
+    category = db.Column(db.String(50), nullable=True)  # 'grammar', 'vocabulary', etc.
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Class Assignments - AAFS AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .assignments-page {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+    }
+
+    .assignments-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+    }
+
+    .assignment-card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        padding: 16px 18px;
+    }
+
+    .assignment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
+
+    .assignment-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin: 0 0 4px 0;
+    }
+
+    .assignment-type {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(99, 102, 241, 0.08);
+        color: #6366f1;
+    }
+
+    .assignment-date {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+    }
+
+    .assignment-footer {
+        margin-top: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+    }
+
+    .pill {
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border: 1px solid var(--border-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="assignments-page">
+    <div class="page-header">
+        <h1 class="page-title">Class Assignments</h1>
+    </div>
+
+    {% if activities %}
+    <div class="assignments-grid">
+        {% for activity in activities %}
+        <div class="assignment-card">
+            <div class="assignment-header">
+                <div>
+                    <h2 class="assignment-title">{{ activity.title }}</h2>
+                    <div class="assignment-date">
+                        Due: {{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No Limit' }}
+                    </div>
+                </div>
+                <span class="assignment-type">{{ activity.activity_type }}</span>
+            </div>
+            <div class="assignment-footer">
+                <span class="pill">
+                    {% if activity.due_date and activity.due_date >= now %}
+                        Pending
+                    {% else %}
+                        Completed
+                    {% endif %}
+                </span>
+                <span class="assignment-date">
+                    ID: {{ activity.id }}
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>No assignments defined yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+

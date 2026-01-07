@@ -17,7 +17,7 @@ class SubmissionRepository:
     @staticmethod
     def update_grade(submission_id, score, grammar_fb, vocab_fb):
        
-        submission = db.session.get(Submission, submission_id)
+        submission = Submission.query.get(submission_id)
         if submission:
            
             new_grade = Grade(

@@ -409,6 +409,13 @@
     </div>
 
     <!-- Content Area - Flex 1, Centered -->
+    <!-- Start Quiz Button -->
+    <div class="start-quiz-section" style="margin: 20px 0; text-align: center;">
+        <a href="{{ url_for('start_quiz') }}" class="btn-start-quiz-large" style="display: inline-block; padding: 15px 30px; background: var(--primary-color); color: white; text-decoration: none; border-radius: 8px; font-size: 1.1rem;">
+            Start New Quiz
+        </a>
+    </div>
+
     {% if quizzes and quizzes|length > 0 %}
     <div class="quizzes-content-area">
         <div class="quizzes-grid-container">

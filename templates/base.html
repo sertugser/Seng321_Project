@@ -1050,49 +1050,13 @@
 
     <!-- Main Area -->
     <div class="main-area">
+        <!-- Content Wrapper -->
         <div class="content-wrapper">
             {% block header %}{% endblock %}
-
-            {% with messages = get_flashed_messages(with_categories=true) %}
-              {% if messages %}
-                <div class="flash-messages" style="margin-bottom: 24px;">
-                  {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}" style="
-                        padding: 12px 16px;
-                        border-radius: 8px;
-                        margin-bottom: 12px;
-                        font-size: 0.875rem;
-                        font-weight: 600;
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        border: 1px solid transparent;
-                        animation: slideDown 0.3s ease-out;
-                        {% if category == 'success' %}
-                            background-color: rgba(34, 197, 94, 0.1);
-                            color: #16a34a;
-                            border-color: rgba(34, 197, 94, 0.2);
-                        {% elif category == 'danger' or category == 'error' %}
-                            background-color: rgba(220, 38, 38, 0.1);
-                            color: #dc2626;
-                            border-color: rgba(220, 38, 38, 0.2);
-                        {% else %}
-                            background-color: var(--hover-bg);
-                            color: var(--text-main);
-                            border-color: var(--border-color);
-                        {% endif %}
-                    ">
-                      <span>{{ message }}</span>
-                      <button type="button" onclick="this.parentElement.style.display='none'" style="background:none; border:none; color:inherit; cursor:pointer; font-size:1.5rem; line-height:1; padding-left:10px;">&times;</button>
-                    </div>
-                  {% endfor %}
-                </div>
-              {% endif %}
-            {% endwith %}
-
             {% block content %}{% endblock %}
         </div>
     </div>
+
     <script>
         // Set up tooltips for collapsed sidebar icons
         (function() {
@@ -1221,22 +1185,6 @@
                 }
             }
         });
-        // base.html - Add this inside your <script> block
-        document.addEventListener('DOMContentLoaded', function() {
-    // Select all alert boxes
-        const alerts = document.querySelectorAll('.alert');
-    
-         alerts.forEach(function(alert) {
-        // Set a timeout to fade out and remove the alert after 5 seconds
-        setTimeout(function() {
-            alert.style.transition = "opacity 0.5s ease";
-            alert.style.opacity = "0";
-            setTimeout(() => alert.remove(), 500);
-        }, 3000); // 5000 milliseconds = 5 seconds
-    });
-});
-
-
     </script>
     {% block extra_js %}{% endblock %}
 </body>

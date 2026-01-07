@@ -30,4 +30,6 @@ class OCRService:
         except Exception as e:
             # Print detailed error to terminal for debugging
             print(f"OCR System Error: {e}")
+            if "tesseract" in str(e).lower():
+                print("Note: Make sure Tesseract OCR is installed and TESSERACT_PATH is set correctly in .env file")
             return None

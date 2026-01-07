@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Students - AAFS AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .students-page {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+    }
+
+    .search-box {
+        padding: 10px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--card-bg);
+        color: var(--text-main);
+        font-size: 0.875rem;
+        width: 300px;
+    }
+
+    .search-box:focus {
+        outline: none;
+        border-color: #6366f1;
+    }
+
+    .students-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .student-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 24px;
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease;
+    }
+
+    .student-card:hover {
+        border-color: #6366f1;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+    }
+
+    .student-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .student-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .student-info h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin: 0 0 4px 0;
+    }
+
+    .student-info p {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .student-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .stat-box {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .student-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+    }
+
+    .btn-action {
+        flex: 1;
+        padding: 8px 16px;
+        background: var(--accent);
+        color: var(--white);
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.8125rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+        background: var(--accent-hover);
+    }
+
+    .btn-action.secondary {
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+    }
+
+    .btn-action.secondary:hover {
+        background: rgba(99, 102, 241, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="students-page">
+    <div class="page-header">
+        <h1 class="page-title">Students</h1>
+        <input type="text" class="search-box" id="searchInput" placeholder="Search students...">
+    </div>
+
+    <div class="students-grid" id="studentsGrid">
+        {% for student in students %}
+        <div class="student-card" data-name="{{ student.username|lower }}" data-email="{{ student.email|lower }}">
+            <div class="student-header">
+                <div class="student-avatar">{{ student.username[0] | upper }}</div>
+                <div class="student-info">
+                    <h3>{{ student.username }}</h3>
+                    <p>{{ student.email }}</p>
+                </div>
+            </div>
+            <div class="student-stats">
+                <div class="stat-box">
+                    <div class="stat-value">{{ student.submissions|length if student.submissions else 0 }}</div>
+                    <div class="stat-label">Submissions</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">
+                        {% if student.submissions %}
+                            {% set graded_scores = [] %}
+                            {% for sub in student.submissions %}
+                                {% if sub.grade and sub.grade.score %}
+                                    {% set _ = graded_scores.append(sub.grade.score) %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if graded_scores %}
+                                {{ "%.1f"|format((graded_scores | sum / graded_scores|length)) }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </div>
+                    <div class="stat-label">Avg Score</div>
+                </div>
+            </div>
+            <div class="student-actions">
+                <!-- View all feedback for this student -->
+                <button class="btn-action secondary"
+                        onclick="window.location.href='{{ url_for('instructor_feedback', student_id=student.id) }}'">
+                    View Feedback
+                </button>
+                <!-- Go to detailed student profile (instructor view) -->
+                <button class="btn-action"
+                        onclick="window.location.href='{{ url_for('instructor_student_detail', student_id=student.id) }}'">
+                    Details
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll('.student-card');
+        
+        cards.forEach(card => {
+            const name = card.getAttribute('data-name');
+            const email = card.getAttribute('data-email');
+            
+            if (name.includes(searchTerm) || email.includes(searchTerm)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}
+

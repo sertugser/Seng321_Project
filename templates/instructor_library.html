@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Resource Library - AAFS AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .library-page {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+    }
+
+    .library-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 16px;
+    }
+
+    .library-card {
+        background: var(--card-bg);
+        border-radius: 14px;
+        border: 1px solid var(--border-color);
+        padding: 14px 16px;
+        font-size: 0.85rem;
+    }
+
+    .library-card h2 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin: 0 0 4px 0;
+        color: var(--text-main);
+    }
+
+    .library-card p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="library-page">
+    <div class="page-header">
+        <h1 class="page-title">Resource Library</h1>
+    </div>
+
+    <div class="library-grid">
+        {% for activity in activities %}
+        <div class="library-card">
+            <h2>{{ activity.title }}</h2>
+            <p>Type: {{ activity.activity_type }}</p>
+            <p>Due: {{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No Limit' }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+

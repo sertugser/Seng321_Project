@@ -36,29 +36,83 @@ An intelligent, full-stack English learning ecosystem designed to enhance studen
 ## 🚀 Getting Started
 
 ### 1. Requirements
-* Python 3.10+
-* **Tesseract OCR** installed on your local machine.
+* **Python 3.10+** (Check with `python --version`)
+* **Tesseract OCR** installed on your local machine
+  - **Windows:** Download from [GitHub Tesseract Releases](https://github.com/UB-Mannheim/tesseract/wiki) and install
+  - **Linux:** `sudo apt-get install tesseract-ocr` (Ubuntu/Debian) or `sudo yum install tesseract` (CentOS/RHEL)
+  - **Mac:** `brew install tesseract`
 
 ### 2. Installation & Setup
-Copy and paste the following commands into your terminal:
 
-# Clone the repository
+#### Step 1: Clone the Repository
+```bash
 git clone <your-repository-url>
+cd <project-folder>
+```
 
-# Enter the directory
-cd Seng321_Project
-
-# Create and activate virtual environment
+#### Step 2: Create Virtual Environment
+```bash
+# Create virtual environment
 python -m venv venv
+
+# Activate virtual environment
 # On Windows:
 .\venv\Scripts\activate
 # On Linux/Mac:
 source venv/bin/activate
+```
 
-# Install all dependencies
+#### Step 3: Install Dependencies
+```bash
+# Upgrade pip first
+python -m pip install --upgrade pip
+
+# Install all required packages
 python -m pip install -r requirements.txt
+```
 
-# Create your .env file and add your keys
-# SECRET_KEY=your_secret_key
-# GEMINI_API_KEY=your_google_api_key
-# TESSERACT_PATH=C:\Program Files\Tesseract-OCR\tesseract.exe
+#### Step 4: Configure Environment Variables
+Create a `.env` file in the project root and add your actual values:
+   ```env
+   # Generate a secret key (run this command):
+   # python -c "import secrets; print(secrets.token_hex(16))"
+   SECRET_KEY=your-generated-secret-key-here
+   
+   # Get your Gemini API key from: https://aistudio.google.com/app/apikey
+   GEMINI_API_KEY=your_actual_gemini_api_key_here
+   
+   # Tesseract path (only needed if not in system PATH)
+   # Windows example:
+   TESSERACT_PATH=C:\Program Files\Tesseract-OCR\tesseract.exe
+   # Linux/Mac: Usually leave empty if installed via package manager
+   # TESSERACT_PATH=
+   ```
+
+#### Step 5: Run the Application
+```bash
+python app.py
+```
+
+The application will:
+- Create the database automatically on first run
+- Create necessary directories (static/uploads)
+- Start the Flask development server on `http://127.0.0.1:5000`
+
+### 3. First Time Setup Notes
+- The database (`site.db`) will be created automatically when you first run the app
+- You can register a new account from the login page
+- To create an instructor account, register with role "Instructor"
+
+### 4. Troubleshooting
+
+**Error: "GEMINI_API_KEY not found"**
+- Make sure you created a `.env` file (copy from `.env.example`)
+- Check that your API key is correct
+
+**Error: "Tesseract not found"**
+- Install Tesseract OCR on your system
+- If installed but not in PATH, set `TESSERACT_PATH` in `.env` file
+
+**Error: "Module not found"**
+- Make sure virtual environment is activated
+- Run `pip install -r requirements.txt` again
