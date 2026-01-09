@@ -680,6 +680,25 @@
             </div>
         </div>
 
+        <!-- Original Text Content for WRITING submissions -->
+        {% if submission.submission_type == 'WRITING' and submission.text_content %}
+        <div class="analysis-card" style="grid-column: 1 / -1; margin-bottom: 16px;">
+            <span class="card-tag">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                Your Text
+            </span>
+            <h3 class="card-title">Original Submission</h3>
+            <div class="card-content" style="background: var(--bg-primary); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color); max-height: 400px; overflow-y: auto; white-space: pre-wrap; line-height: 1.7; font-size: 0.9375rem;">
+                {{ submission.text_content }}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- 2x2 Bento Grid -->
         <div class="analysis-grid">
             <!-- Box 1: Insights & Analysis -->
@@ -710,9 +729,22 @@
                 <h3 class="card-title">Linguistic Accuracy</h3>
                 <div class="card-content">
                     {% if submission.grade and submission.grade.grammar_feedback %}
-                        {{ submission.grade.grammar_feedback }}
+                        {% set grammar_errors = submission.grade.grammar_feedback.split('\n') if submission.grade.grammar_feedback else [] %}
+                        {% if grammar_errors|length > 0 %}
+                            <ul style="list-style: none; padding: 0; margin: 0;">
+                                {% for error in grammar_errors %}
+                                    {% if error.strip() %}
+                                    <li style="padding: 8px 0; border-bottom: 1px solid var(--border-color); color: #ef4444; font-size: 0.875rem;">
+                                        <span style="color: #ef4444; font-weight: 600; margin-right: 6px;">•</span>{{ error.strip() }}
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            {{ submission.grade.grammar_feedback }}
+                        {% endif %}
                     {% else %}
-                        No significant grammar issues detected.
+                        <span style="color: var(--text-secondary);">No significant grammar issues detected.</span>
                     {% endif %}
                 </div>
             </div>
@@ -729,9 +761,22 @@
                 <h3 class="card-title">Word Choice Suggestions</h3>
                 <div class="card-content">
                     {% if submission.grade and submission.grade.vocabulary_feedback %}
-                        {{ submission.grade.vocabulary_feedback }}
+                        {% set vocab_suggestions = submission.grade.vocabulary_feedback.split('\n') if submission.grade.vocabulary_feedback else [] %}
+                        {% if vocab_suggestions|length > 0 %}
+                            <ul style="list-style: none; padding: 0; margin: 0;">
+                                {% for suggestion in vocab_suggestions %}
+                                    {% if suggestion.strip() %}
+                                    <li style="padding: 8px 0; border-bottom: 1px solid var(--border-color); color: var(--accent); font-size: 0.875rem;">
+                                        <span style="color: var(--accent); font-weight: 600; margin-right: 6px;">•</span>{{ suggestion.strip() }}
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            {{ submission.grade.vocabulary_feedback }}
+                        {% endif %}
                     {% else %}
-                        Vocabulary is appropriate for the context.
+                        <span style="color: var(--text-secondary);">Vocabulary is appropriate for the context.</span>
                     {% endif %}
                 </div>
             </div>

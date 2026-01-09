@@ -256,7 +256,7 @@
         <!-- Left Pane: Text Input -->
         <div class="input-pane glass-card">
             <h2 class="pane-title">Enter Your Text</h2>
-            <textarea id="textInput" class="text-input-area" placeholder="Paste or type your text here for AI analysis..."></textarea>
+            <textarea id="textInput" class="text-input-area" placeholder="Paste or type your text here for AI analysis...">{% if submitted_text %}{{ submitted_text }}{% endif %}</textarea>
             <div class="word-counter">
                 <span>Word count:</span>
                 <span class="word-count" id="wordCount">0</span>
@@ -308,8 +308,23 @@
             <div id="grammarTab" class="tab-content">
                 {% if grade and grade.grammar_feedback %}
                 <div class="result-card">
-                    <div class="result-card-title">Grammar Analysis</div>
-                    <div class="result-content">{{ grade.grammar_feedback }}</div>
+                    <div class="result-card-title">Grammar Errors</div>
+                    <div class="result-content">
+                        {% set grammar_errors = grade.grammar_feedback.split('\n') if grade.grammar_feedback else [] %}
+                        {% if grammar_errors|length > 0 %}
+                            <ul style="list-style: none; padding: 0; margin: 0;">
+                                {% for error in grammar_errors %}
+                                    {% if error.strip() %}
+                                    <li style="padding: 12px 0; border-bottom: 1px solid var(--border-color); color: #ef4444; font-size: 0.9375rem; line-height: 1.6;">
+                                        <span style="color: #ef4444; font-weight: 700; margin-right: 8px; font-size: 1.1rem;">•</span>{{ error.strip() }}
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            {{ grade.grammar_feedback }}
+                        {% endif %}
+                    </div>
                 </div>
                 {% else %}
                 <div class="empty-results">
@@ -323,8 +338,23 @@
             <div id="vocabularyTab" class="tab-content">
                 {% if grade and grade.vocabulary_feedback %}
                 <div class="result-card">
-                    <div class="result-card-title">Vocabulary Analysis</div>
-                    <div class="result-content">{{ grade.vocabulary_feedback }}</div>
+                    <div class="result-card-title">Vocabulary Suggestions</div>
+                    <div class="result-content">
+                        {% set vocab_suggestions = grade.vocabulary_feedback.split('\n') if grade.vocabulary_feedback else [] %}
+                        {% if vocab_suggestions|length > 0 %}
+                            <ul style="list-style: none; padding: 0; margin: 0;">
+                                {% for suggestion in vocab_suggestions %}
+                                    {% if suggestion.strip() %}
+                                    <li style="padding: 12px 0; border-bottom: 1px solid var(--border-color); color: var(--accent); font-size: 0.9375rem; line-height: 1.6;">
+                                        <span style="color: var(--accent); font-weight: 700; margin-right: 8px; font-size: 1.1rem;">•</span>{{ suggestion.strip() }}
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            {{ grade.vocabulary_feedback }}
+                        {% endif %}
+                    </div>
                 </div>
                 {% else %}
                 <div class="empty-results">
@@ -369,11 +399,16 @@
     const wordCount = document.getElementById('wordCount');
 
     if (textInput && wordCount) {
-        textInput.addEventListener('input', function() {
-            const text = this.value.trim();
+        // Initialize word count on page load
+        function updateWordCount() {
+            const text = textInput.value.trim();
             const words = text ? text.split(/\s+/).filter(word => word.length > 0).length : 0;
             wordCount.textContent = words;
-        });
+        }
+        
+        updateWordCount(); // Initial count
+        
+        textInput.addEventListener('input', updateWordCount);
     }
 
     // Tab Switching

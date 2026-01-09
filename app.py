@@ -459,10 +459,98 @@ def create_app():
 
         return render_template('instructor_assignment_create.html')
 
-    @app.route('/speaking')
-    @login_required
+    @app.route('/speaking', methods=['GET', 'POST'])
+    @role_required('Student')
     def speaking():
-        # Get speaking submissions
+        activity_id = request.args.get('activity_id')
+        
+        if request.method == 'POST':
+            audio_file = request.files.get('audio_file')
+            
+            if not audio_file or audio_file.filename == '':
+                flash("Please record or upload an audio file.", "danger")
+                return redirect(url_for('speaking'))
+            
+            # Validate file format
+            if not SubmissionService.validate_file_format(audio_file.filename, 'SPEAKING'):
+                flash("Invalid audio format. Please upload MP3 or WAV files.", "danger")
+                return redirect(url_for('speaking'))
+            
+            # Check file size (max 10MB)
+            audio_file.seek(0, os.SEEK_END)
+            file_size = audio_file.tell()
+            audio_file.seek(0)
+            
+            if file_size > 10 * 1024 * 1024:  # 10MB
+                flash("File size exceeds 10MB limit.", "danger")
+                return redirect(url_for('speaking'))
+            
+            # Save audio file
+            filename = secure_filename(audio_file.filename)
+            # Add timestamp to avoid conflicts
+            from datetime import datetime
+            timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S_')
+            filename = timestamp + filename
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            audio_file.save(file_path)
+            
+            # Create submission
+            new_sub = SubmissionService.save_submission_text(
+                student_id=current_user.id,
+                activity_id=activity_id,
+                submission_type='SPEAKING',
+                text_content=None,
+                file_path=filename
+            )
+            
+            # Analyze with AI
+            print(f"Starting AI analysis for speaking submission {new_sub.id}")
+            ai_res = AIService.evaluate_speaking(file_path)
+            
+            # Process evaluation using GradingService
+            if ai_res and ai_res.get('pronunciation_score') is not None:
+                success = GradingService.process_speaking_evaluation(new_sub.id, ai_res)
+                if success:
+                    NotificationService.notify_grade_ready(current_user.id, new_sub.id)
+                    flash("Speaking analyzed successfully!", "success")
+                    # Redirect to show results
+                    return redirect(url_for('speaking', submission_id=new_sub.id))
+                else:
+                    flash("Failed to save grade.", "danger")
+            else:
+                error_msg = ai_res.get('feedback', 'Unknown error') if ai_res else 'No response from AI'
+                flash(f"Analysis failed: {error_msg}", "danger")
+            
+            return redirect(url_for('speaking'))
+        
+        # GET request - display page
+        submission_id = request.args.get('submission_id', type=int)
+        analysis_results = None
+        
+        # If viewing a specific submission, get its results
+        if submission_id:
+            submission = Submission.query.filter_by(id=submission_id, student_id=current_user.id).first()
+            if submission and submission.grade:
+                # Get tips from general_feedback or generate based on scores
+                tips = []
+                if submission.grade.pronunciation_score and submission.grade.pronunciation_score < 80:
+                    tips.append("Practice difficult words slowly, then gradually increase speed")
+                    tips.append("Record yourself and compare with native speakers")
+                if submission.grade.fluency_score and submission.grade.fluency_score < 80:
+                    tips.append("Read aloud daily to improve speech flow")
+                    tips.append("Practice speaking without long pauses")
+                if not tips:
+                    tips.append("Keep up the excellent work!")
+                    tips.append("Continue practicing to maintain your level")
+                
+                analysis_results = {
+                    'pronunciation_score': submission.grade.pronunciation_score,
+                    'fluency_score': submission.grade.fluency_score,
+                    'feedback': submission.grade.general_feedback,
+                    'tips': tips
+                }
+        
+        # Get speaking submissions for stats
         submissions = Submission.query.filter_by(student_id=current_user.id, submission_type='SPEAKING').all()
         speaking_subs = [s for s in submissions if s.grade]
         
@@ -487,7 +575,7 @@ def create_app():
                                avg_score=avg_score,
                                last_practice=last_practice,
                                total_recordings=total_recordings,
-                               analysis_results=None)
+                               analysis_results=analysis_results)
 
     @app.route('/instructor/library')
     @role_required('Instructor')
@@ -1076,14 +1164,32 @@ def create_app():
                 if success:
                     NotificationService.notify_grade_ready(current_user.id, new_sub.id)
                     flash("Submission analyzed successfully!", "success")
+                    # Reload the submission with grade to show results on the same page
+                    new_sub = Submission.query.get(new_sub.id)
+                    return render_template('submit_writing.html', 
+                                         grade=new_sub.grade,
+                                         submitted_text=text_content,
+                                         analysis_results=ai_res)
                 else:
                     flash("Failed to save grade.", "danger")
             else:
                 error_msg = ai_res.get('general_feedback', 'Unknown error') if ai_res else 'No response from AI'
                 flash(f"Analysis failed: {error_msg}", "danger")
             
-            return redirect(url_for('dashboard'))
-        return render_template('submit_writing.html')
+            return render_template('submit_writing.html', submitted_text=text_content)
+        
+        # GET request - check if there's a submission_id to show results
+        submission_id = request.args.get('submission_id', type=int)
+        grade = None
+        submitted_text = None
+        
+        if submission_id:
+            submission = Submission.query.filter_by(id=submission_id, student_id=current_user.id).first()
+            if submission:
+                grade = submission.grade
+                submitted_text = submission.text_content
+        
+        return render_template('submit_writing.html', grade=grade, submitted_text=submitted_text)
 
     @app.route('/submit/handwritten', methods=['GET', 'POST'])
     @role_required('Student')

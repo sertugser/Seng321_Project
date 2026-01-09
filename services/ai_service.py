@@ -155,3 +155,72 @@ class AIService:
                 "vocabulary_suggestions": [],
                 "general_feedback": f"Could not process AI request: {str(e)}"
             }
+    
+    @staticmethod
+    def evaluate_speaking(audio_file_path):
+        """
+        Analyzes student speaking from audio file.
+        Returns a JSON object containing pronunciation_score, fluency_score, and feedback.
+        This is a mock implementation for student project purposes.
+        """
+        import random
+        import os
+        
+        if not audio_file_path or not os.path.exists(audio_file_path):
+            return {
+                "pronunciation_score": 0,
+                "fluency_score": 0,
+                "feedback": "Audio file not found or invalid.",
+                "tips": ["Please ensure the audio file is valid and try again."]
+            }
+        
+        # Get file size to simulate some analysis
+        file_size = os.path.getsize(audio_file_path)
+        
+        # Mock analysis: Generate realistic scores based on file characteristics
+        # In a real implementation, this would use speech recognition and NLP
+        base_score = 70
+        variation = random.randint(-15, 20)
+        
+        pronunciation_score = max(0, min(100, base_score + variation))
+        fluency_score = max(0, min(100, base_score + variation + random.randint(-5, 5)))
+        
+        # Generate feedback based on scores
+        if pronunciation_score >= 85:
+            pronunciation_feedback = "Excellent pronunciation! Your articulation is clear and accurate."
+        elif pronunciation_score >= 70:
+            pronunciation_feedback = "Good pronunciation overall. Some words could be clearer."
+        elif pronunciation_score >= 55:
+            pronunciation_feedback = "Pronunciation needs improvement. Focus on clear articulation."
+        else:
+            pronunciation_feedback = "Pronunciation requires significant practice. Consider working with a tutor."
+        
+        if fluency_score >= 85:
+            fluency_feedback = "Great fluency! Your speech flows naturally."
+        elif fluency_score >= 70:
+            fluency_feedback = "Good fluency. Try to reduce pauses and hesitations."
+        elif fluency_score >= 55:
+            fluency_feedback = "Fluency needs work. Practice speaking more smoothly."
+        else:
+            fluency_feedback = "Fluency needs significant improvement. Practice reading aloud regularly."
+        
+        # Generate tips
+        tips = []
+        if pronunciation_score < 80:
+            tips.append("Practice difficult words slowly, then gradually increase speed")
+            tips.append("Record yourself and compare with native speakers")
+        if fluency_score < 80:
+            tips.append("Read aloud daily to improve speech flow")
+            tips.append("Practice speaking without long pauses")
+        if pronunciation_score >= 80 and fluency_score >= 80:
+            tips.append("Keep up the excellent work!")
+            tips.append("Continue practicing to maintain your level")
+        
+        general_feedback = f"{pronunciation_feedback} {fluency_feedback} Overall, your speaking shows potential for improvement with consistent practice."
+        
+        return {
+            "pronunciation_score": round(pronunciation_score, 1),
+            "fluency_score": round(fluency_score, 1),
+            "feedback": general_feedback,
+            "tips": tips
+        }

@@ -477,24 +477,57 @@
 <script>
     const recordBtn = document.getElementById('recordBtn');
     const recordLabel = document.getElementById('recordLabel');
+    const audioInput = document.getElementById('audioInput');
+    const uploadZone = document.getElementById('uploadZone');
+    
     let isRecording = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let audioBlob = null;
 
+    // Recording functionality
     if (recordBtn) {
-        recordBtn.addEventListener('click', function() {
-            isRecording = !isRecording;
-            if (isRecording) {
-                recordBtn.classList.add('recording');
-                recordLabel.textContent = 'Recording... Tap to Stop';
+        recordBtn.addEventListener('click', async function() {
+            if (!isRecording) {
+                // Start recording
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    
+                    mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+                    
+                    mediaRecorder.onstop = () => {
+                        audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        submitAudio(audioBlob, 'recording.wav');
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+                    
+                    mediaRecorder.start();
+                    isRecording = true;
+                    recordBtn.classList.add('recording');
+                    recordLabel.textContent = 'Recording... Tap to Stop';
+                } catch (error) {
+                    console.error('Error accessing microphone:', error);
+                    alert('Microphone access denied. Please allow microphone access and try again.');
+                }
             } else {
+                // Stop recording
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
+                isRecording = false;
                 recordBtn.classList.remove('recording');
-                recordLabel.textContent = 'Tap to Start Recording';
+                recordLabel.textContent = 'Processing...';
             }
         });
     }
 
-    const uploadZone = document.getElementById('uploadZone');
-    const audioInput = document.getElementById('audioInput');
-
+    // Upload functionality
     if (uploadZone && audioInput) {
         uploadZone.addEventListener('click', () => audioInput.click());
         
@@ -515,7 +548,75 @@
             uploadZone.style.background = 'var(--bg-primary)';
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                audioInput.files = files;
+                handleAudioFile(files[0]);
+            }
+        });
+        
+        audioInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleAudioFile(e.target.files[0]);
+            }
+        });
+    }
+    
+    function handleAudioFile(file) {
+        // Validate file type
+        const validTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/m4a', 'audio/ogg'];
+        const validExtensions = ['.mp3', '.wav', '.m4a', '.ogg'];
+        const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+        
+        if (!validTypes.includes(file.type) && !validExtensions.includes(fileExt)) {
+            alert('Invalid audio format. Please upload MP3 or WAV files.');
+            return;
+        }
+        
+        // Validate file size (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File size exceeds 10MB limit.');
+            return;
+        }
+        
+        submitAudio(file, file.name);
+    }
+    
+    function submitAudio(audioBlob, filename) {
+        const formData = new FormData();
+        formData.append('audio_file', audioBlob, filename);
+        
+        // Show loading state
+        if (recordLabel) {
+            recordLabel.textContent = 'Uploading and analyzing...';
+        }
+        if (uploadZone) {
+            uploadZone.style.opacity = '0.6';
+            uploadZone.style.pointerEvents = 'none';
+        }
+        
+        fetch('/speaking', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.text();
+            }
+        })
+        .then(data => {
+            if (data) {
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error uploading audio. Please try again.');
+            if (recordLabel) {
+                recordLabel.textContent = 'Tap to Start Recording';
+            }
+            if (uploadZone) {
+                uploadZone.style.opacity = '1';
+                uploadZone.style.pointerEvents = 'auto';
             }
         });
     }

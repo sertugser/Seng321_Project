@@ -5,7 +5,7 @@ import os
 
 class SubmissionService:
     @staticmethod
-    def validate_file_format(filename):
+    def validate_file_format(filename, submission_type=None):
         """
         Validate if file format is supported
         Returns True if valid, False otherwise
@@ -13,8 +13,15 @@ class SubmissionService:
         if not filename:
             return False
         
-        allowed_extensions = ['.docx', '.pdf', '.txt', '.jpg', '.jpeg', '.png', '.gif']
         file_ext = os.path.splitext(filename)[1].lower()
+        
+        # Audio formats for speaking submissions
+        if submission_type == 'SPEAKING':
+            allowed_extensions = ['.mp3', '.wav', '.m4a', '.ogg']
+            return file_ext in allowed_extensions
+        
+        # Default: writing/handwritten formats
+        allowed_extensions = ['.docx', '.pdf', '.txt', '.jpg', '.jpeg', '.png', '.gif']
         return file_ext in allowed_extensions
     
     @staticmethod

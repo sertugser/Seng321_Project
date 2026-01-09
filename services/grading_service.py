@@ -71,6 +71,41 @@ class GradingService:
         
         db.session.commit()
         return True
+    
+    @staticmethod
+    def process_speaking_evaluation(submission_id, ai_result):
+        """
+        Process AI evaluation result for speaking submission and save grade
+        """
+        submission = Submission.query.get(submission_id)
+        if not submission:
+            return False
+        
+        pronunciation_score = ai_result.get('pronunciation_score', 0)
+        fluency_score = ai_result.get('fluency_score', 0)
+        feedback = ai_result.get('feedback', '')
+        
+        # Calculate overall score as average
+        overall_score = (pronunciation_score + fluency_score) / 2
+        
+        # Create or update grade
+        if submission.grade:
+            submission.grade.score = overall_score
+            submission.grade.pronunciation_score = pronunciation_score
+            submission.grade.fluency_score = fluency_score
+            submission.grade.general_feedback = feedback
+        else:
+            new_grade = Grade(
+                submission_id=submission_id,
+                score=overall_score,
+                pronunciation_score=pronunciation_score,
+                fluency_score=fluency_score,
+                general_feedback=feedback
+            )
+            db.session.add(new_grade)
+        
+        db.session.commit()
+        return True
 
 
 
