@@ -746,6 +746,25 @@
                 <div class="logo-text">AAFS AI</div>
             </div>
 
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div style="margin-bottom: 20px;">
+                        {% for category, message in messages %}
+                            <div class="flash-message flash-{{ category }}" style="padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; font-size: 0.875rem; font-weight: 500; background: #0d1117; border: 1px solid {% if category == 'danger' %}#f85149{% elif category == 'success' %}#3fb950{% else %}#30363d{% endif %};">
+                                {% if category == 'danger' %}
+                                    <span style="color: #f85149;">{{ message }}</span>
+                                {% elif category == 'success' %}
+                                    <span style="color: #3fb950;">{{ message }}</span>
+                                {% else %}
+                                    <span style="color: #8b949e;">{{ message }}</span>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
             <!-- Tab Navigation -->
             <div class="tab-navigation">
                 <button class="tab-button active" onclick="switchTab('signin')">Sign In</button>
@@ -1092,8 +1111,37 @@
             alert('Continue with ' + provider.charAt(0).toUpperCase() + provider.slice(1) + ' - This feature will be implemented soon.');
         }
 
-        // Initialize on page load - check URL parameter
+        // Custom validation messages in English
         document.addEventListener('DOMContentLoaded', function() {
+            // Override HTML5 validation messages for all required inputs
+            const requiredInputs = document.querySelectorAll('input[required], select[required]');
+            requiredInputs.forEach(function(input) {
+                input.addEventListener('invalid', function(e) {
+                    e.preventDefault();
+                    if (input.validity.valueMissing) {
+                        if (input.type === 'email') {
+                            input.setCustomValidity('Please enter your email address.');
+                        } else if (input.type === 'password') {
+                            input.setCustomValidity('Please enter your password.');
+                        } else if (input.type === 'text' && input.name === 'username') {
+                            input.setCustomValidity('Please enter your name.');
+                        } else {
+                            input.setCustomValidity('Please fill in this field.');
+                        }
+                    } else if (input.validity.typeMismatch && input.type === 'email') {
+                        input.setCustomValidity('Please enter a valid email address.');
+                    } else {
+                        input.setCustomValidity('');
+                    }
+                    input.reportValidity();
+                });
+                
+                input.addEventListener('input', function() {
+                    input.setCustomValidity('');
+                });
+            });
+            
+            // Check URL parameter for tab switching
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('mode') === 'register' || urlParams.get('mode') === 'signup') {
                 switchTab('signup');

@@ -38,18 +38,21 @@ class GradingService:
         vocab_text = "\n".join(vocab_suggestions) if vocab_suggestions else None
         
         # Create or update grade
+        # AI grade is created with instructor_approved=False (pending instructor review)
         if submission.grade:
             submission.grade.score = score
             submission.grade.general_feedback = ai_result.get('general_feedback', '')
             submission.grade.grammar_feedback = grammar_text
             submission.grade.vocabulary_feedback = vocab_text
+            submission.grade.instructor_approved = False  # Pending instructor review
         else:
             new_grade = Grade(
                 submission_id=submission_id,
                 score=score,
                 general_feedback=ai_result.get('general_feedback', ''),
                 grammar_feedback=grammar_text,
-                vocabulary_feedback=vocab_text
+                vocabulary_feedback=vocab_text,
+                instructor_approved=False  # Pending instructor review
             )
             db.session.add(new_grade)
         
@@ -60,6 +63,7 @@ class GradingService:
     def update_student_grade(submission_id, new_score, new_feedback=None):
         """
         Update grade manually (for instructors)
+        When instructor updates, it's automatically approved
         """
         submission = Submission.query.get(submission_id)
         if not submission or not submission.grade:
@@ -68,7 +72,21 @@ class GradingService:
         submission.grade.score = new_score
         if new_feedback:
             submission.grade.general_feedback = new_feedback
+        submission.grade.instructor_approved = True  # Approved by instructor
         
+        db.session.commit()
+        return True
+    
+    @staticmethod
+    def approve_grade(submission_id):
+        """
+        Approve AI-generated grade (for instructors)
+        """
+        submission = Submission.query.get(submission_id)
+        if not submission or not submission.grade:
+            return False
+        
+        submission.grade.instructor_approved = True
         db.session.commit()
         return True
     
@@ -89,18 +107,21 @@ class GradingService:
         overall_score = (pronunciation_score + fluency_score) / 2
         
         # Create or update grade
+        # AI grade is created with instructor_approved=False (pending instructor review)
         if submission.grade:
             submission.grade.score = overall_score
             submission.grade.pronunciation_score = pronunciation_score
             submission.grade.fluency_score = fluency_score
             submission.grade.general_feedback = feedback
+            submission.grade.instructor_approved = False  # Pending instructor review
         else:
             new_grade = Grade(
                 submission_id=submission_id,
                 score=overall_score,
                 pronunciation_score=pronunciation_score,
                 fluency_score=fluency_score,
-                general_feedback=feedback
+                general_feedback=feedback,
+                instructor_approved=False  # Pending instructor review
             )
             db.session.add(new_grade)
         

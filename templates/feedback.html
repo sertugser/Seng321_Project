@@ -707,11 +707,24 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
-                    AI Feedback
+                    {% if submission.grade and submission.grade.instructor_approved %}Instructor Feedback{% else %}AI Feedback{% endif %}
                 </span>
                 <h3 class="card-title">Insights & Analysis</h3>
                 <div class="card-content">
-                    {{ (submission.grade.general_feedback) if (submission.grade and submission.grade.general_feedback) else 'AI is processing the analysis...' }}
+                    {% if submission.grade and submission.grade.general_feedback %}
+                        {{ submission.grade.general_feedback }}
+                        {% if submission.grade.instructor_approved %}
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-secondary);">
+                            <strong>Status:</strong> Reviewed and approved by instructor
+                        </div>
+                        {% else %}
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-secondary);">
+                            <strong>Status:</strong> Pending instructor review
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <span style="color: var(--text-secondary);">AI is processing the analysis...</span>
+                    {% endif %}
                 </div>
             </div>
 
@@ -781,7 +794,42 @@
                 </div>
             </div>
 
-            <!-- Box 4: Quick Actions -->
+            <!-- Box 4: Assignment Info (if applicable) -->
+            {% if submission.activity_id %}
+            <div class="analysis-card">
+                <span class="card-tag">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    Assignment
+                </span>
+                <h3 class="card-title">Assignment Details</h3>
+                <div class="card-content">
+                    {% if submission.activity %}
+                    <div style="margin-bottom: 12px;">
+                        <strong style="color: var(--text-main);">Title:</strong>
+                        <div style="color: var(--text-secondary); margin-top: 4px;">{{ submission.activity.title }}</div>
+                    </div>
+                    {% if submission.activity.description %}
+                    <div style="margin-bottom: 12px;">
+                        <strong style="color: var(--text-main);">Description:</strong>
+                        <div style="color: var(--text-secondary); margin-top: 4px;">{{ submission.activity.description }}</div>
+                    </div>
+                    {% endif %}
+                    {% if submission.activity.due_date %}
+                    <div>
+                        <strong style="color: var(--text-main);">Due Date:</strong>
+                        <div style="color: var(--text-secondary); margin-top: 4px;">{{ submission.activity.due_date.strftime('%b %d, %Y') }}</div>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <span style="color: var(--text-secondary);">Assignment information not available.</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <!-- Box 4: Quick Actions (if not assignment) -->
             <div class="analysis-card">
                 <span class="card-tag">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -812,6 +860,7 @@
                     </button>
                 </div>
             </div>
+            {% endif %}
         </div>
 
         <!-- OCR Conversion Results -->

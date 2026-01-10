@@ -53,6 +53,7 @@ class Grade(db.Model):
     # Speaking Metrics [New]
     pronunciation_score = db.Column(db.Float, nullable=True)
     fluency_score = db.Column(db.Float, nullable=True)
+    instructor_approved = db.Column(db.Boolean, default=False, nullable=False)  # False = Pending, True = Graded
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # --- 5. LearningGoal Entity (UC7) ---
@@ -61,6 +62,7 @@ class LearningGoal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     goal_name = db.Column(db.String(100), nullable=False) # e.g., "Improve Pronunciation"
+    category = db.Column(db.String(50), nullable=True, default='General')
     target_value = db.Column(db.Integer, default=100)
     current_value = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

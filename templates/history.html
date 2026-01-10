@@ -638,6 +638,7 @@
     <!-- Modern Pill Tabs Filter Bar -->
     <div class="filter-bar">
         <a href="/history" class="filter-pill {% if not request.args.get('filter') or request.args.get('filter') == 'all' %}active{% endif %}">All</a>
+        <a href="/history?filter=assignments" class="filter-pill {% if request.args.get('filter') == 'assignments' %}active{% endif %}">Assignments</a>
         <a href="/history?filter=speaking" class="filter-pill {% if request.args.get('filter') == 'speaking' %}active{% endif %}">Speaking AI</a>
         <a href="/history?filter=writing" class="filter-pill {% if request.args.get('filter') == 'writing' %}active{% endif %}">Writing</a>
         <a href="/history?filter=handwritten" class="filter-pill {% if request.args.get('filter') == 'handwritten' %}active{% endif %}">OCR AI</a>
@@ -646,8 +647,89 @@
 
     <!-- Bento Grid Container -->
 
+    {# Assignments history view #}
+    {% if request.args.get('filter') == 'assignments' %}
+        {% if assignments and assignments|length > 0 %}
+        <div class="bento-grid-container">
+            <div class="bento-grid">
+                {% for activity in assignments %}
+                {% set subs = activity_submissions.get(activity.id, []) %}
+                {% set latest_sub = subs|first if subs else None %}
+                {% set score = latest_sub.grade.score if latest_sub and latest_sub.grade else 0 %}
+                {% set score_class = 'high' if score >= 70 else 'medium' if score >= 40 else 'low' %}
+                <div class="activity-tile" onclick="window.location.href='{{ url_for('view_feedback', submission_id=latest_sub.id) if latest_sub else '#' }}'">
+                    <div class="tile-visual">
+                        <div class="tile-icon-large {% if activity.activity_type == 'SPEAKING' %}speaking{% elif activity.activity_type == 'WRITING' %}writing{% elif activity.activity_type == 'QUIZ' %}writing{% else %}writing{% endif %}">
+                            {% if activity.activity_type == 'WRITING' %}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            {% elif activity.activity_type == 'SPEAKING' %}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                            {% else %}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="tile-content">
+                        <h3 class="tile-title">{{ activity.title }}</h3>
+                        <p class="tile-date">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            Due: {{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No Limit' }}
+                        </p>
+                        {% if latest_sub and latest_sub.grade %}
+                        <p class="tile-date">Score: {{ score | round }}%</p>
+                        {% endif %}
+                    </div>
+                    {% if latest_sub and latest_sub.grade %}
+                    <div class="tile-score-badge {{ score_class }}">
+                        {{ score | round }}%
+                    </div>
+                    {% endif %}
+                    <div class="tile-overlay">
+                        <a href="{{ url_for('view_feedback', submission_id=latest_sub.id) if latest_sub else '#' }}" class="tile-action-btn view" onclick="event.stopPropagation();" title="View Details">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state-wrapper">
+            <div class="empty-state">
+                <div class="empty-state-title">No completed assignments yet.</div>
+                <div class="empty-state-text">Complete assignments to see them here.</div>
+                <a href="/assignments" class="empty-state-cta">
+                    Go to Assignments
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
     {# Quiz history view #}
-    {% if request.args.get('filter') == 'quiz' %}
+    {% elif request.args.get('filter') == 'quiz' %}
         {% if quizzes and quizzes|length > 0 %}
         <div class="bento-grid-container">
             <div class="bento-grid">

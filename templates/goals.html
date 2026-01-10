@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}My Learning Goals - AAFS AI{% endblock %}
 
@@ -55,12 +55,14 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 16px;
+        align-items: stretch;
+        width: 100%;
     }
 
     .goal-card {
         background: var(--card-bg);
         border-radius: 12px;
-        padding: 20px;
+        padding: 24px;
         border: 1px solid var(--border-color);
         transition: all 0.2s ease;
         display: flex;
@@ -69,6 +71,9 @@
         text-align: center;
         position: relative;
         opacity: 1;
+        min-height: 280px;
+        height: 100%;
+        box-sizing: border-box;
     }
 
     .goal-card.fade-out {
@@ -84,20 +89,21 @@
     /* Delete Icon - Top Right Corner */
     .goal-delete-btn {
         position: absolute;
-        top: 12px;
-        right: 12px;
-        width: 28px;
-        height: 28px;
+        top: 16px;
+        right: 16px;
+        width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: transparent;
-        border: none;
+        background: rgba(148, 163, 184, 0.1);
+        border: 1px solid var(--border-color);
         cursor: pointer;
-        color: #94a3b8; /* text-slate-400 */
+        color: #94a3b8;
         transition: all 0.2s ease;
-        border-radius: 6px;
+        border-radius: 8px;
         padding: 0;
+        z-index: 10;
     }
 
     .goal-delete-btn:hover {
@@ -112,10 +118,39 @@
     }
 
     .goal-name {
-        font-size: 0.9375rem;
+        font-size: 1rem;
         font-weight: 600;
         color: var(--text-main);
+        margin-bottom: 12px;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding: 0 48px;
+        line-height: 1.5;
+        min-height: 1.5em;
+        text-align: center;
+        box-sizing: border-box;
+    }
+    
+    .goal-category {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
         margin-bottom: 16px;
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+        border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+    
+    [data-theme="dark"] .goal-category {
+        background: rgba(129, 140, 248, 0.15);
+        color: #818cf8;
+        border-color: rgba(129, 140, 248, 0.3);
     }
 
     /* Thin Circular Progress Ring */
@@ -124,6 +159,7 @@
         width: 80px;
         height: 80px;
         margin-bottom: 16px;
+        flex-shrink: 0;
     }
 
     .progress-ring {
@@ -162,6 +198,8 @@
         font-size: 0.75rem;
         color: var(--text-secondary);
         margin-bottom: 16px;
+        width: 100%;
+        flex-shrink: 0;
     }
 
     .btn-edit {
@@ -175,6 +213,8 @@
         cursor: pointer;
         transition: all 0.2s ease;
         width: 100%;
+        margin-top: auto;
+        flex-shrink: 0;
     }
 
     .btn-edit:hover {
@@ -186,25 +226,18 @@
     /* Goals Container */
     #goalsContainer {
         position: relative;
-        min-height: calc(100vh - 200px); /* Full viewport height minus header */
         width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        margin-top: 0;
     }
 
-    /* Empty State - Perfectly Centered */
+    /* Empty State */
     .empty-state {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
         width: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
         text-align: center;
-        z-index: 1;
+        padding: 80px 20px;
     }
 
     .empty-state-content {
@@ -525,7 +558,7 @@
 
 <!-- Goals Container -->
 <div id="goalsContainer">
-    <div class="goals-grid" id="goalsGrid">
+    <div class="goals-grid" id="goalsGrid" style="display: {% if goals|length > 0 %}grid{% else %}none{% endif %};">
         {% for goal in goals %}
         <div class="goal-card" id="goal-card-{{ goal.id }}">
             <!-- Delete Button - Top Right Corner -->
@@ -538,13 +571,19 @@
             
             <h3 class="goal-name">{{ goal.goal_name }}</h3>
             
+            {% if goal.category %}
+            <span class="goal-category">{{ goal.category }}</span>
+            {% endif %}
+            
             <div class="progress-ring-container">
                 <svg class="progress-ring" viewBox="0 0 80 80">
                     <circle class="progress-ring-circle progress-ring-bg" cx="40" cy="40" r="36"></circle>
+                    {% set progress_percent = ((goal.current_value / goal.target_value) * 100) if goal.target_value > 0 else 0 %}
+                    {% set progress_percent = progress_percent if progress_percent <= 100 else 100 %}
                     <circle class="progress-ring-circle progress-ring-fill" cx="40" cy="40" r="36" 
-                            style="stroke-dashoffset: {{ 226 - (226 * (goal.current_value / goal.target_value)) }};"></circle>
+                            style="stroke-dashoffset: {{ 226 - (226 * (progress_percent / 100)) }};"></circle>
                 </svg>
-                <div class="progress-text">{{ ((goal.current_value / goal.target_value) * 100) | round }}%</div>
+                <div class="progress-text">{{ progress_percent | round }}%</div>
             </div>
             
             <div class="goal-progress-info">{{ goal.current_value }} / {{ goal.target_value }}</div>
@@ -603,12 +642,13 @@
     </div>
 </div>
 
-<!-- Add Goal Modal -->
+<!-- Add/Edit Goal Modal -->
 <div id="addGoalModal" class="modal" style="display: none;">
     <div class="modal-content">
         <span class="close-button" onclick="closeGoalModal()">&times;</span>
-        <h3>Add New Learning Goal</h3>
+        <h3 id="modalTitle">Add New Learning Goal</h3>
         <form id="addGoalForm" onsubmit="submitGoal(event)">
+            <input type="hidden" id="goal_id" name="goal_id" value="">
             <div class="form-group">
                 <label class="form-label" for="goal_name">Goal Name</label>
                 <input type="text" id="goal_name" name="goal_name" class="form-input" placeholder="e.g., Master IELTS Speaking" required>
@@ -647,17 +687,54 @@
 </div>
 
 <script>
-    function openGoalModal() {
-        document.getElementById('addGoalModal').style.display = 'flex';
-        // Reset form
-        document.getElementById('addGoalForm').reset();
+    function openGoalModal(goalId = null) {
+        const modal = document.getElementById('addGoalModal');
+        const form = document.getElementById('addGoalForm');
+        const modalTitle = document.getElementById('modalTitle');
+        const goalIdInput = document.getElementById('goal_id');
+        
+        modal.style.display = 'flex';
+        
+        if (goalId) {
+            // Edit mode - load goal data
+            modalTitle.textContent = 'Edit Learning Goal';
+            fetch(`/goals/${goalId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.goal) {
+                        const goal = data.goal;
+                        document.getElementById('goal_name').value = goal.goal_name || '';
+                        document.getElementById('category').value = goal.category || 'General';
+                        document.getElementById('target_value').value = goal.target_value || '';
+                        document.getElementById('current_value').value = goal.current_value || '0';
+                        goalIdInput.value = goal.id;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading goal:', error);
+                    resetGoalForm();
+                });
+        } else {
+            // Add mode
+            resetGoalForm();
+        }
+    }
+    
+    function resetGoalForm() {
+        const form = document.getElementById('addGoalForm');
+        const modalTitle = document.getElementById('modalTitle');
+        const goalIdInput = document.getElementById('goal_id');
+        
+        form.reset();
         document.getElementById('current_value').value = '0';
+        document.getElementById('category').value = '';
+        goalIdInput.value = '';
+        modalTitle.textContent = 'Add New Learning Goal';
     }
 
     function closeGoalModal() {
         document.getElementById('addGoalModal').style.display = 'none';
-        // Reset form
-        document.getElementById('addGoalForm').reset();
+        resetGoalForm();
     }
 
     function submitGoal(event) {
@@ -674,9 +751,14 @@
         submitLoading.style.display = 'inline';
         submitBtn.disabled = true;
         
+        // Determine if edit or create
+        const goalId = document.getElementById('goal_id').value;
+        const url = goalId ? `/goals/${goalId}` : '/goals';
+        const method = goalId ? 'PUT' : 'POST';
+        
         // Submit via fetch (AJAX)
-        fetch('/goals', {
-            method: 'POST',
+        fetch(url, {
+            method: method,
             body: formData,
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
@@ -712,8 +794,7 @@
     }
 
     function editGoal(goalId) {
-        // Edit functionality - to be implemented
-        openGoalModal();
+        openGoalModal(goalId);
     }
 
     window.onclick = function(event) {
@@ -783,6 +864,10 @@
                             // Show single empty state and hide grid
                             emptyState.style.display = 'flex';
                             grid.style.display = 'none';
+                        } else if (remainingCards.length > 0 && emptyState) {
+                            // Hide empty state and show grid
+                            emptyState.style.display = 'none';
+                            grid.style.display = 'grid';
                         }
                     }, 300);
                 }

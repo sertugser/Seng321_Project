@@ -1,119 +1,275 @@
 ﻿{% extends "base.html" %}
 
-{% block title %}Adjust Grade - AAFS{% endblock %}
+{% block title %}Adjust AI Grade - AAFS AI{% endblock %}
 
 {% block extra_css %}
 <style>
-    .content-container {
-        display: flex;
-        justify-content: center;
-        padding: 20px 0;
+    .adjust-page {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 32px;
     }
 
     .adjust-card {
-        padding: 30px;
-        width: 100%;
-        max-width: 600px;
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        padding: 32px;
+        box-shadow: var(--shadow-md);
     }
 
-    h2 {
-        text-align: center;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 10px;
-        margin-bottom: 20px;
+    .page-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border-color);
     }
 
-    label {
-        display: block;
-        margin-top: 15px;
+    .page-header h1 {
+        font-size: 1.75rem;
         font-weight: 700;
         color: var(--text-main);
-        font-size: 0.9rem;
+        margin: 0;
     }
 
-    .ai-score {
-        font-size: 1.5rem;
-        color: var(--primary);
-        font-weight: 800;
-        text-align: center;
-        padding: 15px;
-        border: 2px solid var(--primary);
-        border-radius: var(--radius-md);
-        margin-bottom: 20px;
-        background: #eef2ff;
+    .page-header svg {
+        width: 28px;
+        height: 28px;
+        color: #f59e0b;
     }
 
-    .student-info {
-        background: #f8fafc;
-        padding: 15px;
-        border-radius: var(--radius-md);
-        margin-bottom: 20px;
-        border: 1px solid #e2e8f0;
-    }
-
-    .submission-content {
-        border: 1px solid #e2e8f0;
-        padding: 15px;
-        margin-top: 10px;
+    .info-section {
         background: var(--card-bg);
-        max-height: 200px;
-        overflow-y: auto;
-        white-space: pre-wrap;
-        font-family: 'Courier New', monospace;
-        border-radius: var(--radius-md);
-        font-size: 0.85rem;
-        color: var(--text-muted);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
     }
 
-    .back-link {
-        display: block;
-        text-align: center;
-        margin-top: 20px;
-        text-decoration: none;
-        color: var(--text-muted);
+    .info-section p {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+
+    .info-section strong {
+        color: var(--text-main);
         font-weight: 600;
     }
 
+    .ai-score-card {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+        text-align: center;
+    }
+
+    .ai-score-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .ai-score-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #6366f1;
+        margin: 0;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 12px;
+        margin-top: 24px;
+    }
+
+    .submission-content {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        max-height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        font-family: 'Courier New', monospace;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 8px;
+    }
+
+    .form-group input[type="number"],
+    .form-group textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        font-size: 0.9375rem;
+        background: var(--card-bg);
+        color: var(--text-main);
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+
+    .form-group input[type="number"]:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 120px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn-save {
+        flex: 1;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-save:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-save svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
+    }
+
+    .back-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
     .back-link:hover {
-        color: var(--primary);
+        background: var(--hover-bg);
+        color: var(--text-main);
+        border-color: var(--accent);
+    }
+
+    .back-link svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
+    }
+
+    [data-theme="dark"] .ai-score-card {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+        border-color: rgba(99, 102, 241, 0.3);
     }
 </style>
 {% endblock %}
 
-{% block header %}
-<h2>Adjust Grade</h2>
-{% endblock %}
-
 {% block content %}
-<div class="content-container">
-    <div class="adjust-card glass-card">
-        <h2>✏️ Adjust AI Grade</h2>
-
-        <div class="student-info">
-            Submission by: <b>{{ submission.student.username }}</b> ({{ submission.student.email }})<br>
-            Submitted on: {{ submission.created_at.strftime('%Y-%m-%d %H:%M') }}
+<div class="adjust-page">
+    <div class="adjust-card">
+        <div class="page-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <h1>Adjust AI Grade</h1>
         </div>
 
-        <div class="ai-score">
-            AI Assigned Score: {{ submission.grade.score | round(1) }}/100
+        <div class="info-section">
+            <p><strong>Submission by:</strong> {{ submission.student.username }} ({{ submission.student.email }})</p>
+            <p style="margin-top: 8px;"><strong>Submitted on:</strong> {{ submission.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
         </div>
 
-        <h3>Original Content:</h3>
+        <div class="ai-score-card">
+            <div class="ai-score-label">AI Assigned Score</div>
+            <div class="ai-score-value">{{ submission.grade.score | round(1) }}%</div>
+        </div>
+
+        <h3 class="section-title">Original Content:</h3>
         <div class="submission-content">
-            {{ submission.text_content }}
+            {{ submission.text_content or submission.file_path or 'No content available' }}
         </div>
 
         <form action="/adjust_grade/{{ submission.id }}" method="POST">
-            <label for="new_score">New Score (0-100):</label>
-            <input type="number" id="new_score" name="new_score" value="{{ submission.grade.score | round(0) }}" min="0" max="100" step="0.1" required>
+            <div class="form-group">
+                <label for="new_score">New Score (0-100)</label>
+                <input type="number" id="new_score" name="new_score" value="{{ submission.grade.score | round(0) }}" min="0" max="100" step="0.1" required>
+            </div>
 
-            <label for="new_feedback">Adjust General Feedback:</label>
-            <textarea id="new_feedback" name="new_feedback">{{ submission.grade.general_feedback }}</textarea>
+            <div class="form-group">
+                <label for="new_feedback">Adjust General Feedback</label>
+                <textarea id="new_feedback" name="new_feedback" placeholder="Enter feedback for the student...">{{ submission.grade.general_feedback or '' }}</textarea>
+            </div>
 
-            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 20px;">💾 Save Adjusted Grade</button>
+            <div class="form-actions">
+                <button type="submit" class="btn-save">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Save Adjusted Grade
+                </button>
+                <a href="{{ url_for('instructor_dashboard') }}" class="back-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Back to Dashboard
+                </a>
+            </div>
         </form>
-
-        <a href="/instructor/dashboard" class="back-link">← Back to Instructor Dashboard</a>
     </div>
 </div>
 {% endblock %}

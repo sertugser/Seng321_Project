@@ -259,6 +259,7 @@
             </div>
             
             <div class="assignment-actions">
+                {% if activity and activity.id %}
                 <a href="{{ url_for('instructor_assignment_detail', activity_id=activity.id) }}" class="btn-action btn-view">
                     View Details
                 </a>
@@ -268,6 +269,7 @@
                 <button onclick="deleteAssignment({{ activity.id }}, '{{ activity.title }}')" class="btn-action btn-delete-assignment">
                     Delete
                 </button>
+                {% endif %}
             </div>
         </div>
         {% endfor %}

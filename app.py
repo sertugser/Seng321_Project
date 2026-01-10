@@ -1,4 +1,4 @@
-﻿import os
+import os
 from datetime import datetime 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response
 from werkzeug.utils import secure_filename
@@ -96,19 +96,38 @@ def create_app():
         email = request.form.get('email')
         password = request.form.get('password')
         role = request.form.get('role', 'Student') 
+        
+        # Username kontrolü
+        if User.query.filter_by(username=username).first():
+            flash("This username is already taken!", "danger")
+            return redirect(url_for('login', mode='register'))
+        
+        # Email kontrolü
         if User.query.filter_by(email=email).first():
-            flash("Email already exists!", "danger")
+            flash("This email address is already in use!", "danger")
+            return redirect(url_for('login', mode='register'))
+        
+        try:
+            hashed_pw = generate_password_hash(password, method='pbkdf2:sha256')
+            new_user = User(username=username, email=email, password=hashed_pw, role=role)
+            db.session.add(new_user)
+            db.session.commit()
+            flash("Registration is successful, you can now log in.", "success")
             return redirect(url_for('login'))
-        hashed_pw = generate_password_hash(password, method='pbkdf2:sha256')
-        new_user = User(username=username, email=email, password=hashed_pw, role=role)
-        db.session.add(new_user)
-        db.session.commit()
-        flash("Registration successful!", "success")
-        return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            flash("An error occurred during registration. Please try again.", "danger")
+            return redirect(url_for('login', mode='register'))
 
     @app.route('/login', methods=['GET', 'POST'])
     def login():
         if current_user.is_authenticated: return redirect(url_for('dashboard'))
+        
+        # Clear flash messages on GET request (when coming from logout)
+        if request.method == 'GET':
+            from flask import session
+            session.pop('_flashes', None)
+        
         if request.method == 'POST':
             user = User.query.filter_by(email=request.form.get('email')).first()
             if user and check_password_hash(user.password, request.form.get('password')):
@@ -120,6 +139,9 @@ def create_app():
     @app.route('/logout')
     @login_required
     def logout():
+        # Clear all flash messages before logout
+        from flask import session
+        session.pop('_flashes', None)
         logout_user()
         return redirect(url_for('login'))
 
@@ -396,31 +418,97 @@ def create_app():
     @app.route('/assignments')
     @login_required
     def view_assignments():
-        activities = LearningActivity.query.order_by(LearningActivity.due_date.asc()).all()
+        all_activities = LearningActivity.query.order_by(LearningActivity.due_date.asc()).all()
         now = datetime.utcnow()
 
         # Student submissions to mark completed assignments (including quiz submissions)
         user_subs = Submission.query.filter_by(student_id=current_user.id).all()
-        completed_ids = set(s.activity_id for s in user_subs if s.activity_id)
+        submitted_ids = set(s.activity_id for s in user_subs if s.activity_id and s.activity_id is not None)
+        
+        # Get submissions with their grades for status determination
+        submissions_with_grades = {s.activity_id: s for s in user_subs if s.activity_id and s.grade}
 
-        all_count = len(activities)
-        completed_count = len([a for a in activities if a.id in completed_ids])
-        pending_count = all_count - completed_count
+        # Filter assignments for students
+        if current_user.role == 'Student':
+            # Get all active assignments (not expired)
+            active_activities = [a for a in all_activities if not a.due_date or a.due_date >= now]
+            
+            # Categorize assignments:
+            # Active: not submitted yet
+            active_activities_list = [a for a in active_activities if a.id not in submitted_ids]
+            
+            # Pending: submitted but waiting for instructor approval (has grade but not approved)
+            pending_activities = []
+            completed_activities = []
+            
+            for activity_id in submitted_ids:
+                activity = next((a for a in all_activities if a.id == activity_id), None)
+                if activity:
+                    submission = submissions_with_grades.get(activity_id)
+                    if submission and submission.grade:
+                        if submission.grade.instructor_approved:
+                            completed_activities.append(activity)
+                        else:
+                            pending_activities.append(activity)
+                    else:
+                        # Submitted but no grade yet - treat as pending
+                        pending_activities.append(activity)
+            
+            # Default: show active
+            activities = active_activities_list
+        else:
+            activities = all_activities
+            active_activities_list = activities
+            pending_activities = []
+            completed_activities = []
+
+        # Calculate counts for display
+        active_count = len(active_activities_list)
+        pending_count = len(pending_activities)
+        completed_count = len(completed_activities)
 
         return render_template('assignments.html', 
                                activities=activities,
-                               all_count=all_count,
+                               active_activities=active_activities_list,
+                               pending_activities=pending_activities,
+                               completed_activities=completed_activities,
+                               active_count=active_count,
                                pending_count=pending_count,
                                completed_count=completed_count,
                                now=now,
-                               completed_ids=completed_ids)
+                               submitted_ids=submitted_ids,
+                               user_subs=user_subs,
+                               submissions_with_grades=submissions_with_grades)
 
     @app.route('/instructor/assignments')
     @role_required('Instructor')
     def instructor_assignments():
         activities = LearningActivity.query.order_by(LearningActivity.due_date.asc()).all()
         now = datetime.utcnow()
-        return render_template('instructor_assignments.html', activities=activities, now=now)
+        
+        # Calculate submission stats for each activity
+        # Same logic as instructor_assignment_detail
+        activity_stats = []
+        for activity in activities:
+            if not activity or not hasattr(activity, 'id'):
+                continue
+            submissions = Submission.query.filter_by(activity_id=activity.id).all()
+            total_submissions = len(submissions)
+            # Graded = instructor approved
+            graded_submissions = len([s for s in submissions if s.grade and s.grade.instructor_approved])
+            # Pending = has AI grade but not approved yet
+            pending_submissions = len([s for s in submissions if s.grade and not s.grade.instructor_approved])
+            
+            activity_stats.append({
+                'activity': activity,
+                'total_submissions': total_submissions,
+                'graded_submissions': graded_submissions,
+                'pending_submissions': pending_submissions
+            })
+        
+        return render_template('instructor_assignments.html', 
+                             activity_stats=activity_stats, 
+                             now=now)
 
     @app.route('/instructor/assignments/create', methods=['GET', 'POST'])
     @role_required('Instructor')
@@ -494,14 +582,35 @@ def create_app():
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             audio_file.save(file_path)
             
+            # Check if already submitted for this activity
+            if activity_id:
+                existing = Submission.query.filter_by(
+                    student_id=current_user.id,
+                    activity_id=activity_id
+                ).first()
+                if existing:
+                    flash("You have already submitted this assignment.", "danger")
+                    return redirect(url_for('speaking'))
+                
+                # Check due date
+                activity = LearningActivity.query.get(activity_id)
+                if activity and activity.due_date:
+                    if datetime.utcnow() > activity.due_date:
+                        flash("This assignment has expired. The due date has passed.", "danger")
+                        return redirect(url_for('speaking'))
+            
             # Create submission
-            new_sub = SubmissionService.save_submission_text(
+            new_sub, error_msg = SubmissionService.save_submission_text(
                 student_id=current_user.id,
                 activity_id=activity_id,
                 submission_type='SPEAKING',
                 text_content=None,
                 file_path=filename
             )
+            
+            if not new_sub:
+                flash(error_msg or "Failed to create submission.", "danger")
+                return redirect(url_for('speaking'))
             
             # Analyze with AI
             print(f"Starting AI analysis for speaking submission {new_sub.id}")
@@ -720,10 +829,12 @@ def create_app():
                 db.session.flush() # get id
                 
                 # Create Grade
+                # Quiz grades are auto-approved since they're automatically graded
                 new_grade = Grade(
                     submission_id=new_sub.id,
                     score=score,
-                    general_feedback=f"Auto-graded quiz. Correct: {correct}/{total}"
+                    general_feedback=f"Auto-graded quiz. Correct: {correct}/{total}",
+                    instructor_approved=True  # Auto-approved for quizzes
                 )
                 db.session.add(new_grade)
                 db.session.commit() # Commit submission and grade
@@ -788,12 +899,14 @@ def create_app():
             category = request.form.get('category', 'General')  # Category for future use
             
             if goal_name and target_value:
+                category = request.form.get('category', 'General')
                 # Use GoalService to create goal
                 new_goal = GoalService.set_goal(
                     user_id=current_user.id,
                     goal_name=goal_name,
                     target_value=target_value,
-                    current_value=current_value
+                    current_value=current_value,
+                    category=category
                 )
                 
                 # Return JSON for AJAX requests
@@ -812,6 +925,57 @@ def create_app():
         # GET request - display goals using GoalService
         user_goals = GoalService.get_user_goals(current_user.id)
         return render_template('goals.html', goals=user_goals)
+    
+    @app.route('/goals/<int:goal_id>', methods=['GET', 'PUT'])
+    @login_required
+    def get_or_update_goal(goal_id):
+        goal = GoalRepository.get_goal_by_id(goal_id)
+        
+        if not goal:
+            return jsonify({'success': False, 'message': 'Goal not found'}), 404
+        
+        # Ensure user can only access their own goals
+        if goal.user_id != current_user.id:
+            return jsonify({'success': False, 'message': 'Permission denied'}), 403
+        
+        if request.method == 'GET':
+            # Return goal data
+            return jsonify({
+                'success': True,
+                'goal': {
+                    'id': goal.id,
+                    'goal_name': goal.goal_name,
+                    'category': goal.category or 'General',
+                    'target_value': goal.target_value,
+                    'current_value': goal.current_value
+                }
+            })
+        
+        elif request.method == 'PUT':
+            # Update goal
+            goal_name = request.form.get('goal_name')
+            target_value = request.form.get('target_value', type=int)
+            current_value = request.form.get('current_value', type=int)
+            category = request.form.get('category', 'General')
+            
+            updated_goal = GoalService.update_goal(
+                goal_id=goal_id,
+                goal_name=goal_name,
+                target_value=target_value,
+                current_value=current_value,
+                category=category
+            )
+            
+            if updated_goal:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': True, 'message': 'Goal updated successfully!'}), 200
+                flash('Goal updated successfully!', 'success')
+                return redirect(url_for('goals'))
+            else:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'message': 'Failed to update goal'}), 500
+                flash('Failed to update goal.', 'error')
+                return redirect(url_for('goals'))
 
     @app.route('/delete-goal/<int:goal_id>', methods=['POST'])
     @login_required
@@ -1068,13 +1232,134 @@ def create_app():
     @app.route('/instructor/pending')
     @role_required('Instructor')
     def instructor_pending():
-        submissions = Submission.query.filter(~Submission.grade.has()).order_by(Submission.created_at.desc()).all()
+        # Show submissions with AI grades that need instructor approval (instructor_approved=False)
+        from models.entities import Grade
+        submissions = Submission.query.join(Grade).filter(
+            Grade.instructor_approved == False
+        ).order_by(Submission.created_at.desc()).all()
         return render_template(
             'instructor_feedback.html',
             submissions=submissions,
             selected_student_id=None,
             selected_type='all'
         )
+    
+    @app.route('/instructor/assignments/<int:activity_id>')
+    @role_required('Instructor')
+    def instructor_assignment_detail(activity_id):
+        activity = LearningActivity.query.get_or_404(activity_id)
+        submissions = Submission.query.filter_by(activity_id=activity_id).order_by(Submission.created_at.desc()).all()
+        
+        total_submissions = len(submissions)
+        # Graded = instructor approved
+        graded_submissions = len([s for s in submissions if s.grade and s.grade.instructor_approved])
+        # Pending = has AI grade but not approved yet
+        pending_submissions = len([s for s in submissions if s.grade and not s.grade.instructor_approved])
+        
+        # Get students who submitted
+        student_ids = set(s.student_id for s in submissions)
+        students = User.query.filter(User.id.in_(student_ids)).all() if student_ids else []
+        
+        return render_template('instructor_assignment_detail.html',
+                             activity=activity,
+                             submissions=submissions,
+                             total_submissions=total_submissions,
+                             graded_submissions=graded_submissions,
+                             pending_submissions=pending_submissions,
+                             students=students)
+    
+    @app.route('/instructor/assignments/<int:activity_id>/edit', methods=['GET', 'POST'])
+    @role_required('Instructor')
+    def instructor_edit_assignment(activity_id):
+        activity = LearningActivity.query.get_or_404(activity_id)
+        
+        if activity.instructor_id != current_user.id:
+            flash("You don't have permission to edit this assignment.", "danger")
+            return redirect(url_for('instructor_assignments'))
+        
+        if request.method == 'POST':
+            title = request.form.get('title')
+            activity_type = request.form.get('activity_type')
+            due_date_str = request.form.get('due_date')
+            description = request.form.get('description')
+            quiz_category = request.form.get('quiz_category') if activity_type == 'QUIZ' else None
+            
+            if not title or not activity_type:
+                flash('Title and type are required.', 'danger')
+                return redirect(url_for('instructor_edit_assignment', activity_id=activity_id))
+            
+            activity.title = title
+            activity.activity_type = activity_type
+            activity.description = description
+            activity.quiz_category = quiz_category
+            
+            due_date = None
+            if due_date_str:
+                try:
+                    due_date = datetime.strptime(due_date_str, '%Y-%m-%d')
+                except ValueError:
+                    flash('Invalid date format. Use YYYY-MM-DD.', 'danger')
+                    return redirect(url_for('instructor_edit_assignment', activity_id=activity_id))
+            activity.due_date = due_date
+            
+            db.session.commit()
+            flash('Assignment updated successfully!', 'success')
+            return redirect(url_for('instructor_assignment_detail', activity_id=activity_id))
+        
+        return render_template('instructor_assignment_edit.html', activity=activity)
+    
+    @app.route('/instructor/assignments/<int:activity_id>/delete', methods=['POST'])
+    @role_required('Instructor')
+    def instructor_delete_assignment(activity_id):
+        activity = LearningActivity.query.get_or_404(activity_id)
+        
+        if activity.instructor_id != current_user.id:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'Permission denied'}), 403
+            flash("You don't have permission to delete this assignment.", "danger")
+            return redirect(url_for('instructor_assignments'))
+        
+        # Delete associated submissions and grades
+        submissions = Submission.query.filter_by(activity_id=activity_id).all()
+        for submission in submissions:
+            if submission.grade:
+                db.session.delete(submission.grade)
+            db.session.delete(submission)
+        
+        db.session.delete(activity)
+        db.session.commit()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': True, 'message': 'Assignment deleted successfully!'}), 200
+        
+        flash('Assignment deleted successfully!', 'success')
+        return redirect(url_for('instructor_assignments'))
+    
+    @app.route('/instructor/submissions/<int:submission_id>/approve', methods=['POST'])
+    @role_required('Instructor')
+    def approve_submission(submission_id):
+        submission = Submission.query.get_or_404(submission_id)
+        
+        if not submission.grade:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': 'No grade found for this submission'}), 400
+            flash('No grade found for this submission.', 'danger')
+            return redirect(url_for('instructor_pending'))
+        
+        success = GradingService.approve_grade(submission_id)
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            if success:
+                return jsonify({'success': True, 'message': 'Grade approved successfully!'}), 200
+            else:
+                return jsonify({'success': False, 'message': 'Failed to approve grade'}), 400
+        
+        if success:
+            flash('Grade approved successfully!', 'success')
+        else:
+            flash('Failed to approve grade.', 'danger')
+        
+        return redirect(url_for('instructor_pending'))
 
     @app.route('/instructor/questions', methods=['GET', 'POST'])
     @role_required('Instructor')
@@ -1146,13 +1431,17 @@ def create_app():
                 return redirect(url_for('submit_writing'))
             
             # Create submission using SubmissionService
-            new_sub = SubmissionService.save_submission_text(
+            new_sub, error_msg = SubmissionService.save_submission_text(
                 student_id=current_user.id,
                 activity_id=activity_id,
                 submission_type='WRITING',
                 text_content=text_content,
                 file_path=file.filename if file else None
             )
+
+            if not new_sub:
+                flash(error_msg or "Failed to create submission.", "danger")
+                return render_template('submit_writing.html', submitted_text=text_content)
 
             # Analyze with AI
             print(f"Starting AI analysis for submission {new_sub.id}")
@@ -1214,13 +1503,19 @@ def create_app():
                 
                 if extracted_text:
                     # Save submission using SubmissionService
-                    new_sub = SubmissionService.save_submission_text(
+                    new_sub, error_msg = SubmissionService.save_submission_text(
                         student_id=current_user.id,
                         activity_id=activity_id,
                         submission_type='HANDWRITTEN',
                         text_content=extracted_text,
                         file_path=filename
                     )
+                    
+                    if not new_sub:
+                        flash(error_msg or "Failed to create submission.", "danger")
+                        return render_template('submit_handwritten.html', 
+                                             image_path=None,
+                                             extracted_text=None)
                     
                     ai_res = AIService.evaluate_writing(extracted_text)
                     if ai_res:
@@ -1265,7 +1560,32 @@ def create_app():
             else:
                 quizzes = []
         
-        return render_template('history.html', submissions=submissions, quizzes=quizzes)
+        # For assignments history
+        assignments = []
+        activity_submissions = {}
+        if filter_type == 'assignments':
+            # Get all completed assignments (submitted ones)
+            user_subs_all = Submission.query.filter_by(student_id=current_user.id).all()
+            completed_activity_ids = set(s.activity_id for s in user_subs_all if s.activity_id)
+            
+            # Get activities that have been submitted
+            assignments = LearningActivity.query.filter(
+                LearningActivity.id.in_(completed_activity_ids)
+            ).order_by(LearningActivity.due_date.desc()).all()
+            
+            # Get submissions for these activities
+            for sub in user_subs_all:
+                if sub.activity_id:
+                    if sub.activity_id not in activity_submissions:
+                        activity_submissions[sub.activity_id] = []
+                    activity_submissions[sub.activity_id].append(sub)
+        
+        return render_template('history.html', 
+                             submissions=submissions, 
+                             quizzes=quizzes,
+                             assignments=assignments if filter_type == 'assignments' else [],
+                             activity_submissions=activity_submissions if filter_type == 'assignments' else {},
+                             now=datetime.utcnow())
 
     @app.route('/feedback/<int:submission_id>')
     @login_required
@@ -1278,6 +1598,11 @@ def create_app():
         if current_user.role != 'Instructor' and sub.student_id != current_user.id:
             flash("You don't have permission to view this report.", "error")
             return redirect(url_for('dashboard'))
+        
+        # Load activity if submission is part of an assignment
+        if sub.activity_id:
+            sub.activity = LearningActivity.query.get(sub.activity_id)
+        
         return render_template('feedback.html', submission=sub)
 
     @app.route('/adjust_grade/<int:submission_id>', methods=['GET', 'POST'])
@@ -1294,7 +1619,7 @@ def create_app():
             new_feedback = request.form.get('new_feedback', '')
             
             if new_score is not None and 0 <= new_score <= 100:
-                # Use GradingService to update grade
+                # Use GradingService to update grade (this automatically sets instructor_approved=True)
                 success = GradingService.update_student_grade(submission.id, new_score, new_feedback)
                 if success:
                     NotificationService.notify_grade_ready(submission.student_id, submission.id)

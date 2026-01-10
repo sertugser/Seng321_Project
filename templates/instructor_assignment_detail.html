@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}Assignment Details - AAFS AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-page {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+    }
+
+    .btn-back {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .btn-back:hover {
+        background: var(--hover-bg);
+        color: var(--text-main);
+    }
+
+    .assignment-info-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .info-row {
+        display: flex;
+        gap: 24px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+
+    .info-item {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        padding: 20px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 8px;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .submissions-section {
+        background: var(--card-bg);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        padding: 24px;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 20px;
+    }
+
+    .submissions-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .submissions-table th {
+        text-align: left;
+        padding: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .submissions-table td {
+        padding: 12px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.875rem;
+        color: var(--text-main);
+    }
+
+    .submissions-table tr:hover {
+        background: var(--hover-bg);
+    }
+
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-badge.graded {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+    }
+
+    .status-badge.pending {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+
+    .btn-view-submission {
+        padding: 6px 12px;
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-view-submission:hover {
+        background: var(--accent);
+        color: var(--white);
+    }
+
+    .empty-submissions {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-secondary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-page">
+    <div class="page-header">
+        <div>
+            <a href="{{ url_for('instructor_assignments') }}" class="btn-back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                Back to Assignments
+            </a>
+        </div>
+        <div style="display: flex; gap: 12px;">
+            <a href="{{ url_for('instructor_edit_assignment', activity_id=activity.id) }}" class="btn-back" style="background: #6366f1; color: #ffffff; border-color: #6366f1;">
+                Edit Assignment
+            </a>
+        </div>
+    </div>
+
+    <div class="assignment-info-card">
+        <h1 class="page-title" style="margin-bottom: 20px;">{{ activity.title }}</h1>
+        <div class="info-row">
+            <div class="info-item">
+                <div class="info-label">Type</div>
+                <div class="info-value">{{ activity.activity_type }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Due Date</div>
+                <div class="info-value">{{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No Limit' }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Created</div>
+                <div class="info-value">{{ activity.created_at.strftime('%b %d, %Y') if activity.created_at else 'N/A' }}</div>
+            </div>
+        </div>
+        {% if activity.description %}
+        <div class="info-row">
+            <div class="info-item" style="flex: 1 1 100%;">
+                <div class="info-label">Description</div>
+                <div class="info-value" style="font-weight: 400;">{{ activity.description }}</div>
+            </div>
+        </div>
+        {% endif %}
+        {% if activity.quiz_category %}
+        <div class="info-row">
+            <div class="info-item">
+                <div class="info-label">Quiz Category</div>
+                <div class="info-value">{{ activity.quiz_category }}</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_submissions }}</div>
+            <div class="stat-label">Total Submissions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: #22c55e;">{{ graded_submissions }}</div>
+            <div class="stat-label">Graded</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: #f59e0b;">{{ pending_submissions }}</div>
+            <div class="stat-label">Pending Review</div>
+        </div>
+    </div>
+
+    <div class="submissions-section">
+        <h2 class="section-title">Student Submissions</h2>
+        {% if submissions %}
+        <table class="submissions-table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Type</th>
+                    <th>Submitted</th>
+                    <th>Status</th>
+                    <th>Score</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for submission in submissions %}
+                <tr>
+                    <td>{{ submission.student.username }}</td>
+                    <td>{{ submission.submission_type }}</td>
+                    <td>{{ submission.created_at.strftime('%b %d, %Y %H:%M') }}</td>
+                    <td>
+                        {% if submission.grade %}
+                            {% if submission.grade.instructor_approved %}
+                            <span class="status-badge graded">Graded</span>
+                            {% else %}
+                            <span class="status-badge pending">Pending Review</span>
+                            {% endif %}
+                        {% else %}
+                        <span class="status-badge pending">No Grade</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if submission.grade %}
+                        {{ submission.grade.score | round }}%
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('view_feedback', submission_id=submission.id) }}" class="btn-view-submission">View</a>
+                        {% if submission.grade %}
+                        <a href="{{ url_for('adjust_grade', submission_id=submission.id) }}" class="btn-view-submission" style="margin-left: 8px;">Adjust</a>
+                        {% if not submission.grade.instructor_approved %}
+                        <button onclick="approveSubmission({{ submission.id }})" class="btn-view-submission" style="margin-left: 8px; background: #22c55e; color: #ffffff; border-color: #22c55e;">Approve</button>
+                        {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-submissions">
+            <p>No submissions yet for this assignment.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function approveSubmission(submissionId) {
+    if (confirm('Approve this AI-generated grade?')) {
+        fetch(`/instructor/submissions/${submissionId}/approve`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to approve grade');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while approving the grade');
+        });
+    }
+}
+</script>
+{% endblock %}
