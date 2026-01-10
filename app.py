@@ -1431,13 +1431,17 @@ def create_app():
                 return redirect(url_for('submit_writing'))
             
             # Create submission using SubmissionService
-            new_sub = SubmissionService.save_submission_text(
+            new_sub, error_msg = SubmissionService.save_submission_text(
                 student_id=current_user.id,
                 activity_id=activity_id,
                 submission_type='WRITING',
                 text_content=text_content,
                 file_path=file.filename if file else None
             )
+
+            if not new_sub:
+                flash(error_msg or "Failed to create submission.", "danger")
+                return render_template('submit_writing.html', submitted_text=text_content)
 
             # Analyze with AI
             print(f"Starting AI analysis for submission {new_sub.id}")
@@ -1499,13 +1503,19 @@ def create_app():
                 
                 if extracted_text:
                     # Save submission using SubmissionService
-                    new_sub = SubmissionService.save_submission_text(
+                    new_sub, error_msg = SubmissionService.save_submission_text(
                         student_id=current_user.id,
                         activity_id=activity_id,
                         submission_type='HANDWRITTEN',
                         text_content=extracted_text,
                         file_path=filename
                     )
+                    
+                    if not new_sub:
+                        flash(error_msg or "Failed to create submission.", "danger")
+                        return render_template('submit_handwritten.html', 
+                                             image_path=None,
+                                             extracted_text=None)
                     
                     ai_res = AIService.evaluate_writing(extracted_text)
                     if ai_res:
