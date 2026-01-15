@@ -224,7 +224,7 @@
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
-            <h1>Adjust AI Grade</h1>
+            <h1>Adjust Evaluation</h1>
         </div>
 
         <div class="info-section">
@@ -237,36 +237,43 @@
             <div class="ai-score-value">{{ submission.grade.score | round(1) }}%</div>
         </div>
 
-        <h3 class="section-title">Original Content:</h3>
-        <div class="submission-content">
-            {{ submission.text_content or submission.file_path or 'No content available' }}
+        <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 24px;">
+            <div class="info-item">
+                <label style="display: block; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 4px;">Student ID</label>
+                <span style="font-weight: 600; color: var(--text-main);">#{{ submission.student_id }}</span>
+            </div>
+            <div class="info-item">
+                <label style="display: block; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 4px;">Assignment Type</label>
+                <span style="font-weight: 600; color: var(--text-main); text-transform: capitalize;">{{ submission.submission_type }}</span>
+            </div>
+            <div class="info-item">
+                <label style="display: block; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 4px;">AI Initial Score</label>
+                <span style="font-weight: 600; color: #7c4dff;">{{ submission.grade.score }}%</span>
+            </div>
         </div>
 
-        <form action="/adjust_grade/{{ submission.id }}" method="POST">
+        <form method="POST">
             <div class="form-group">
-                <label for="new_score">New Score (0-100)</label>
-                <input type="number" id="new_score" name="new_score" value="{{ submission.grade.score | round(0) }}" min="0" max="100" step="0.1" required>
+                <label for="score">Instructor's Final Score (%)</label>
+                <input type="number" step="0.1" name="score" id="score" class="form-control" 
+                       value="{{ submission.grade.score }}" required 
+                       style="width: 100%; padding: 12px 16px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--border-color); font-size: 0.9375rem; color: var(--text-main); transition: border-color 0.2s;">
             </div>
 
             <div class="form-group">
-                <label for="new_feedback">Adjust General Feedback</label>
-                <textarea id="new_feedback" name="new_feedback" placeholder="Enter feedback for the student...">{{ submission.grade.general_feedback or '' }}</textarea>
+                <label for="feedback">General Feedback & Comments</label>
+                <textarea name="feedback" id="feedback" rows="6" class="form-control" 
+                          placeholder="Provide detailed feedback for the student..."
+                          style="width: 100%; padding: 12px 16px; border-radius: 8px; background: var(--card-bg); border: 1px solid var(--border-color); font-size: 0.9375rem; color: var(--text-main); transition: border-color 0.2s; resize: vertical; min-height: 120px; font-family: inherit;">{{ submission.grade.general_feedback }}</textarea>
             </div>
 
-            <div class="form-actions">
-                <button type="submit" class="btn-save">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                        <polyline points="7 3 7 8 15 8"></polyline>
-                    </svg>
-                    Save Adjusted Grade
+            <div style="display: flex; align-items: center; gap: 16px; margin-top: 32px;">
+                <button type="submit" class="btn-save" style="background: #7c4dff; color: white; border: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; font-size: 0.9375rem; cursor: pointer; transition: opacity 0.2s;">
+                    Save Changes
                 </button>
-                <a href="{{ url_for('instructor_dashboard') }}" class="back-link">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                    Back to Dashboard
+                <a href="{{ url_for('instructor_student_detail', student_id=submission.student_id) }}" 
+                   style="color: var(--text-muted); padding: 12px 24px; font-weight: 500; text-decoration: none; border: 1px solid var(--border-color); border-radius: 8px; transition: all 0.2s;">
+                    Cancel
                 </a>
             </div>
         </form>

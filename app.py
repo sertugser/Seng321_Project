@@ -1,11 +1,19 @@
 import os
+import io
+import csv
 from datetime import datetime 
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, send_file, Response
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 import docx 
 from functools import wraps
+try:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.pdfgen import canvas
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
 
 # Project internal imports
 from config import Config
@@ -64,6 +72,7 @@ def create_app():
     @app.before_request
     def check_user_auth():
         public_routes = ['login', 'register', 'static', 'privacy', 'terms', 'index']
+        # Export routes are protected by @login_required, so they will be handled correctly
         if not current_user.is_authenticated and request.endpoint not in public_routes:
             return redirect(url_for('login'))
 
@@ -1078,28 +1087,153 @@ def create_app():
             return redirect(url_for('settings'))
         
         return render_template('settings.html')
+    @app.route('/export/pdf')
+    @login_required
+    def export_pdf():
+        """Export student submissions to PDF"""
+        # Check if reportlab is available
+        if not REPORTLAB_AVAILABLE:
+            return "PDF generation requires reportlab library. Please install with: pip install reportlab", 500
+        
+        try:
+            from models.entities import Submission
+            
+            # Get all submissions for the current user
+            submissions = db.session.query(Submission).filter_by(student_id=current_user.id).order_by(Submission.created_at.desc()).all()
+            
+            # Create PDF buffer
+            buffer = io.BytesIO()
+            try:
+                p = canvas.Canvas(buffer, pagesize=letter)
+                width, height = letter
+                
+                # Header section
+                p.setFont("Helvetica-Bold", 18)
+                p.drawString(100, height - 50, "AAFS AI - Academic Progress Report")
+                p.setFont("Helvetica", 12)
+                p.drawString(100, height - 80, f"Student: {current_user.username}")
+                p.drawString(100, height - 100, f"Generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M')}")
+                p.line(100, height - 110, 500, height - 110)
+                
+                if submissions:
+                    # Table headers
+                    y = height - 130
+                    p.setFont("Helvetica-Bold", 11)
+                    p.drawString(100, y, "Date")
+                    p.drawString(200, y, "Type")
+                    p.drawString(350, y, "Score")
+                    p.line(100, y - 5, 500, y - 5)
+                    
+                    # Table rows
+                    p.setFont("Helvetica", 10)
+                    y -= 25
+                    
+                    for sub in submissions:
+                        # Check if we need a new page
+                        if y < 100:
+                            p.showPage()
+                            y = height - 50
+                        
+                        try:
+                            # Get score safely
+                            if sub.grade and sub.grade.score is not None:
+                                score = sub.grade.score
+                            else:
+                                score = 0
+                            
+                            # Format date safely
+                            if sub.created_at:
+                                date_str = sub.created_at.strftime('%Y-%m-%d')
+                            else:
+                                date_str = 'N/A'
+                            
+                            # Format type safely
+                            if sub.submission_type:
+                                type_str = sub.submission_type.capitalize()
+                            else:
+                                type_str = 'Unknown'
+                            
+                            # Draw row
+                            p.drawString(100, y, date_str)
+                            p.drawString(200, y, type_str)
+                            p.drawString(350, y, f"{score}%")
+                            
+                            y -= 20
+                        except Exception as e:
+                            # Skip problematic submissions and continue
+                            continue
+                else:
+                    # No submissions message
+                    y = height - 130
+                    p.setFont("Helvetica", 12)
+                    p.drawString(100, y, "No submissions found.")
+                
+                # Finalize and save PDF
+                p.showPage()
+                p.save()
+            finally:
+                # Ensure buffer is ready for reading
+                buffer.seek(0)
+            
+            # Generate filename
+            filename = f"academic_report_{current_user.id}_{datetime.utcnow().strftime('%Y%m%d')}.pdf"
+            
+            # Get PDF bytes
+            pdf_bytes = buffer.getvalue()
+            buffer.close()
+            
+            # Create response with PDF data
+            response = make_response(pdf_bytes)
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+            response.headers['Content-Length'] = str(len(pdf_bytes))
+            
+            return response
+            
+        except Exception as e:
+            import traceback
+            error_msg = str(e)
+            traceback.print_exc()
+            # Return error as text instead of redirecting
+            return f"Error generating PDF: {error_msg}", 500
+
+    @app.route('/export/csv')
+    @login_required
+    def export_csv():
+        """Export student submissions to CSV"""
+        from models.entities import Submission
+        submissions = Submission.query.filter_by(student_id=current_user.id).all()
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Headers
+        writer.writerow(['Date', 'Assignment Type', 'Score', 'AI Feedback'])
+        
+        for sub in submissions:
+            score = sub.grade.score if sub.grade else 0
+            feedback = sub.grade.general_feedback if sub.grade else "No feedback"
+            writer.writerow([
+                sub.created_at.strftime('%Y-%m-%d'), 
+                sub.submission_type, 
+                f"{score}%", 
+                feedback
+            ])
+        
+        return Response(
+            output.getvalue(),
+            mimetype="text/csv",
+            headers={"Content-disposition": "attachment; filename=progress_report.csv"}
+        )
+
     @app.route('/export')
     @login_required
     def export_data():
+        """Legacy export route for backwards compatibility"""
         format_type = request.args.get('format', 'csv')
-        student_id = current_user.id if current_user.role == 'Student' else None
-        
-        # Use ReportService to generate report
-        report_data = ReportService.export_report(student_id=student_id, format=format_type)
-        
-        if report_data and format_type == 'csv':
-            response = make_response(report_data)
-            response.headers['Content-Type'] = 'text/csv'
-            response.headers['Content-Disposition'] = f'attachment; filename=report_{current_user.id}.csv'
-            return response
-        elif report_data and format_type == 'pdf':
-            response = make_response(report_data)
-            response.headers['Content-Type'] = 'application/pdf'
-            response.headers['Content-Disposition'] = f'attachment; filename=report_{current_user.id}_{datetime.utcnow().strftime("%Y%m%d")}.pdf'
-            return response
+        if format_type == 'pdf':
+            return redirect(url_for('export_pdf'))
         else:
-            flash("Failed to generate report.", "danger")
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('export_csv'))
 
     # ---  INSTRUCTOR DASHBOARD ---
 
@@ -1635,30 +1769,38 @@ def create_app():
         
         return render_template('feedback.html', submission=sub)
 
-    @app.route('/adjust_grade/<int:submission_id>', methods=['GET', 'POST'])
-    @role_required('Instructor')
+    @app.route('/instructor/adjust-grade/<int:submission_id>', methods=['GET', 'POST'])
+    @login_required
     def adjust_grade(submission_id):
-        submission = Submission.query.get_or_404(submission_id)
-        
-        if not submission.grade:
-            flash("No grade found for this submission.", "danger")
+        from models.entities import Submission, Grade
+        submission = db.session.get(Submission, submission_id)
+        if not submission:
+            flash('Submission not found', 'danger')
             return redirect(url_for('instructor_dashboard'))
         
+        if not submission.grade:
+            new_grade = Grade(submission_id=submission.id, score=0.0)
+            db.session.add(new_grade)
+            db.session.commit()
+            submission = db.session.get(Submission, submission_id)  # Refresh to get the new grade
+        
         if request.method == 'POST':
-            new_score = request.form.get('new_score', type=float)
-            new_feedback = request.form.get('new_feedback', '')
-            
-            if new_score is not None and 0 <= new_score <= 100:
-                # Use GradingService to update grade (this automatically sets instructor_approved=True)
-                success = GradingService.update_student_grade(submission.id, new_score, new_feedback)
-                if success:
-                    NotificationService.notify_grade_ready(submission.student_id, submission.id)
-                    flash("Grade adjusted successfully!", "success")
-                    return redirect(url_for('instructor_dashboard'))
+            try:
+                score = request.form.get('score', type=float)
+                feedback = request.form.get('feedback', '')
+                
+                if score is not None and 0 <= score <= 100:
+                    submission.grade.score = score
+                    submission.grade.general_feedback = feedback
+                    submission.grade.instructor_approved = True
+                    db.session.commit()
+                    flash('Success: Evaluation updated!', 'success')
+                    return redirect(url_for('instructor_student_detail', student_id=submission.student_id))
                 else:
-                    flash("Failed to update grade.", "danger")
-            else:
-                flash("Invalid score. Please enter a value between 0 and 100.", "danger")
+                    flash('Invalid score. Please enter a value between 0 and 100.', 'danger')
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error: {str(e)}', 'danger')
         
         return render_template('adjust_grade.html', submission=submission)
 
