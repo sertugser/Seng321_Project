@@ -5,11 +5,11 @@
 {% block extra_css %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-    /* Allow page to scroll normally */
+    /* Static dashboard - no scroll */
     .content-wrapper {
-        min-height: 100vh;
+        height: 100vh;
         overflow-x: hidden;
-        overflow-y: auto;
+        overflow-y: hidden;
         display: flex;
         flex-direction: column;
         padding: 48px 32px 24px 32px;  /* Top padding 48px to align with sidebar-top (MAIN line level) */
@@ -21,6 +21,7 @@
         display: flex;
         flex-direction: column;
         padding-bottom: 30px;
+        overflow: hidden;
     }
 
     /* Welcome Banner - Compact like Instructor, Aligned with Sidebar MAIN */
@@ -86,7 +87,7 @@
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 16px;
-        margin-bottom: 24px;
+        margin-bottom: 16px;
     }
 
     .stat-card {
@@ -227,8 +228,8 @@
 
     /* Section Header - Learning Overview */
     .section-header {
-        margin-top: 40px; /* Push down from stats cards */
-        margin-bottom: 20px;
+        margin-top: 16px; /* Push down from stats cards */
+        margin-bottom: 16px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -283,7 +284,7 @@
     }
 
     .deadlines-section,
-    .recent-section-wrapper {
+    .academic-reports-section {
         width: 100%;
     }
 
@@ -963,6 +964,74 @@
         color: #818cf8; /* Indigo 400 */
     }
 
+    /* Academic Reports Content */
+    .academic-reports-content {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        flex: 1;
+        justify-content: center;
+        padding: 8px 0;
+    }
+
+    .academic-reports-description {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin: 0;
+        text-align: center;
+    }
+
+    .academic-reports-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .export-btn {
+        text-decoration: none;
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .export-btn-pdf {
+        background: #ff4757;
+        color: #fff !important;
+        box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+    }
+
+    .export-btn-pdf:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+    }
+
+    .export-btn-csv {
+        background: #2ed573;
+        color: #fff !important;
+        box-shadow: 0 4px 15px rgba(46, 213, 115, 0.3);
+    }
+
+    .export-btn-csv:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
+    }
+
+    .export-btn svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
     /* Learning Progress & Streak Card */
     .progress-card {
         border-radius: 24px; /* rounded-3xl - matches other cards */
@@ -1125,6 +1194,7 @@
     @media (max-width: 1200px) {
         .content-wrapper {
             padding: 20px 24px;
+            overflow-y: hidden;
         }
 
         .dashboard-grid {
@@ -1134,7 +1204,7 @@
         }
 
         .chart-section,
-        .recent-section-wrapper,
+        .academic-reports-section,
         .recommended-section,
         .deadlines-section,
         .progress-section-wrapper,
@@ -1162,6 +1232,7 @@
         .content-wrapper {
             padding: 16px;
             height: 100vh;
+            overflow-y: hidden;
         }
 
         .welcome-banner {
@@ -1350,79 +1421,34 @@
                 </div>
             </div>
 
-            <!-- Recent Activity History - Right -->
-            <div class="recent-section-wrapper">
-                <div class="recent-section">
-                    <div class="recent-header">
-                        <h3 class="recent-title">Recent Activity History</h3>
+            <!-- Academic Reports - Right -->
+            <div class="academic-reports-section">
+                <div class="glass-card deadlines-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Academic Reports</h3>
                     </div>
-                    {% if submissions %}
-                    <div class="recent-list">
-                        {% for sub in submissions[-1:]|reverse %}
-                        {% if sub.grade %}
-                        <div class="recent-item">
-                            <div class="recent-info">
-                                {% if sub.submission_type == 'SPEAKING' %}
-                                <div class="recent-icon speaking">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                                        <line x1="12" y1="19" x2="12" y2="23"></line>
-                                        <line x1="8" y1="23" x2="16" y2="23"></line>
-                                    </svg>
-                                </div>
-                                {% elif sub.submission_type == 'WRITING' %}
-                                <div class="recent-icon writing">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                    </svg>
-                                </div>
-                                {% else %}
-                                <div class="recent-icon handwritten">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                        <polyline points="21 15 16 10 5 21"></polyline>
-                                    </svg>
-                                </div>
-                                {% endif %}
-                                <div class="recent-details">
-                                    <div class="recent-type-badge">{{ sub.submission_type }}</div>
-                                    <div class="recent-date">{{ sub.created_at.strftime('%b %d, %Y') }}</div>
-                                </div>
-                            </div>
-                            <div class="recent-badges">
-                                {% set score = sub.grade.score %}
-                                {% if score >= 75 %}
-                                <span class="recent-score-badge high">{{ score }}%</span>
-                                {% elif score >= 50 %}
-                                <span class="recent-score-badge mid">{{ score }}%</span>
-                                {% else %}
-                                <span class="recent-score-badge low">{{ score }}%</span>
-                                {% endif %}
-                            </div>
+                    <div class="academic-reports-content">
+                        <p class="academic-reports-description">Export your full academic history to PDF or CSV files.</p>
+                        <div class="academic-reports-buttons">
+                            <a href="/export/pdf" download class="export-btn export-btn-pdf">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                                Export PDF
+                            </a>
+                            <a href="/export/csv" download class="export-btn export-btn-csv">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Export CSV
+                            </a>
                         </div>
-                        {% endif %}
-                        {% endfor %}
                     </div>
-                    <div class="view-all-link">
-                        <a href="/history">View All History →</a>
-                    </div>
-                    {% else %}
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                            </svg>
-                        </div>
-                        <div class="empty-state-title">No activity yet</div>
-                        <div class="empty-state-text">Submit your first assignment to see activity history</div>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -1492,34 +1518,6 @@
     </div>
 </div>
 
-<!-- Data Export Section (Theme Aware) -->
-<div style="margin: 25px 0; padding: 20px; background: rgba(124, 77, 255, 0.1); border: 1px solid rgba(124, 77, 255, 0.2); border-radius: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
-    <div>
-        <!-- color: inherit diyerek temanın ana yazı rengini almasını sağlıyoruz -->
-        <h5 style="margin: 0; color: inherit; font-weight: 700;">Academic Reports</h5>
-        <!-- opacity kullanarak rengi temanın rengine göre otomatik solduruyoruz -->
-        <p style="margin: 5px 0 0 0; color: inherit; opacity: 0.7; font-size: 0.9rem;">Export your full academic history to PDF or CSV files.</p>
-    </div>
-    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-        <a href="/export/pdf" download style="background: #ff4757; color: #fff !important; text-decoration: none; padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3); transition: transform 0.2s ease;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-            </svg>
-            Export PDF
-        </a>
-        <a href="/export/csv" download style="background: #2ed573; color: #fff !important; text-decoration: none; padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(46, 213, 115, 0.3); transition: transform 0.2s ease;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Export CSV
-        </a>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
