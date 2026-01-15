@@ -660,15 +660,15 @@ def create_app():
                 if success:
                     NotificationService.notify_grade_ready(current_user.id, new_sub.id)
                     flash("Speaking analyzed successfully!", "success")
-                    # Redirect to show results
+                    # Redirect to show results with submission_id parameter
                     return redirect(url_for('speaking', submission_id=new_sub.id))
                 else:
                     flash("Failed to save grade.", "danger")
+                    return redirect(url_for('speaking'))
             else:
                 error_msg = ai_res.get('feedback', 'Unknown error') if ai_res else 'No response from AI'
                 flash(f"Analysis failed: {error_msg}", "danger")
-            
-            return redirect(url_for('speaking'))
+                return redirect(url_for('speaking'))
         
         # GET request - display page
         submission_id = request.args.get('submission_id', type=int)
@@ -751,26 +751,23 @@ def create_app():
             if activity and activity.activity_type == 'QUIZ':
                 category = activity.quiz_category
         
-        if request.method == 'POST' or activity_id:
-            # Get questions using QuizService with optional category
-            questions = QuizService.get_questions(limit=5, category=category)
-            
-            if not questions:
-                flash("No questions available for this category.", "danger")
-                return redirect(url_for('quizzes'))
-            
-            # Store questions in session for quiz flow
-            from flask import session
-            session['quiz_questions'] = [q.id for q in questions]
-            session['quiz_answers'] = {}
-            session['quiz_current'] = 0
-            session['quiz_started'] = True
-            if activity_id:
-                session['quiz_activity_id'] = activity_id
-            
-            return redirect(url_for('quiz_question'))
+        # Get questions using QuizService with optional category
+        questions = QuizService.get_questions(limit=5, category=category)
         
-        return redirect(url_for('quizzes'))
+        if not questions:
+            flash("No questions available.", "danger")
+            return redirect(url_for('quizzes'))
+        
+        # Store questions in session for quiz flow
+        from flask import session
+        session['quiz_questions'] = [q.id for q in questions]
+        session['quiz_answers'] = {}
+        session['quiz_current'] = 0
+        session['quiz_started'] = True
+        if activity_id:
+            session['quiz_activity_id'] = activity_id
+        
+        return redirect(url_for('quiz_question'))
 
     @app.route('/quiz/question', methods=['GET', 'POST'])
     @login_required
@@ -1250,6 +1247,11 @@ def create_app():
         active_count = len(set(s.student_id for s in all_subs))
         pending_count = len(all_subs) - len(graded_subs)
         
+        # Calculate grade distribution
+        grade_high = sum(1 for s in graded_subs if s.grade.score >= 75)
+        grade_mid = sum(1 for s in graded_subs if 50 <= s.grade.score < 75)
+        grade_low = sum(1 for s in graded_subs if s.grade.score < 50)
+        
         # Prepare sparkline data for last 7 days
         today = datetime.utcnow().date()
         last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]  # Last 7 days including today
@@ -1284,7 +1286,10 @@ def create_app():
                                class_avg=class_avg, 
                                active_count=active_count,
                                pending_count=pending_count,
-                               sparkline_data=sparkline_data)
+                               sparkline_data=sparkline_data,
+                               grade_high=grade_high,
+                               grade_mid=grade_mid,
+                               grade_low=grade_low)
 
     @app.route('/instructor/students')
     @role_required('Instructor')

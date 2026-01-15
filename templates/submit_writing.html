@@ -127,6 +127,32 @@
         color: var(--text-secondary);
     }
 
+    /* Uploaded File Display */
+    .uploaded-file-info {
+        margin-top: 16px;
+        padding: 16px;
+        background: var(--hover-bg);
+        border-radius: 12px;
+        border-left: 4px solid var(--accent);
+        display: none;
+    }
+
+    .uploaded-file-info.show {
+        display: block;
+    }
+
+    .file-name {
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 8px;
+        word-break: break-word;
+    }
+
+    .file-size {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
     /* Right Pane: Results */
     .results-pane {
         padding: 32px;
@@ -269,6 +295,10 @@
                     <div class="upload-text">Or Upload Document</div>
                     <div class="upload-hint">Supports .docx, .txt • Max 5MB</div>
                     <input type="file" id="fileInput" accept=".docx,.txt" style="display: none;" onchange="handleFileUpload(event)">
+                </div>
+                <div id="uploadedFileInfo" class="uploaded-file-info">
+                    <div class="file-name" id="uploadedFileName"></div>
+                    <div class="file-size" id="uploadedFileSize"></div>
                 </div>
             </div>
         </div>
@@ -453,6 +483,15 @@
     function handleFileUpload(event) {
         const file = event.target.files[0];
         if (file) {
+            // Show file info
+            const uploadedFileInfo = document.getElementById('uploadedFileInfo');
+            const uploadedFileName = document.getElementById('uploadedFileName');
+            const uploadedFileSize = document.getElementById('uploadedFileSize');
+            
+            uploadedFileName.textContent = '📎 ' + file.name;
+            uploadedFileSize.textContent = 'Dosya boyutu: ' + (file.size / 1024).toFixed(2) + ' KB';
+            uploadedFileInfo.classList.add('show');
+
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/submit/writing';

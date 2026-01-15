@@ -597,15 +597,11 @@
             body: formData
         })
         .then(response => {
-            if (response.redirected) {
+            // Handle redirects properly
+            if (response.ok || response.status === 302 || response.status === 303) {
                 window.location.href = response.url;
             } else {
-                return response.text();
-            }
-        })
-        .then(data => {
-            if (data) {
-                window.location.reload();
+                throw new Error('Upload failed');
             }
         })
         .catch(error => {
