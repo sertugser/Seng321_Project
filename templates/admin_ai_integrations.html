@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}AI Integrations - AAFS AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+    }
+
+    .page-header h1 {
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+    }
+
+    .table-container {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+        background: var(--sidebar-bg);
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-success { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+    .badge-warning { background: rgba(234, 179, 8, 0.1); color: #eab308; }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-sm {
+        padding: 6px 16px;
+        border-radius: 6px;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        min-width: 70px;
+        height: 32px;
+        line-height: 20px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        white-space: nowrap;
+    }
+
+    .btn-edit {
+        background: var(--accent);
+        color: white;
+    }
+
+    .btn-toggle {
+        background: #eab308;
+        color: white;
+    }
+
+    .api-key-masked {
+        font-family: monospace;
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+    }
+
+    tr:hover {
+        background: var(--hover-bg);
+    }
+
+    .btn-sm:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>AI Integrations</h1>
+    <a href="/admin/ai-integrations/create" class="btn-primary">+ Add Integration</a>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Integration Name</th>
+                <th>API Key</th>
+                <th>API Endpoint</th>
+                <th>Status</th>
+                <th>Updated</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for integration in integrations %}
+            <tr>
+                <td><strong>{{ integration.integration_name }}</strong></td>
+                <td class="api-key-masked">
+                    {% if integration.api_key %}
+                    {{ integration.api_key[:10] }}...{{ integration.api_key[-4:] if integration.api_key|length > 14 else '' }}
+                    {% else %}
+                    Not configured
+                    {% endif %}
+                </td>
+                <td>{{ integration.api_endpoint or '-' }}</td>
+                <td>
+                    {% if integration.is_active %}
+                    <span class="badge badge-success">Active</span>
+                    {% else %}
+                    <span class="badge badge-warning">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>{{ integration.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    <div class="action-buttons">
+                        <a href="/admin/ai-integrations/{{ integration.id }}/edit" class="btn-sm btn-edit">Edit</a>
+                        <form method="POST" action="/admin/ai-integrations/{{ integration.id }}/toggle" style="display: inline;">
+                            <button type="submit" class="btn-sm btn-toggle">
+                                {% if integration.is_active %}Deactivate{% else %}Activate{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if not integrations %}
+    <div style="padding: 32px; text-align: center; color: var(--text-secondary);">
+        No AI integrations configured yet. <a href="/admin/ai-integrations/create" style="color: var(--accent);">Add one now</a>.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

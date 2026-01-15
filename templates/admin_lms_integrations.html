@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}LMS Integrations - AAFS AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+    }
+
+    .page-header h1 {
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+    }
+
+    .table-container {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+        background: var(--sidebar-bg);
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background: rgba(34, 197, 94, 0.1);
+        color: #16a34a;
+    }
+
+    .badge-warning {
+        background: rgba(245, 158, 11, 0.1);
+        color: #d97706;
+    }
+
+    .badge-danger {
+        background: rgba(239, 68, 68, 0.1);
+        color: #dc2626;
+    }
+
+    .api-key-masked {
+        font-family: monospace;
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+    }
+
+    tr:hover {
+        background: var(--hover-bg);
+    }
+
+    .btn-sm {
+        padding: 6px 16px;
+        border-radius: 6px;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 70px;
+        height: 32px;
+        line-height: 20px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        white-space: nowrap;
+    }
+
+    .btn-edit {
+        background: var(--accent);
+        color: white;
+    }
+
+    .btn-delete {
+        background: #ef4444;
+        color: white;
+    }
+
+    .btn-toggle {
+        background: #64748b;
+        color: white;
+    }
+
+    .btn-sync {
+        background: #22c55e;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>LMS Integrations</h1>
+    <a href="/admin/lms-integrations/create" class="btn-primary">+ Add Integration</a>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>LMS Type</th>
+                <th>Name</th>
+                <th>API URL</th>
+                <th>Course ID</th>
+                <th>Status</th>
+                <th>Sync Enabled</th>
+                <th>Last Sync</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for integration in integrations %}
+            <tr>
+                <td><strong>{{ integration.lms_type|upper }}</strong></td>
+                <td>{{ integration.lms_name }}</td>
+                <td>{{ integration.api_url[:40] }}{{ '...' if integration.api_url|length > 40 else '' }}</td>
+                <td>{{ integration.course_id or '-' }}</td>
+                <td>
+                    {% if integration.is_active %}
+                    <span class="badge badge-success">Active</span>
+                    {% else %}
+                    <span class="badge badge-warning">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if integration.sync_enabled %}
+                    <span class="badge badge-success">Yes</span>
+                    {% else %}
+                    <span class="badge badge-danger">No</span>
+                    {% endif %}
+                </td>
+                <td>{{ integration.last_sync_at.strftime('%Y-%m-%d %H:%M') if integration.last_sync_at else 'Never' }}</td>
+                <td>
+                    <div style="display: flex; gap: 8px;">
+                        <a href="/admin/lms-integrations/{{ integration.id }}/edit" class="btn-sm btn-edit">Edit</a>
+                        {% if integration.is_active and integration.sync_enabled %}
+                        <form method="POST" action="/admin/lms-integrations/{{ integration.id }}/sync" style="display: inline;">
+                            <button type="submit" class="btn-sm btn-sync">Sync Grades</button>
+                        </form>
+                        {% endif %}
+                        <form method="POST" action="/admin/lms-integrations/{{ integration.id }}/delete" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this integration?');">
+                            <button type="submit" class="btn-sm btn-delete">Delete</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if not integrations %}
+    <div style="padding: 32px; text-align: center; color: var(--text-secondary);">
+        No LMS integrations configured yet. <a href="/admin/lms-integrations/create" style="color: var(--accent);">Add one now</a>.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

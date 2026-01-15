@@ -107,12 +107,109 @@ The application will:
 - Create necessary directories (static/uploads)
 - Start the Flask development server on `http://127.0.0.1:5000`
 
-### 3. First Time Setup Notes
+### 3. Admin Account Setup
+
+To create an admin account, you have several options:
+
+#### Option 1: Using the Admin Creation Script (Recommended)
+1. Navigate to the project directory in Terminal/PowerShell
+2. Run the script:
+   ```bash
+   python create_admin.py
+   ```
+3. Enter the required information:
+   - Username
+   - Email address
+   - Password (minimum 6 characters)
+   - Confirm Password
+
+#### Option 2: Modify Existing User to Admin
+If you already have a user account:
+1. Run the application:
+   ```bash
+   python app.py
+   ```
+2. Navigate to `/admin/users` page (if another admin exists)
+3. Find your user and click "Edit"
+4. Change the role to "Admin" and save
+
+#### Option 3: Create Admin via Python Console
+Using Python console:
+```python
+from app import create_app
+from models.database import db
+from models.entities import User
+from werkzeug.security import generate_password_hash
+
+app = create_app()
+with app.app_context():
+    admin = User(
+        username='admin',
+        email='admin@example.com',
+        password=generate_password_hash('your_password', method='pbkdf2:sha256'),
+        role='Admin'
+    )
+    db.session.add(admin)
+    db.session.commit()
+    print("Admin user created!")
+```
+
+### 4. Admin Panel Access
+
+1. Start the application:
+   ```bash
+   python app.py
+   ```
+
+2. Navigate to the login page:
+   ```
+   http://127.0.0.1:5000/login
+   ```
+
+3. Enter your admin email and password
+
+4. After login, you will be automatically redirected to the admin dashboard
+
+### 5. Admin Panel Features
+
+#### User Management (FR17)
+- View all users
+- Create new users
+- Edit user information
+- Delete users
+- Filter by role (Student, Instructor, Admin)
+
+#### Course & Enrollment Management (FR17)
+- View and manage courses
+- Enroll students in courses
+- Manage enrollment statuses (active, completed, dropped)
+- View course enrollments
+
+#### Platform Settings (FR18)
+- Configure platform-wide settings
+- Manage setting keys and values
+- Add setting descriptions
+
+#### AI Integration Management (FR18)
+- Configure external AI services
+- Manage API keys
+- Activate/deactivate integrations
+- Configure API endpoints
+
+#### LMS Integration Management (FR18, FR20)
+- Configure LMS integrations (Canvas, Moodle, Blackboard)
+- Manage API credentials
+- Enable/disable grade synchronization
+- Sync grades to external LMS platforms
+
+### 6. First Time Setup Notes
 - The database (`site.db`) will be created automatically when you first run the app
 - You can register a new account from the login page
 - To create an instructor account, register with role "Instructor"
+- Admin panel access is restricted to users with 'Admin' role
+- Keep your admin password strong and change it regularly for security
 
-### 4. Troubleshooting
+### 7. Troubleshooting
 
 **Error: "GEMINI_API_KEY not found"**
 - Make sure you created a `.env` file (copy from `.env.example`)

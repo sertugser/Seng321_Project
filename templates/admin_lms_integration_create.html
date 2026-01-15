@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Create LMS Integration - AAFS AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 32px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    input[type="text"], input[type="url"], input[type="password"], textarea, select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 0.875rem;
+        background: var(--card-bg);
+        color: var(--text-main);
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+
+    textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: auto;
+    }
+
+    .btn-secondary {
+        background: var(--border-color);
+        color: var(--text-main);
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+        background: var(--hover-bg);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .help-text {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1 style="margin: 0 0 24px 0;">Create LMS Integration</h1>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="lms_type">LMS Type *</label>
+            <select id="lms_type" name="lms_type" required>
+                <option value="">Select LMS Type</option>
+                <option value="canvas">Canvas</option>
+                <option value="moodle">Moodle</option>
+                <option value="blackboard">Blackboard</option>
+            </select>
+            <div class="help-text">Select the Learning Management System platform</div>
+        </div>
+
+        <div class="form-group">
+            <label for="lms_name">Integration Name *</label>
+            <input type="text" id="lms_name" name="lms_name" required placeholder="e.g., Canvas Production, Moodle Test Server">
+        </div>
+
+        <div class="form-group">
+            <label for="api_url">API URL *</label>
+            <input type="url" id="api_url" name="api_url" required placeholder="https://your-lms.example.com">
+            <div class="help-text">Base URL for the LMS API endpoint</div>
+        </div>
+
+        <div class="form-group">
+            <label for="api_key">API Key</label>
+            <input type="password" id="api_key" name="api_key" placeholder="Enter API key or token">
+            <div class="help-text">API authentication key (will be securely stored)</div>
+        </div>
+
+        <div class="form-group">
+            <label for="api_secret">API Secret (Optional)</label>
+            <input type="password" id="api_secret" name="api_secret" placeholder="Enter API secret if required">
+        </div>
+
+        <div class="form-group">
+            <label for="course_id">Course ID (Optional)</label>
+            <input type="text" id="course_id" name="course_id" placeholder="LMS course identifier">
+            <div class="help-text">The course ID in the LMS for grade synchronization</div>
+        </div>
+
+        <div class="form-group">
+            <div class="checkbox-group">
+                <input type="checkbox" id="is_active" name="is_active">
+                <label for="is_active" style="margin: 0;">Active</label>
+            </div>
+            <div class="help-text">Enable this integration</div>
+        </div>
+
+        <div class="form-group">
+            <div class="checkbox-group">
+                <input type="checkbox" id="sync_enabled" name="sync_enabled">
+                <label for="sync_enabled" style="margin: 0;">Enable Grade Sync</label>
+            </div>
+            <div class="help-text">Enable automatic grade synchronization</div>
+        </div>
+
+        <div class="form-group">
+            <label for="configuration">Additional Configuration (JSON)</label>
+            <textarea id="configuration" name="configuration" placeholder='{"key": "value"}'></textarea>
+            <div class="help-text">Optional JSON configuration for advanced settings</div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Create Integration</button>
+            <a href="/admin/lms-integrations" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

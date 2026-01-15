@@ -880,6 +880,124 @@
                     </a>
                 </div>
             </div>
+            {% elif user.is_authenticated and user.role == 'Admin' %}
+            <!-- ADMIN MAIN Category -->
+            <div class="nav-category" data-category="main">
+                <div class="nav-category-header" onclick="toggleCategory(this)">
+                    <div class="nav-category-toggle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <span>MAIN</span>
+                </div>
+                <div class="nav-category-content">
+                    <a href="/admin/dashboard" class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}" title="Dashboard">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- USER MANAGEMENT Category -->
+            <div class="nav-category" data-category="users">
+                <div class="nav-category-header" onclick="toggleCategory(this)">
+                    <div class="nav-category-toggle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <span>USER MANAGEMENT</span>
+                </div>
+                <div class="nav-category-content">
+                    <a href="/admin/users" class="nav-link {% if request.endpoint in ['admin_users', 'admin_create_user', 'admin_edit_user'] %}active{% endif %}" title="Users">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Users</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- COURSE MANAGEMENT Category -->
+            <div class="nav-category" data-category="courses">
+                <div class="nav-category-header" onclick="toggleCategory(this)">
+                    <div class="nav-category-toggle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <span>COURSE MANAGEMENT</span>
+                </div>
+                <div class="nav-category-content">
+                    <a href="/admin/courses" class="nav-link {% if request.endpoint in ['admin_courses', 'admin_create_course', 'admin_edit_course'] %}active{% endif %}" title="Courses">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        <span>Courses</span>
+                    </a>
+                    <a href="/admin/enrollments" class="nav-link {% if request.endpoint in ['admin_enrollments', 'admin_create_enrollment', 'admin_edit_enrollment'] %}active{% endif %}" title="Enrollments">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="8.5" cy="7" r="4"></circle>
+                            <path d="M20 8v6"></path>
+                            <path d="M23 11h-6"></path>
+                        </svg>
+                        <span>Enrollments</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- PLATFORM SETTINGS Category -->
+            <div class="nav-category" data-category="settings">
+                <div class="nav-category-header" onclick="toggleCategory(this)">
+                    <div class="nav-category-toggle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <span>PLATFORM SETTINGS</span>
+                </div>
+                <div class="nav-category-content">
+                    <a href="/admin/settings" class="nav-link {% if request.endpoint == 'admin_settings' %}active{% endif %}" title="Settings">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+                        </svg>
+                        <span>Settings</span>
+                    </a>
+                    <a href="/admin/ai-integrations" class="nav-link {% if request.endpoint in ['admin_ai_integrations', 'admin_create_ai_integration', 'admin_edit_ai_integration'] %}active{% endif %}" title="AI Integrations">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+                            <line x1="7" y1="2" x2="7" y2="22"></line>
+                            <line x1="17" y1="2" x2="17" y2="22"></line>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <line x1="2" y1="7" x2="7" y2="7"></line>
+                            <line x1="2" y1="17" x2="7" y2="17"></line>
+                            <line x1="17" y1="17" x2="22" y2="17"></line>
+                            <line x1="17" y1="7" x2="22" y2="7"></line>
+                        </svg>
+                        <span>AI Integrations</span>
+                    </a>
+                    <a href="/admin/lms-integrations" class="nav-link {% if request.endpoint in ['admin_lms_integrations', 'admin_create_lms_integration', 'admin_edit_lms_integration'] %}active{% endif %}" title="LMS Integrations">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                        <span>LMS Integrations</span>
+                    </a>
+                </div>
+            </div>
             {% elif user.is_authenticated and user.role == 'Instructor' %}
             <!-- MAIN Category -->
             <div class="nav-category" data-category="main">

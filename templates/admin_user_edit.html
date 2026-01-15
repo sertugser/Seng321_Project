@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User - AAFS AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 600px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 32px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 0.875rem;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        color: var(--text-main);
+        font-size: 0.875rem;
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .btn-secondary {
+        background: var(--border-color);
+        color: var(--text-main);
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+        background: var(--hover-bg);
+    }
+
+    .help-text {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1 style="margin: 0 0 24px 0;">Edit User</h1>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" value="{{ user.username }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" value="{{ user.email }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="password">New Password (leave blank to keep current)</label>
+            <input type="password" id="password" name="password" minlength="6">
+            <div class="help-text">Leave blank if you don't want to change the password</div>
+        </div>
+
+        <div class="form-group">
+            <label for="role">Role</label>
+            <select id="role" name="role" required>
+                <option value="Student" {% if user.role == 'Student' %}selected{% endif %}>Student</option>
+                <option value="Instructor" {% if user.role == 'Instructor' %}selected{% endif %}>Instructor</option>
+                <option value="Admin" {% if user.role == 'Admin' %}selected{% endif %}>Admin</option>
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Update User</button>
+            <a href="/admin/users" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

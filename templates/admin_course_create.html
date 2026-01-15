@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Create Course - AAFS AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 600px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 32px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 0.875rem;
+    }
+
+    input, select, textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        color: var(--text-main);
+        font-size: 0.875rem;
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+
+    textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: auto;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .btn-secondary {
+        background: var(--border-color);
+        color: var(--text-main);
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+        background: var(--hover-bg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1 style="margin: 0 0 24px 0;">Create New Course</h1>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="name">Course Name</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="code">Course Code</label>
+            <input type="text" id="code" name="code" required placeholder="e.g., ENG101">
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="instructor_id">Instructor (Optional)</label>
+            <select id="instructor_id" name="instructor_id">
+                <option value="">None</option>
+                {% for instructor in instructors %}
+                <option value="{{ instructor.id }}">{{ instructor.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <div class="checkbox-group">
+                <input type="checkbox" id="is_active" name="is_active" checked>
+                <label for="is_active" style="margin: 0;">Active</label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Create Course</button>
+            <a href="/admin/courses" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

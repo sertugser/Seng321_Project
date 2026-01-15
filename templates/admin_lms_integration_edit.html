@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Edit LMS Integration - AAFS AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 32px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 0.875rem;
+    }
+
+    input[type="text"], input[type="url"], input[type="password"], textarea, select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 0.875rem;
+        background: var(--card-bg);
+        color: var(--text-main);
+        box-sizing: border-box;
+        font-family: inherit;
+    }
+
+    textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: auto;
+    }
+
+    .btn-secondary {
+        background: var(--border-color);
+        color: var(--text-main);
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+        background: var(--hover-bg);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .help-text {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+
+    .readonly-field {
+        background: var(--sidebar-bg);
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1 style="margin: 0 0 24px 0;">Edit LMS Integration</h1>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="lms_type">LMS Type</label>
+            <input type="text" id="lms_type" name="lms_type" value="{{ integration.lms_type }}" readonly class="readonly-field">
+            <div class="help-text">LMS type cannot be changed after creation</div>
+        </div>
+
+        <div class="form-group">
+            <label for="lms_name">Integration Name *</label>
+            <input type="text" id="lms_name" name="lms_name" value="{{ integration.lms_name }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="api_url">API URL *</label>
+            <input type="url" id="api_url" name="api_url" value="{{ integration.api_url }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="api_key">API Key</label>
+            <input type="password" id="api_key" name="api_key" placeholder="Leave blank to keep existing key">
+            <div class="help-text">Leave blank to keep existing API key. Enter new key to update.</div>
+        </div>
+
+        <div class="form-group">
+            <label for="api_secret">API Secret</label>
+            <input type="password" id="api_secret" name="api_secret" placeholder="Leave blank to keep existing secret">
+            <div class="help-text">Leave blank to keep existing API secret. Enter new secret to update.</div>
+        </div>
+
+        <div class="form-group">
+            <label for="course_id">Course ID</label>
+            <input type="text" id="course_id" name="course_id" value="{{ integration.course_id or '' }}">
+        </div>
+
+        <div class="form-group">
+            <div class="checkbox-group">
+                <input type="checkbox" id="is_active" name="is_active" {% if integration.is_active %}checked{% endif %}>
+                <label for="is_active" style="margin: 0;">Active</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="checkbox-group">
+                <input type="checkbox" id="sync_enabled" name="sync_enabled" {% if integration.sync_enabled %}checked{% endif %}>
+                <label for="sync_enabled" style="margin: 0;">Enable Grade Sync</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="configuration">Additional Configuration (JSON)</label>
+            <textarea id="configuration" name="configuration">{{ integration.configuration or '' }}</textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">Update Integration</button>
+            <a href="/admin/lms-integrations" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

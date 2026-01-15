@@ -10,7 +10,7 @@ from functools import wraps
 # Project internal imports
 from config import Config
 from models.database import db
-from models.entities import User, Submission, Grade, LearningActivity, LearningGoal, Quiz, QuizDetail, Question
+from models.entities import User, Submission, Grade, LearningActivity, LearningGoal, Quiz, QuizDetail, Question, Course, Enrollment, PlatformSettings, AIIntegration, LMSIntegration
 from services.ai_service import AIService
 from services.ocr_service import OCRService
 from services.grading_service import GradingService
@@ -27,6 +27,8 @@ from repositories.grade_repository import GradeRepository
 from repositories.activity_repository import ActivityRepository
 from repositories.goal_repository import GoalRepository
 from repositories.feedback_repository import FeedbackRepository
+from repositories.admin_repository import AdminRepository
+from services.admin_service import AdminService
 
 def create_app():
     app = Flask(__name__)
@@ -61,7 +63,7 @@ def create_app():
     # --- AUTHENTICATION CHECK & CACHE CONTROL ---
     @app.before_request
     def check_user_auth():
-        public_routes = ['login', 'register', 'static', 'privacy', 'terms']
+        public_routes = ['login', 'register', 'static', 'privacy', 'terms', 'index']
         if not current_user.is_authenticated and request.endpoint not in public_routes:
             return redirect(url_for('login'))
 
@@ -121,7 +123,14 @@ def create_app():
 
     @app.route('/login', methods=['GET', 'POST'])
     def login():
-        if current_user.is_authenticated: return redirect(url_for('dashboard'))
+        # If already authenticated, redirect to appropriate dashboard
+        if current_user.is_authenticated:
+            if current_user.role == 'Admin':
+                return redirect(url_for('admin_dashboard'))
+            elif current_user.role == 'Instructor':
+                return redirect(url_for('instructor_dashboard'))
+            else:
+                return redirect(url_for('dashboard'))
         
         # Clear flash messages on GET request (when coming from logout)
         if request.method == 'GET':
@@ -129,25 +138,40 @@ def create_app():
             session.pop('_flashes', None)
         
         if request.method == 'POST':
-            user = User.query.filter_by(email=request.form.get('email')).first()
-            if user and check_password_hash(user.password, request.form.get('password')):
+            email = request.form.get('email', '').strip()
+            password = request.form.get('password', '')
+            
+            if not email or not password:
+                flash("Please enter both email and password.", "danger")
+                return render_template('login.html')
+            
+            user = User.query.filter_by(email=email).first()
+            if user and check_password_hash(user.password, password):
                 login_user(user)
-                return redirect(url_for('dashboard'))
-            flash("Invalid credentials.", "danger")
+                # Redirect based on role
+                if user.role == 'Admin':
+                    return redirect(url_for('admin_dashboard'))
+                elif user.role == 'Instructor':
+                    return redirect(url_for('instructor_dashboard'))
+                else:
+                    return redirect(url_for('dashboard'))
+            flash("Invalid email or password.", "danger")
         return render_template('login.html')
 
     @app.route('/logout')
     @login_required
     def logout():
-        # Clear all flash messages before logout
+        # Clear all flash messages and session data before logout
         from flask import session
-        session.pop('_flashes', None)
+        session.clear()  # Clear all session data
         logout_user()
         return redirect(url_for('login'))
 
     @app.route('/dashboard')
     @login_required
     def dashboard():
+        if current_user.role == 'Admin':
+            return redirect(url_for('admin_dashboard'))
         if current_user.role == 'Instructor':
             return redirect(url_for('instructor_dashboard'))
         
@@ -370,6 +394,10 @@ def create_app():
         # Get recommendations using StatsService
         recommendations = StatsService.fetch_recommendations(current_user.id)
         
+        # Get adaptive insights (UC17)
+        from services.adaptive_insights_service import AdaptiveInsightsService
+        adaptive_insights = AdaptiveInsightsService.get_active_insights(current_user.id)
+        
         # Get user goals using GoalService
         user_goals = GoalService.get_user_goals(current_user.id)[:2]
         
@@ -413,7 +441,8 @@ def create_app():
                                strongest_score=strongest_score,
                                weakest_area=weakest_area,
                                weakest_score=weakest_score,
-                               recommendations=recommendations)
+                               recommendations=recommendations,
+                               adaptive_insights=adaptive_insights)
 
     @app.route('/assignments')
     @login_required
@@ -1064,9 +1093,10 @@ def create_app():
             response.headers['Content-Disposition'] = f'attachment; filename=report_{current_user.id}.csv'
             return response
         elif report_data and format_type == 'pdf':
-            # PDF implementation would go here
-            flash("PDF export is not yet fully implemented.", "info")
-            return redirect(url_for('dashboard'))
+            response = make_response(report_data)
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = f'attachment; filename=report_{current_user.id}_{datetime.utcnow().strftime("%Y%m%d")}.pdf'
+            return response
         else:
             flash("Failed to generate report.", "danger")
             return redirect(url_for('dashboard'))
@@ -1662,6 +1692,483 @@ def create_app():
     @app.route('/terms')
     def terms():
         return render_template('terms.html')
+
+    # --- ADMIN ROUTES ---
+    
+    @app.route('/admin/dashboard')
+    @role_required('Admin')
+    def admin_dashboard():
+        stats = AdminService.get_user_statistics()
+        recent_users = AdminRepository.get_all_users()[:10]
+        recent_courses = AdminRepository.get_all_courses()[:5]
+        return render_template('admin_dashboard.html', stats=stats, recent_users=recent_users, recent_courses=recent_courses)
+    
+    @app.route('/admin/users')
+    @role_required('Admin')
+    def admin_users():
+        users = AdminRepository.get_all_users()
+        role_filter = request.args.get('role', 'all')
+        if role_filter != 'all':
+            users = [u for u in users if u.role == role_filter]
+        return render_template('admin_users.html', users=users, role_filter=role_filter)
+    
+    @app.route('/admin/users/create', methods=['GET', 'POST'])
+    @role_required('Admin')
+    def admin_create_user():
+        if request.method == 'POST':
+            username = request.form.get('username')
+            email = request.form.get('email')
+            password = request.form.get('password')
+            role = request.form.get('role', 'Student')
+            
+            errors = AdminService.validate_user_data(username, email, password, role)
+            if errors:
+                for error in errors:
+                    flash(error, 'danger')
+                return render_template('admin_user_create.html')
+            
+            try:
+                AdminRepository.create_user(username, email, password, role)
+                flash('User created successfully!', 'success')
+                return redirect(url_for('admin_users'))
+            except Exception as e:
+                flash(f'Error creating user: {str(e)}', 'danger')
+        
+        return render_template('admin_user_create.html')
+    
+    @app.route('/admin/users/<int:user_id>/edit', methods=['GET', 'POST'])
+    @role_required('Admin')
+    def admin_edit_user(user_id):
+        user = AdminRepository.get_user_by_id(user_id)
+        if not user:
+            flash('User not found', 'danger')
+            return redirect(url_for('admin_users'))
+        
+        if request.method == 'POST':
+            username = request.form.get('username')
+            email = request.form.get('email')
+            password = request.form.get('password')  # Optional
+            role = request.form.get('role')
+            
+            # Validate (skip password if not provided)
+            errors = AdminService.validate_user_data(username, email, None if not password else password, role)
+            # Remove password error if password is empty
+            if not password:
+                errors = [e for e in errors if 'Password' not in e]
+            # Check if username/email conflicts with other users
+            existing_username = User.query.filter_by(username=username).first()
+            if existing_username and existing_username.id != user_id:
+                errors.append("Username already exists")
+            existing_email = User.query.filter_by(email=email).first()
+            if existing_email and existing_email.id != user_id:
+                errors.append("Email already exists")
+            
+            if errors:
+                for error in errors:
+                    flash(error, 'danger')
+                return render_template('admin_user_edit.html', user=user)
+            
+            try:
+                AdminRepository.update_user(user_id, username, email, password if password else None, role)
+                flash('User updated successfully!', 'success')
+                return redirect(url_for('admin_users'))
+            except Exception as e:
+                flash(f'Error updating user: {str(e)}', 'danger')
+        
+        return render_template('admin_user_edit.html', user=user)
+    
+    @app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+    @role_required('Admin')
+    def admin_delete_user(user_id):
+        if user_id == current_user.id:
+            flash('You cannot delete your own account', 'danger')
+            return redirect(url_for('admin_users'))
+        
+        try:
+            AdminRepository.delete_user(user_id)
+            flash('User deleted successfully!', 'success')
+        except Exception as e:
+            flash(f'Error deleting user: {str(e)}', 'danger')
+        
+        return redirect(url_for('admin_users'))
+    
+    @app.route('/admin/courses')
+    @role_required('Admin')
+    def admin_courses():
+        courses = AdminRepository.get_all_courses()
+        instructors = AdminRepository.get_users_by_role('Instructor')
+        return render_template('admin_courses.html', courses=courses, instructors=instructors)
+    
+    @app.route('/admin/courses/create', methods=['GET', 'POST'])
+    @role_required('Admin')
+    def admin_create_course():
+        instructors = AdminRepository.get_users_by_role('Instructor')
+        
+        if request.method == 'POST':
+            name = request.form.get('name')
+            code = request.form.get('code')
+            description = request.form.get('description')
+            instructor_id = request.form.get('instructor_id', type=int) or None
+            is_active = request.form.get('is_active') == 'on'
+            
+            errors = AdminService.validate_course_data(name, code, description)
+            if errors:
+                for error in errors:
+                    flash(error, 'danger')
+                return render_template('admin_course_create.html', instructors=instructors)
+            
+            try:
+                AdminRepository.create_course(name, code, description, instructor_id, is_active)
+                flash('Course created successfully!', 'success')
+                return redirect(url_for('admin_courses'))
+            except Exception as e:
+                flash(f'Error creating course: {str(e)}', 'danger')
+        
+        return render_template('admin_course_create.html', instructors=instructors)
+    
+    @app.route('/admin/courses/<int:course_id>/edit', methods=['GET', 'POST'])
+    @role_required('Admin')
+    def admin_edit_course(course_id):
+        course = AdminRepository.get_course_by_id(course_id)
+        if not course:
+            flash('Course not found', 'danger')
+            return redirect(url_for('admin_courses'))
+        
+        instructors = AdminRepository.get_users_by_role('Instructor')
+        
+        if request.method == 'POST':
+            name = request.form.get('name')
+            code = request.form.get('code')
+            description = request.form.get('description')
+            instructor_id = request.form.get('instructor_id', type=int) or None
+            is_active = request.form.get('is_active') == 'on'
+            
+            errors = AdminService.validate_course_data(name, code, description)
+            # Check if code conflicts with other courses
+            existing_course = Course.query.filter_by(code=code).first()
+            if existing_course and existing_course.id != course_id:
+                errors.append("Course code already exists")
+            
+            if errors:
+                for error in errors:
+                    flash(error, 'danger')
+                return render_template('admin_course_edit.html', course=course, instructors=instructors)
+            
+            try:
+                AdminRepository.update_course(course_id, name, code, description, instructor_id, is_active)
+                flash('Course updated successfully!', 'success')
+                return redirect(url_for('admin_courses'))
+            except Exception as e:
+                flash(f'Error updating course: {str(e)}', 'danger')
+        
+        return render_template('admin_course_edit.html', course=course, instructors=instructors)
+    
+    @app.route('/admin/courses/<int:course_id>/delete', methods=['POST'])
+    @role_required('Admin')
+    def admin_delete_course(course_id):
+        try:
+            AdminRepository.delete_course(course_id)
+            flash('Course deleted successfully!', 'success')
+        except Exception as e:
+            flash(f'Error deleting course: {str(e)}', 'danger')
+        
+        return redirect(url_for('admin_courses'))
+    
+    @app.route('/admin/enrollments')
+    @role_required('Admin')
+    def admin_enrollments():
+        enrollments = AdminRepository.get_all_enrollments()
+        course_filter = request.args.get('course_id', type=int)
+        student_filter = request.args.get('student_id', type=int)
+        
+        if course_filter:
+            enrollments = [e for e in enrollments if e.course_id == course_filter]
+        if student_filter:
+            enrollments = [e for e in enrollments if e.student_id == student_filter]
+        
+        courses = AdminRepository.get_all_courses()
+        students = AdminRepository.get_users_by_role('Student')
+        
+        return render_template('admin_enrollments.html', 
+                             enrollments=enrollments, 
+                             courses=courses, 
+                             students=students,
+                             course_filter=course_filter,
+                             student_filter=student_filter)
+    
+    @app.route('/admin/enrollments/create', methods=['GET', 'POST'])
+    @role_required('Admin')
+    def admin_create_enrollment():
+        courses = AdminRepository.get_all_courses()
+        students = AdminRepository.get_users_by_role('Student')
+        
+        if request.method == 'POST':
+            student_id = request.form.get('student_id', type=int)
+            course_id = request.form.get('course_id', type=int)
+            status = request.form.get('status', 'active')
+            
+            if not student_id or not course_id:
+                flash('Student and course are required', 'danger')
+                return render_template('admin_enrollment_create.html', courses=courses, students=students)
+            
+            try:
+                result = AdminRepository.create_enrollment(student_id, course_id, status)
+                if result:
+                    flash('Enrollment created successfully!', 'success')
+                    return redirect(url_for('admin_enrollments'))
+                else:
+                    flash('Student is already enrolled in this course', 'danger')
+            except Exception as e:
+                flash(f'Error creating enrollment: {str(e)}', 'danger')
+        
+        return render_template('admin_enrollment_create.html', courses=courses, students=students)
+    
+    @app.route('/admin/enrollments/<int:enrollment_id>/edit', methods=['GET', 'POST'])
+    @role_required('Admin')
+    def admin_edit_enrollment(enrollment_id):
+        enrollment = AdminRepository.get_enrollment_by_id(enrollment_id)
+        if not enrollment:
+            flash('Enrollment not found', 'danger')
+            return redirect(url_for('admin_enrollments'))
+        
+        if request.method == 'POST':
+            status = request.form.get('status')
+            
+            try:
+                AdminRepository.update_enrollment(enrollment_id, status)
+                flash('Enrollment updated successfully!', 'success')
+                return redirect(url_for('admin_enrollments'))
+            except Exception as e:
+                flash(f'Error updating enrollment: {str(e)}', 'danger')
+        
+        return render_template('admin_enrollment_edit.html', enrollment=enrollment)
+    
+    @app.route('/admin/enrollments/<int:enrollment_id>/delete', methods=['POST'])
+    @role_required('Admin')
+    def admin_delete_enrollment(enrollment_id):
+        try:
+            AdminRepository.delete_enrollment(enrollment_id)
+            flash('Enrollment deleted successfully!', 'success')
+        except Exception as e:
+            flash(f'Error deleting enrollment: {str(e)}', 'danger')
+        
+        return redirect(url_for('admin_enrollments'))
+    
+    @app.route('/admin/settings')
+    @role_required('Admin')
+    def admin_settings():
+        settings = AdminRepository.get_all_settings()
+        return render_template('admin_settings.html', settings=settings)
+    
+    @app.route('/admin/settings/update', methods=['POST'])
+    @role_required('Admin')
+    def admin_update_setting():
+        setting_key = request.form.get('setting_key')
+        setting_value = request.form.get('setting_value')
+        setting_type = request.form.get('setting_type', 'string')
+        description = request.form.get('description')
+        
+        if not setting_key:
+            flash('Setting key is required', 'danger')
+            return redirect(url_for('admin_settings'))
+        
+        try:
+            AdminRepository.create_or_update_setting(setting_key, setting_value, setting_type, description, current_user.id)
+            flash('Setting updated successfully!', 'success')
+        except Exception as e:
+            flash(f'Error updating setting: {str(e)}', 'danger')
+        
+        return redirect(url_for('admin_settings'))
+    
+    @app.route('/admin/ai-integrations')
+    @role_required('Admin')
+    def admin_ai_integrations():
+        integrations = AdminRepository.get_all_ai_integrations()
+        return render_template('admin_ai_integrations.html', integrations=integrations)
+    
+    @app.route('/admin/ai-integrations/create', methods=['GET', 'POST'])
+    @role_required('Admin')
+    def admin_create_ai_integration():
+        if request.method == 'POST':
+            integration_name = request.form.get('integration_name')
+            api_key = request.form.get('api_key')
+            is_active = request.form.get('is_active') == 'on'
+            api_endpoint = request.form.get('api_endpoint')
+            configuration = request.form.get('configuration')
+            
+            if not integration_name:
+                flash('Integration name is required', 'danger')
+                return render_template('admin_ai_integration_create.html')
+            
+            try:
+                AdminRepository.create_or_update_ai_integration(
+                    integration_name, api_key, is_active, api_endpoint, configuration, current_user.id
+                )
+                flash('AI integration configured successfully!', 'success')
+                return redirect(url_for('admin_ai_integrations'))
+            except Exception as e:
+                flash(f'Error configuring AI integration: {str(e)}', 'danger')
+        
+        return render_template('admin_ai_integration_create.html')
+    
+    @app.route('/admin/ai-integrations/<int:integration_id>/edit', methods=['GET', 'POST'])
+    @role_required('Admin')
+    def admin_edit_ai_integration(integration_id):
+        integration = AdminRepository.get_ai_integration_by_id(integration_id)
+        if not integration:
+            flash('AI integration not found', 'danger')
+            return redirect(url_for('admin_ai_integrations'))
+        
+        if request.method == 'POST':
+            api_key = request.form.get('api_key')
+            is_active = request.form.get('is_active') == 'on'
+            api_endpoint = request.form.get('api_endpoint')
+            configuration = request.form.get('configuration')
+            
+            # Only update API key if provided (not empty)
+            api_key_to_update = api_key if api_key and api_key.strip() else None
+            
+            try:
+                AdminRepository.create_or_update_ai_integration(
+                    integration.integration_name, api_key_to_update, is_active, api_endpoint, configuration, current_user.id
+                )
+                flash('AI integration updated successfully!', 'success')
+                return redirect(url_for('admin_ai_integrations'))
+            except Exception as e:
+                flash(f'Error updating AI integration: {str(e)}', 'danger')
+        
+        return render_template('admin_ai_integration_edit.html', integration=integration)
+    
+    @app.route('/admin/ai-integrations/<int:integration_id>/toggle', methods=['POST'])
+    @role_required('Admin')
+    def admin_toggle_ai_integration(integration_id):
+        integration = AdminRepository.get_ai_integration_by_id(integration_id)
+        if integration:
+            try:
+                AdminRepository.create_or_update_ai_integration(
+                    integration.integration_name, None, not integration.is_active, 
+                    None, None, current_user.id
+                )
+                status = "activated" if not integration.is_active else "deactivated"
+                flash(f'AI integration {status} successfully!', 'success')
+            except Exception as e:
+                flash(f'Error toggling AI integration: {str(e)}', 'danger')
+        
+        return redirect(url_for('admin_ai_integrations'))
+    
+    # --- LMS Integration Routes (UC15, FR20) ---
+    @app.route('/admin/lms-integrations')
+    @role_required('Admin')
+    def admin_lms_integrations():
+        integrations = AdminRepository.get_all_lms_integrations()
+        return render_template('admin_lms_integrations.html', integrations=integrations)
+    
+    @app.route('/admin/lms-integrations/create', methods=['GET', 'POST'])
+    @role_required('Admin')
+    def admin_create_lms_integration():
+        if request.method == 'POST':
+            lms_type = request.form.get('lms_type')
+            lms_name = request.form.get('lms_name')
+            api_url = request.form.get('api_url')
+            api_key = request.form.get('api_key')
+            api_secret = request.form.get('api_secret')
+            course_id = request.form.get('course_id')
+            is_active = request.form.get('is_active') == 'on'
+            sync_enabled = request.form.get('sync_enabled') == 'on'
+            configuration = request.form.get('configuration')
+            
+            if not lms_type or not lms_name or not api_url:
+                flash('LMS type, name, and API URL are required', 'danger')
+                return render_template('admin_lms_integration_create.html')
+            
+            try:
+                AdminRepository.create_or_update_lms_integration(
+                    lms_type, lms_name, api_url, api_key, api_secret, course_id,
+                    is_active, sync_enabled, configuration, current_user.id
+                )
+                flash('LMS integration configured successfully!', 'success')
+                return redirect(url_for('admin_lms_integrations'))
+            except Exception as e:
+                flash(f'Error configuring LMS integration: {str(e)}', 'danger')
+        
+        return render_template('admin_lms_integration_create.html')
+    
+    @app.route('/admin/lms-integrations/<int:integration_id>/edit', methods=['GET', 'POST'])
+    @role_required('Admin')
+    def admin_edit_lms_integration(integration_id):
+        integration = AdminRepository.get_lms_integration_by_id(integration_id)
+        if not integration:
+            flash('LMS integration not found', 'danger')
+            return redirect(url_for('admin_lms_integrations'))
+        
+        if request.method == 'POST':
+            lms_name = request.form.get('lms_name')
+            api_url = request.form.get('api_url')
+            api_key = request.form.get('api_key')
+            api_secret = request.form.get('api_secret')
+            course_id = request.form.get('course_id')
+            is_active = request.form.get('is_active') == 'on'
+            sync_enabled = request.form.get('sync_enabled') == 'on'
+            configuration = request.form.get('configuration')
+            
+            # Only update API key if provided (not empty)
+            api_key_to_update = api_key if api_key and api_key.strip() else None
+            api_secret_to_update = api_secret if api_secret and api_secret.strip() else None
+            
+            try:
+                AdminRepository.create_or_update_lms_integration(
+                    integration.lms_type, lms_name, api_url, api_key_to_update, api_secret_to_update,
+                    course_id, is_active, sync_enabled, configuration, current_user.id
+                )
+                flash('LMS integration updated successfully!', 'success')
+                return redirect(url_for('admin_lms_integrations'))
+            except Exception as e:
+                flash(f'Error updating LMS integration: {str(e)}', 'danger')
+        
+        return render_template('admin_lms_integration_edit.html', integration=integration)
+    
+    @app.route('/admin/lms-integrations/<int:integration_id>/delete', methods=['POST'])
+    @role_required('Admin')
+    def admin_delete_lms_integration(integration_id):
+        try:
+            AdminRepository.delete_lms_integration(integration_id)
+            flash('LMS integration deleted successfully!', 'success')
+        except Exception as e:
+            flash(f'Error deleting LMS integration: {str(e)}', 'danger')
+        
+        return redirect(url_for('admin_lms_integrations'))
+    
+    @app.route('/admin/lms-integrations/<int:integration_id>/sync', methods=['POST'])
+    @role_required('Admin')
+    def admin_sync_lms_grades(integration_id):
+        from services.lms_service import LMSService
+        student_id = request.form.get('student_id', type=int)
+        submission_id = request.form.get('submission_id', type=int)
+        
+        try:
+            result = LMSService.sync_grades_to_lms(integration_id, student_id, submission_id)
+            if result.get('success'):
+                flash(result.get('message', 'Grades synced successfully!'), 'success')
+            else:
+                flash(result.get('message', 'Failed to sync grades'), 'danger')
+        except Exception as e:
+            flash(f'Error syncing grades: {str(e)}', 'danger')
+        
+        return redirect(url_for('admin_lms_integrations'))
+    
+    # --- Adaptive Insights Route (UC17) ---
+    @app.route('/admin/generate-insights', methods=['POST'])
+    @role_required('Admin')
+    def admin_generate_insights():
+        from services.adaptive_insights_service import AdaptiveInsightsService
+        
+        try:
+            result = AdaptiveInsightsService.generate_insights_for_all_students()
+            flash(f'Generated insights for {result["success_count"]}/{result["total_students"]} students. Total insights: {result["total_insights"]}', 'success')
+        except Exception as e:
+            flash(f'Error generating insights: {str(e)}', 'danger')
+        
+        return redirect(url_for('admin_dashboard'))
 
     return app
 
