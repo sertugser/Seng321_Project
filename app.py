@@ -3034,20 +3034,33 @@ def create_app():
         activity_id = request.args.get('activity_id')
         image_path = None
         extracted_text = None
+        uploaded_filename = None
+        grade = None
         
         if request.method == 'POST':
             file = request.files.get('file')
             if file and file.filename != '':
+                file_ext = os.path.splitext(file.filename)[1].lower()
+                allowed_extensions = {'.pdf', '.jpg', '.jpeg', '.png', '.gif'}
+                if file_ext not in allowed_extensions:
+                    flash("Invalid file format. Please upload PDF or image files.", "danger")
+                    return render_template('submit_handwritten.html', 
+                                         image_path=None,
+                                         extracted_text=None,
+                                         uploaded_filename=None)
+
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(file_path)
+                uploaded_filename = filename
                 
                 extracted_text = OCRService.extract_text_from_image(file_path)
                 if not extracted_text:
                     flash("Failed to extract text from image. Please upload a clearer image with better handwriting.", "danger")
                     return render_template('submit_handwritten.html', 
                                          image_path=None,
-                                         extracted_text=None)
+                                         extracted_text=None,
+                                         uploaded_filename=None)
                 
                 if extracted_text:
                     # Save submission using SubmissionService
@@ -3073,16 +3086,21 @@ def create_app():
                             success = GradingService.process_evaluation(new_sub.id, ai_res)
                             if success:
                                 NotificationService.notify_grade_ready(current_user.id, new_sub.id)
+                                new_sub = Submission.query.get(new_sub.id)
+                                grade = new_sub.grade
                     else:
                         flash("AI features are currently disabled by administrator.", "danger")
                     
                     # Set image path for display (relative to static folder)
-                    image_path = f"uploads/{filename}"
+                    if file_ext in {'.jpg', '.jpeg', '.png', '.gif'}:
+                        image_path = f"uploads/{filename}"
                     flash("Image processed successfully!", "success")
                     
         return render_template('submit_handwritten.html', 
                                image_path=image_path,
-                               extracted_text=extracted_text)
+                               extracted_text=extracted_text,
+                               uploaded_filename=uploaded_filename,
+                               grade=grade)
 
     @app.route('/history')
     @login_required

@@ -72,6 +72,36 @@
         width: 100%;
     }
 
+    .history-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .export-btn {
+        padding: 8px 14px;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-main);
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .export-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(99, 102, 241, 0.05);
+    }
+
     /* Filter Bar - Centered (Same as Assignments) */
     .filter-bar-wrapper {
         display: flex;
@@ -691,6 +721,14 @@
     <div class="history-header">
         <div class="history-title-wrapper">
             <h1 class="history-title">History</h1>
+        </div>
+        <div class="history-actions">
+            <a href="{{ url_for('export_pdf') }}" class="export-btn" download>
+                Export PDF
+            </a>
+            <a href="{{ url_for('export_csv') }}" class="export-btn" download>
+                Export CSV
+            </a>
         </div>
         <div class="filter-bar-wrapper">
             <div class="filter-bar">
