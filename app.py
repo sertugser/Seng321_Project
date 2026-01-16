@@ -88,7 +88,7 @@ def create_app():
         except:
             return {}
 
-    # Configure Upload Folder
+    # Configure Upload Folders
     UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static/uploads')
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     os.makedirs(UPLOAD_FOLDER, exist_ok=True) 
