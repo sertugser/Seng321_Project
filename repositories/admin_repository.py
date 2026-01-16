@@ -29,14 +29,16 @@ class AdminRepository:
         if not user:
             return None
         
-        if username:
-            user.username = username
-        if email:
-            user.email = email
-        if password:
+        # Always update if provided (not None)
+        if username is not None:
+            user.username = username.strip() if isinstance(username, str) else username
+        if email is not None:
+            user.email = email.strip() if isinstance(email, str) else email
+        if password is not None and password:
             user.password = generate_password_hash(password, method='pbkdf2:sha256')
-        if role:
-            user.role = role
+        # Always update role if provided (even if empty string, but should not be None for updates)
+        if role is not None:
+            user.role = role.strip() if isinstance(role, str) else role
         
         db.session.commit()
         return user

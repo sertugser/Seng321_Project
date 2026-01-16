@@ -4,88 +4,10 @@
 
 {% block extra_css %}
 <style>
-    .assignments-page {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
+    /* Use global .page-container - no need for .assignments-page */
 
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
-        gap: 16px;
-    }
-
-    .page-title {
-        font-size: 1.6rem;
-        font-weight: 700;
-        color: var(--text-main);
-        margin: 0;
-    }
-
-    .assignments-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 20px;
-    }
-
-    .assignment-card {
-        background: var(--card-bg);
-        border-radius: 16px;
-        border: 1px solid var(--border-color);
-        padding: 16px 18px;
-    }
-
-    .assignment-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 8px;
-    }
-
-    .assignment-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--text-main);
-        margin: 0 0 4px 0;
-    }
-
-    .assignment-type {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        padding: 2px 8px;
-        border-radius: 999px;
-        background: rgba(99, 102, 241, 0.08);
-        color: #6366f1;
-    }
-
-    .assignment-date {
-        font-size: 0.8rem;
-        color: var(--text-secondary);
-    }
-
-    .assignment-footer {
-        margin-top: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.8rem;
-    }
-
-    .pill {
-        padding: 2px 8px;
-        border-radius: 999px;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border: 1px solid var(--border-color);
-    }
-    
     .btn-add-assignment {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         gap: 8px;
         padding: 10px 20px;
@@ -98,11 +20,13 @@
         cursor: pointer;
         transition: all 0.2s ease;
         text-decoration: none;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
     }
     
     .btn-add-assignment:hover {
         background: #4f46e5;
         transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
     
     .btn-add-assignment svg {
@@ -110,98 +34,423 @@
         height: 18px;
         stroke-width: 2;
     }
-    
-    .assignment-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 12px;
-        flex-wrap: wrap;
-    }
-    
-    .btn-action {
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        border: 1px solid var(--border-color);
-        text-decoration: none;
-        display: inline-block;
-    }
-    
-    .btn-view {
-        background: transparent;
-        color: var(--accent);
-        border-color: var(--accent);
-    }
-    
-    .btn-view:hover {
-        background: var(--accent);
-        color: var(--white);
-    }
-    
-    .btn-edit-assignment {
-        background: transparent;
-        color: #6366f1;
-        border-color: #6366f1;
-    }
-    
-    .btn-edit-assignment:hover {
-        background: #6366f1;
-        color: #ffffff;
-    }
-    
-    .btn-delete-assignment {
-        background: transparent;
-        color: #ef4444;
-        border-color: #ef4444;
-    }
-    
-    .btn-delete-assignment:hover {
-        background: #ef4444;
-        color: #ffffff;
-    }
-    
-    .assignment-stats {
+
+    /* Search and Filter Bar */
+    .search-filter-bar {
         display: flex;
         gap: 12px;
-        margin-top: 8px;
-        font-size: 0.75rem;
-        color: var(--text-secondary);
-    }
-    
-    .stat-item {
-        display: flex;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
         align-items: center;
-        gap: 4px;
+        justify-content: space-between;
+        width: 100%;
     }
-    
-    .stat-badge {
-        padding: 2px 6px;
-        border-radius: 4px;
+
+    .search-box {
+        flex: 1;
+        min-width: 200px;
+        max-width: 400px;
+        padding: 10px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--card-bg);
+        color: var(--text-main);
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+
+    .search-box:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        flex-shrink: 0;
+    }
+
+    .filter-btn {
+        padding: 8px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--card-bg);
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .filter-btn:hover {
+        background: var(--hover-bg);
+        border-color: #6366f1;
+        color: var(--text-main);
+    }
+
+    .filter-btn.active {
+        background: #6366f1;
+        color: #ffffff;
+        border-color: #6366f1;
+    }
+
+    /* Assignment Cards Grid - Responsive auto-fit with fixed card width */
+    .assignments-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 310px);
+        gap: 16px;
+        width: 100%;
+        justify-content: start;
+    }
+
+    @media (max-width: 700px) {
+        .assignments-grid {
+            grid-template-columns: 1fr;
+            justify-content: center;
+        }
+        
+        .assignment-card {
+            width: 100%;
+            max-width: 310px;
+            margin: 0 auto;
+        }
+    }
+
+    /* Modern Assignment Card - Compact Size */
+    .assignment-card {
+        background: var(--card-bg);
+        border-radius: 14px;
+        padding: 14px 16px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 310px;
+        height: auto;
+    }
+
+    .assignment-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        border-color: #6366f1;
+    }
+
+    /* Card Header */
+    .assignment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .assignment-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+        line-height: 1.4;
+        flex: 1;
+    }
+
+    .assignment-type-badge {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
         font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
-    
-    .stat-badge.total {
+
+    .assignment-type-badge.writing {
         background: rgba(99, 102, 241, 0.1);
         color: #6366f1;
     }
-    
-    .stat-badge.graded {
+
+    .assignment-type-badge.speaking {
+        background: rgba(236, 72, 153, 0.1);
+        color: #ec4899;
+    }
+
+    /* Meta Row */
+    .assignment-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+    }
+
+    .meta-item svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+    }
+
+    .status-chip {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .status-chip.active {
         background: rgba(34, 197, 94, 0.1);
         color: #22c55e;
     }
-    
-    .stat-badge.pending {
-        background: rgba(245, 158, 11, 0.1);
-        color: #f59e0b;
+
+    .status-chip.expired {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+
+    /* Stats Row - 3 mini stats - Compact */
+    .assignment-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        padding: 10px 0;
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-main);
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.65rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 500;
+    }
+
+    /* Actions Row */
+    .assignment-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .btn-view {
+        flex: 1;
+        height: 40px;
+        padding: 0 16px;
+        border-radius: 8px;
+        background: #6366f1;
+        color: #ffffff;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-decoration: none;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-view:hover {
+        background: #4f46e5;
+        transform: translateY(-1px);
+    }
+
+    .btn-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    .btn-icon:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-icon svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
+    }
+
+    .btn-icon-edit {
+        color: #6366f1;
+        border-color: #6366f1;
+    }
+
+    .btn-icon-edit:hover {
+        background: #6366f1;
+        color: #ffffff;
+    }
+
+    .btn-icon-delete {
+        color: #ef4444;
+        border-color: #ef4444;
+    }
+
+    .btn-icon-delete:hover {
+        background: #ef4444;
+        color: #ffffff;
+    }
+
+    /* Delete Confirmation Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 400px;
+        width: 100%;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border-color);
+    }
+
+    .modal-header {
+        margin-bottom: 16px;
+    }
+
+    .modal-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 8px 0;
+    }
+
+    .modal-message {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 24px;
+    }
+
+    .btn-modal {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+    }
+
+    .btn-modal-cancel {
+        background: var(--card-bg);
+        color: var(--text-main);
+        border: 1px solid var(--border-color);
+    }
+
+    .btn-modal-cancel:hover {
+        background: var(--hover-bg);
+    }
+
+    .btn-modal-delete {
+        background: #ef4444;
+        color: #ffffff;
+    }
+
+    .btn-modal-delete:hover {
+        background: #dc2626;
+    }
+
+    /* Empty State */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        padding: 60px 20px;
+        text-align: center;
+    }
+
+    .empty-state svg {
+        width: 64px;
+        height: 64px;
+        color: var(--text-secondary);
+        opacity: 0.4;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h2 {
+        color: var(--text-main);
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .empty-state p {
+        color: var(--text-secondary);
+        font-size: 0.9375rem;
+        margin: 0;
+        line-height: 1.5;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="assignments-page">
+<div class="page-container">
     <div class="page-header">
         <h1 class="page-title">Manage Assignments</h1>
         <a href="{{ url_for('instructor_create_assignment') }}" class="btn-add-assignment">
@@ -213,83 +462,186 @@
         </a>
     </div>
 
+    <!-- Search and Filter Bar -->
+    <div class="search-filter-bar">
+        <input type="text" id="searchInput" class="search-box" placeholder="Search assignments...">
+        <div class="filter-group">
+            <button class="filter-btn active" data-filter="all" onclick="applyFilter('all')">All</button>
+            <button class="filter-btn" data-filter="writing" onclick="applyFilter('writing')">Writing</button>
+            <button class="filter-btn" data-filter="speaking" onclick="applyFilter('speaking')">Speaking</button>
+            <button class="filter-btn" data-filter="active" onclick="applyFilter('active')">Active</button>
+            <button class="filter-btn" data-filter="expired" onclick="applyFilter('expired')">Expired</button>
+        </div>
+    </div>
+
     {% if activity_stats %}
-    <div class="assignments-grid">
+    <div class="assignments-grid" id="assignmentsGrid">
         {% for stat in activity_stats %}
         {% set activity = stat.activity %}
-        <div class="assignment-card">
+        {% set is_expired = activity.due_date is not none and activity.due_date < now %}
+        <div class="assignment-card" 
+             data-type="{{ activity.activity_type.lower() }}" 
+             data-status="{{ 'expired' if is_expired else 'active' }}"
+             data-title="{{ activity.title.lower() }}">
+            <!-- Card Header -->
             <div class="assignment-header">
-                <div>
-                    <h2 class="assignment-title">{{ activity.title }}</h2>
-                    <div class="assignment-date">
-                        Due: {{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No Limit' }}
-                    </div>
-                    {% if activity.description %}
-                    <div class="assignment-date" style="margin-top: 4px; font-size: 0.75rem;">
-                        {{ activity.description[:50] }}{% if activity.description|length > 50 %}...{% endif %}
-                    </div>
-                    {% endif %}
-                </div>
-                <span class="assignment-type">{{ activity.activity_type }}</span>
-            </div>
-            
-            <div class="assignment-stats">
-                <div class="stat-item">
-                    <span class="stat-badge total">{{ stat.total_submissions }}</span>
-                    <span>Total</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-badge graded">{{ stat.graded_submissions }}</span>
-                    <span>Graded</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-badge pending">{{ stat.pending_submissions }}</span>
-                    <span>Pending</span>
-                </div>
-            </div>
-            
-            <div class="assignment-footer">
-                <span class="pill" style="{% if activity.due_date and activity.due_date < now %}background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: #ef4444;{% endif %}">
-                    {% if activity.due_date and activity.due_date >= now %}
-                        Active
-                    {% else %}
-                        Expired
-                    {% endif %}
+                <h2 class="assignment-title">{{ activity.title }}</h2>
+                <span class="assignment-type-badge {{ activity.activity_type.lower() }}">
+                    {{ activity.activity_type }}
                 </span>
             </div>
             
+            <!-- Meta Row -->
+            <div class="assignment-meta">
+                <div class="meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span>{{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No Due Date' }}</span>
+                </div>
+                <span class="status-chip {{ 'expired' if is_expired else 'active' }}">
+                    {{ 'Expired' if is_expired else 'Active' }}
+                </span>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="assignment-stats">
+                <div class="stat-item">
+                    <div class="stat-value">{{ stat.total_submissions }}</div>
+                    <div class="stat-label">Submissions</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ stat.graded_submissions }}</div>
+                    <div class="stat-label">Graded</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ stat.pending_submissions }}</div>
+                    <div class="stat-label">Pending</div>
+                </div>
+            </div>
+
+            <!-- Actions Row -->
             <div class="assignment-actions">
-                <a href="{{ url_for('instructor_assignment_detail', activity_id=activity.id) }}" class="btn-action btn-view">
-                    View Details
+                <a href="{{ url_for('instructor_assignment_detail', activity_id=activity.id) }}" class="btn-view">
+                    View
                 </a>
-                <a href="{{ url_for('instructor_edit_assignment', activity_id=activity.id) }}" class="btn-action btn-edit-assignment">
-                    Edit
+                <a href="{{ url_for('instructor_edit_assignment', activity_id=activity.id) }}" class="btn-icon btn-icon-edit" title="Edit">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
                 </a>
-                <button onclick="deleteAssignment({{ activity.id }}, '{{ activity.title }}')" class="btn-action btn-delete-assignment">
-                    Delete
+                <button onclick="showDeleteModal({{ activity.id }}, '{{ activity.title }}')" class="btn-icon btn-icon-delete" title="Delete">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
                 </button>
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <div style="text-align: center; padding: 60px 20px;">
-        <p style="color: var(--text-secondary); font-size: 1rem; margin-bottom: 20px;">No assignments defined yet.</p>
-        <a href="{{ url_for('instructor_create_assignment') }}" class="btn-add-assignment" style="display: inline-flex;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Create Your First Assignment
-        </a>
+    <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+        <h2>No assignments yet</h2>
+        <p>Get started by creating your first assignment using the button above.</p>
     </div>
     {% endif %}
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Delete Assignment</h3>
+            <p class="modal-message" id="deleteModalMessage">Are you sure you want to delete this assignment? This will also delete all associated submissions. This action cannot be undone.</p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal btn-modal-cancel" onclick="closeDeleteModal()">Cancel</button>
+            <button class="btn-modal btn-modal-delete" id="confirmDeleteBtn">Delete</button>
+        </div>
+    </div>
+</div>
+
 <script>
-function deleteAssignment(activityId, title) {
-    if (confirm(`Are you sure you want to delete "${title}"? This will also delete all associated submissions. This action cannot be undone.`)) {
-        fetch(`/instructor/assignments/${activityId}/delete`, {
+let currentActivityId = null;
+
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    filterCards();
+});
+
+// Filter functionality
+let currentFilter = 'all';
+
+function applyFilter(filter) {
+    currentFilter = filter;
+    
+    // Update filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-filter') === filter) {
+            btn.classList.add('active');
+        }
+    });
+    
+    filterCards();
+}
+
+function filterCards() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const cards = document.querySelectorAll('.assignment-card');
+    
+    cards.forEach(card => {
+        const type = card.getAttribute('data-type');
+        const status = card.getAttribute('data-status');
+        const title = card.getAttribute('data-title');
+        
+        let showByFilter = true;
+        if (currentFilter === 'all') {
+            showByFilter = true;
+        } else if (currentFilter === 'writing' || currentFilter === 'speaking') {
+            showByFilter = type === currentFilter;
+        } else if (currentFilter === 'active' || currentFilter === 'expired') {
+            showByFilter = status === currentFilter;
+        }
+        
+        const showBySearch = searchTerm === '' || title.includes(searchTerm);
+        
+        if (showByFilter && showBySearch) {
+            card.style.display = 'flex';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Delete modal functionality
+function showDeleteModal(activityId, title) {
+    currentActivityId = activityId;
+    document.getElementById('deleteModalMessage').textContent = 
+        `Are you sure you want to delete "${title}"? This will also delete all associated submissions. This action cannot be undone.`;
+    document.getElementById('deleteModal').classList.add('active');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('active');
+    currentActivityId = null;
+}
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+    if (currentActivityId) {
+        fetch(`/instructor/assignments/${currentActivityId}/delete`, {
             method: 'POST',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
@@ -298,6 +650,7 @@ function deleteAssignment(activityId, title) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                closeDeleteModal();
                 location.reload();
             } else {
                 alert(data.message || 'Failed to delete assignment');
@@ -308,9 +661,13 @@ function deleteAssignment(activityId, title) {
             alert('An error occurred while deleting the assignment');
         });
     }
-}
+});
+
+// Close modal on overlay click
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDeleteModal();
+    }
+});
 </script>
 {% endblock %}
-
-
-

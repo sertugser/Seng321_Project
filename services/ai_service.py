@@ -224,3 +224,102 @@ class AIService:
             "feedback": general_feedback,
             "tips": tips
         }
+    
+    @staticmethod
+    def generate_quiz_explanation(question, student_answer, correct_answer):
+        """
+        Generates personalized AI feedback explaining why the correct answer is correct
+        and why the student's answer was incorrect.
+        
+        Args:
+            question (str): The question text
+            student_answer (str): The answer the student selected
+            correct_answer (str): The correct answer
+            
+        Returns:
+            str: AI-generated explanation in English, or fallback message if API fails
+        """
+        if not API_KEY:
+            print("ERROR: Cannot generate quiz explanation - GEMINI_API_KEY is not set!")
+            return "Generating AI analysis... Please check API configuration."
+        
+        if not question or not correct_answer:
+            return "Generating AI analysis..."
+        
+        # Initialize model (reuse the same logic as evaluate_writing)
+        model = None
+        try:
+            available_models = genai.list_models()
+            supported_models = []
+            for m in available_models:
+                if hasattr(m, 'supported_generation_methods') and 'generateContent' in m.supported_generation_methods:
+                    model_name = m.name.replace('models/', '')
+                    supported_models.append(model_name)
+            
+            if not supported_models:
+                supported_models = ['gemini-pro', 'gemini-1.5-pro', 'gemini-1.5-flash']
+            
+            preferred = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
+            model_name = None
+            
+            for pref in preferred:
+                if pref in supported_models:
+                    model_name = pref
+                    break
+            
+            if not model_name and supported_models:
+                model_name = supported_models[0]
+            
+            if model_name:
+                model = genai.GenerativeModel(model_name)
+            else:
+                raise Exception("No available models found")
+                
+        except Exception as e:
+            print(f"Error initializing model for quiz explanation: {e}")
+            # Fallback: try common model names directly
+            fallback_names = ['gemini-pro', 'gemini-1.5-pro', 'gemini-1.5-flash']
+            for model_name in fallback_names:
+                try:
+                    model = genai.GenerativeModel(model_name)
+                    break
+                except Exception:
+                    continue
+        
+        if not model:
+            return "Generating AI analysis... Please try again later."
+        
+        # Create the prompt
+        prompt = f"""You are an experienced English teacher. A student answered a quiz question incorrectly.
+
+Question: "{question}"
+
+The student selected: "{student_answer}"
+The correct answer is: "{correct_answer}"
+
+Please provide a helpful, instructional explanation in English (2-3 sentences) that:
+1. Explains why the correct answer ({correct_answer}) is the right choice
+2. Briefly explains why the student's choice ({student_answer}) was incorrect
+3. Uses a supportive, educational tone
+
+Keep your response concise and focused on helping the student understand the concept. Do not use markdown formatting."""
+
+        try:
+            print(f"Generating quiz explanation for question: {question[:50]}...")
+            response = model.generate_content(prompt)
+            
+            if not response or not response.text:
+                print("ERROR: Empty response from Gemini API for quiz explanation")
+                return "Generating AI analysis... Please try again later."
+            
+            explanation = response.text.strip()
+            # Remove any markdown formatting that might slip through
+            explanation = explanation.replace('**', '').replace('*', '').replace('`', '')
+            print(f"Successfully generated quiz explanation (length: {len(explanation)})")
+            return explanation
+            
+        except Exception as e:
+            print(f"AI Service Error generating quiz explanation: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
+            return "Generating AI analysis... Please try again later."

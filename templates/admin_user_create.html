@@ -4,97 +4,470 @@
 
 {% block extra_css %}
 <style>
-    .form-container {
-        max-width: 600px;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        padding: 32px;
-        margin: 0 auto;
+    /* Background with theme-aware colors - Fixed, no scroll */
+    html, body {
+        height: 100%;
+        overflow: hidden !important;
+        margin: 0;
+        padding: 0;
     }
 
+    body {
+        height: 100vh;
+        width: 100vw;
+        box-sizing: border-box;
+        background: var(--bg-primary);
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow: hidden !important;
+    }
+
+    /* Override main-area from base.html */
+    .main-area {
+        overflow: hidden !important;
+        height: 100vh !important;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin-left: var(--sidebar-width) !important;
+    }
+
+    body.sidebar-collapsed .main-area {
+        margin-left: var(--sidebar-collapsed-width) !important;
+    }
+
+    .content-wrapper {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Subtle pattern overlay - theme-aware */
+    body::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+            radial-gradient(circle at 2px 2px, rgba(99, 102, 241, 0.08) 1px, transparent 0);
+        background-size: 40px 40px;
+        opacity: 0.3;
+        pointer-events: none;
+    }
+
+    [data-theme="dark"] body::before {
+        opacity: 0.15;
+    }
+
+    /* Wider Card - fixed width for better proportions, centered, no overflow */
+    .form-container {
+        width: 100%;
+        max-width: 800px;
+        min-width: 600px;
+        max-height: calc(100vh - 48px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 48px;
+        margin: 0;
+        box-shadow: var(--shadow-lg);
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Hide scrollbar but keep functionality */
+    .form-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .form-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .form-container::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 3px;
+    }
+
+    .form-container::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
+    }
+
+    @media (min-width: 1024px) {
+        .form-container {
+            max-width: 900px;
+            min-width: 700px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .content-wrapper {
+            padding: 16px;
+        }
+
+        .form-container {
+            min-width: unset;
+            max-width: 100%;
+            padding: 40px 32px;
+            max-height: calc(100vh - 32px);
+        }
+    }
+
+    /* Form should take available space */
+    .form-container form {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+    }
+
+    /* Header Section */
+    .form-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 12px;
+    }
+
+    .form-header-icon {
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        border-radius: 16px;
+        color: white;
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+        flex-shrink: 0;
+    }
+
+    .form-header-icon svg {
+        width: 28px;
+        height: 28px;
+        stroke-width: 2;
+    }
+
+    .form-header-text {
+        flex: 1;
+    }
+
+    .form-container h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 4px 0;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+        .form-container h1 {
+            font-size: 1.75rem;
+            white-space: normal;
+        }
+    }
+
+    .form-subtitle {
+        font-size: 0.9375rem;
+        color: var(--text-secondary);
+        margin: 0;
+        font-weight: 400;
+    }
+
+    /* Form Groups */
     .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 24px;
+        position: relative;
     }
 
     label {
         display: block;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         font-weight: 600;
         color: var(--text-main);
         font-size: 0.875rem;
+        letter-spacing: 0.01em;
+    }
+
+    /* Input Wrapper with Icon */
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 18px;
+        width: 20px;
+        height: 20px;
+        color: var(--text-secondary);
+        pointer-events: none;
+        z-index: 1;
+        transition: color 0.2s ease;
+    }
+
+    .input-icon svg {
+        width: 20px;
+        height: 20px;
+        stroke-width: 2;
     }
 
     input, select {
         width: 100%;
-        padding: 10px 12px;
-        border-radius: 8px;
-        border: 1px solid var(--border-color);
+        padding: 14px 18px 14px 50px;
+        border-radius: 12px;
+        border: 1.5px solid var(--border-color);
         background: var(--card-bg);
         color: var(--text-main);
-        font-size: 0.875rem;
+        font-size: 0.9375rem;
+        font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
         box-sizing: border-box;
-        font-family: inherit;
+        transition: all 0.3s ease;
     }
 
+    input:hover, select:hover {
+        border-color: rgba(99, 102, 241, 0.4);
+        background: var(--card-bg);
+    }
+
+    input:focus, select:focus {
+        outline: none;
+        border-color: #6366f1;
+        background: var(--card-bg);
+        box-shadow: 
+            0 0 0 4px rgba(99, 102, 241, 0.1),
+            0 4px 12px rgba(99, 102, 241, 0.15);
+        transform: translateY(-1px);
+    }
+
+    [data-theme="dark"] input:focus,
+    [data-theme="dark"] select:focus {
+        box-shadow: 
+            0 0 0 4px rgba(99, 102, 241, 0.2),
+            0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    input:focus + .input-icon,
+    select:focus ~ .input-icon {
+        color: #6366f1;
+    }
+
+    select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236366f1' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 18px center;
+        padding-right: 45px;
+    }
+
+    /* Form Actions - Bottom Right */
     .form-actions {
         display: flex;
         gap: 12px;
-        margin-top: 24px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-color);
+        justify-content: flex-end;
+        align-items: center;
     }
 
-    .btn-secondary {
-        background: var(--border-color);
-        color: var(--text-main);
-        padding: 10px 20px;
+    /* Gradient Primary Button */
+    .btn-primary {
+        padding: 14px 32px;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 12px;
         font-weight: 600;
-        font-size: 0.875rem;
+        font-size: 0.9375rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-primary::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .btn-primary:hover::before {
+        left: 100%;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-primary:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+
+    /* Ghost Secondary Button */
+    .btn-secondary {
+        padding: 14px 32px;
+        background: transparent;
+        color: var(--text-main);
+        border: 1.5px solid var(--border-color);
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.9375rem;
         cursor: pointer;
         text-decoration: none;
         display: inline-block;
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
     }
 
     .btn-secondary:hover {
         background: var(--hover-bg);
+        border-color: rgba(99, 102, 241, 0.3);
+        transform: translateY(-1px);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+        body {
+            padding: 16px;
+        }
+
+        .form-container {
+            padding: 32px 24px;
+            border-radius: 16px;
+            max-height: calc(100vh - 32px);
+        }
+
+        .form-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .form-header-icon {
+            width: 48px;
+            height: 48px;
+        }
+
+        .form-header-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .form-container h1 {
+            font-size: 1.75rem;
+        }
+
+        .form-actions {
+            flex-direction: column-reverse;
+            gap: 10px;
+        }
+
+        .btn-primary, .btn-secondary {
+            width: 100%;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="form-container">
-    <h1 style="margin: 0 0 24px 0;">Create New User</h1>
+    <div class="form-header">
+        <div class="form-header-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.375 21c-2.331 0-4.512-.645-6.375-1.765Z" />
+            </svg>
+        </div>
+        <div class="form-header-text">
+            <h1>Create New User</h1>
+            <p class="form-subtitle">Add a new member to the platform.</p>
+        </div>
+    </div>
     
     <form method="POST">
         <div class="form-group">
             <label for="username">Username</label>
-            <input type="text" id="username" name="username" required>
+            <div class="input-wrapper">
+                <div class="input-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                    </svg>
+                </div>
+                <input type="text" id="username" name="username" placeholder="Enter username" required>
+            </div>
         </div>
 
         <div class="form-group">
             <label for="email">Email</label>
-            <input type="email" id="email" name="email" required>
+            <div class="input-wrapper">
+                <div class="input-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                    </svg>
+                </div>
+                <input type="email" id="email" name="email" placeholder="Enter email address" required>
+            </div>
         </div>
 
         <div class="form-group">
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" required minlength="6">
+            <div class="input-wrapper">
+                <div class="input-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                </div>
+                <input type="password" id="password" name="password" placeholder="Enter password (min 6 characters)" required minlength="6">
+            </div>
         </div>
 
         <div class="form-group">
             <label for="role">Role</label>
-            <select id="role" name="role" required>
-                <option value="Student">Student</option>
-                <option value="Instructor">Instructor</option>
-                <option value="Admin">Admin</option>
-            </select>
+            <div class="input-wrapper">
+                <div class="input-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                    </svg>
+                </div>
+                <select id="role" name="role" required>
+                    <option value="">Select a role</option>
+                    <option value="Student">Student</option>
+                    <option value="Instructor">Instructor</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary">Create User</button>
             <a href="/admin/users" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">Create User</button>
         </div>
     </form>
 </div>

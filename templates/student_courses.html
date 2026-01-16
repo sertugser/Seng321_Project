@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}My Courses - AAFS AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Use global .page-container */
+
+    /* Toolbar */
+    .courses-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .courses-toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        min-width: 0;
+    }
+
+    .courses-toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-shrink: 0;
+    }
+
+    .courses-search {
+        flex: 1;
+        min-width: 200px;
+        max-width: 400px;
+        padding: 10px 16px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--card-bg);
+        color: var(--text-main);
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+
+    .courses-search:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    /* Course Cards Grid - 3 columns responsive */
+    .courses-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        width: 100%;
+    }
+
+    @media (max-width: 1024px) {
+        .courses-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .courses-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Modern Course Card */
+    .course-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .course-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        border-color: #6366f1;
+    }
+
+    .course-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .course-card-title {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .course-code {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: #6366f1;
+        margin: 0 0 4px 0;
+    }
+
+    .course-name {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .course-description {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Course Stats Row */
+    .course-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 12px 0;
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .course-stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .course-stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-main);
+        line-height: 1;
+    }
+
+    .course-stat-label {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 500;
+    }
+
+    /* Course Actions */
+    .course-actions {
+        margin-top: auto;
+    }
+
+    .btn-open-course {
+        width: 100%;
+        padding: 10px 16px;
+        border-radius: 8px;
+        background: #6366f1;
+        color: #ffffff;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-open-course:hover {
+        background: #4f46e5;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-open-course svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 64px 24px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+    }
+
+    .empty-state svg {
+        width: 64px;
+        height: 64px;
+        color: var(--text-secondary);
+        margin: 0 auto 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin: 0 0 8px 0;
+    }
+
+    .empty-state p {
+        font-size: 0.9375rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Toolbar -->
+    <div class="courses-toolbar">
+        <div class="courses-toolbar-left">
+            <h1 class="page-title">My Courses</h1>
+        </div>
+        <div class="courses-toolbar-right">
+            <input type="text" id="searchInput" class="courses-search" placeholder="Search courses...">
+        </div>
+    </div>
+
+    {% if enrolled_courses %}
+    <div class="courses-grid" id="coursesGrid">
+        {% for item in enrolled_courses %}
+        {% set course = item.course %}
+        <div class="course-card" 
+             data-code="{{ course.code|lower }}" 
+             data-name="{{ course.name|lower }}"
+             onclick="window.location.href='/courses/{{ course.id }}'">
+            <!-- Card Header -->
+            <div class="course-card-header">
+                <div class="course-card-title">
+                    <h2 class="course-code">{{ course.code }}</h2>
+                    <p class="course-name">{{ course.name }}</p>
+                </div>
+            </div>
+            
+            <!-- Description -->
+            {% if course.description %}
+            <p class="course-description">{{ course.description }}</p>
+            {% endif %}
+
+            <!-- Stats Row -->
+            <div class="course-stats">
+                <div class="course-stat-item">
+                    <div class="course-stat-value">-</div>
+                    <div class="course-stat-label">Assignments</div>
+                </div>
+                <div class="course-stat-item">
+                    <div class="course-stat-value">-</div>
+                    <div class="course-stat-label">Completed</div>
+                </div>
+                <div class="course-stat-item">
+                    <div class="course-stat-value">-</div>
+                    <div class="course-stat-label">Pending</div>
+                </div>
+                <div class="course-stat-item">
+                    <div class="course-stat-value">-</div>
+                    <div class="course-stat-label">Avg Score</div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="course-actions">
+                <a href="/courses/{{ course.id }}" class="btn-open-course" onclick="event.stopPropagation();">
+                    Open Course
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+        <h3>No Courses Enrolled</h3>
+        <p>You are not enrolled in any courses yet. Contact your instructor or admin to be enrolled.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Search functionality
+    document.getElementById('searchInput')?.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll('.course-card');
+        
+        cards.forEach(card => {
+            const code = card.getAttribute('data-code');
+            const name = card.getAttribute('data-name');
+            
+            if (code.includes(searchTerm) || name.includes(searchTerm)) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

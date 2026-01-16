@@ -1,6 +1,7 @@
 import os
 import io
 import csv
+import traceback
 from datetime import datetime, timedelta, timezone
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, send_file, Response
 from werkzeug.utils import secure_filename
@@ -8,6 +9,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 import docx 
 from functools import wraps
+from sqlalchemy import or_, func, case
 try:
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfgen import canvas
@@ -82,7 +84,180 @@ def create_app():
 
     # Create Database Tables
     with app.app_context():
+        # First, try to add missing columns (migration)
+        try:
+            import sqlite3
+            # Use app.config instead of importing Config to avoid scope issues
+            db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+            if not db_uri:
+                raise ValueError("SQLALCHEMY_DATABASE_URI not found in app config")
+            
+            db_path = db_uri.replace('sqlite:///', '')
+            
+            if os.path.exists(db_path):
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+                
+                try:
+                    # Check if learning_activity table exists
+                    cursor.execute("""
+                        SELECT name FROM sqlite_master 
+                        WHERE type='table' AND name='learning_activity'
+                    """)
+                    table_exists = cursor.fetchone()
+                    
+                    if table_exists:
+                        # Check if student_id column exists
+                        cursor.execute("PRAGMA table_info(learning_activity)")
+                        columns = [column[1] for column in cursor.fetchall()]
+                        
+                        if 'student_id' not in columns:
+                            print("Adding student_id column to learning_activity table...")
+                            cursor.execute("""
+                                ALTER TABLE learning_activity 
+                                ADD COLUMN student_id INTEGER 
+                                REFERENCES users(id)
+                            """)
+                            conn.commit()
+                            print("✓ Successfully added student_id column.")
+                        else:
+                            print("✓ student_id column already exists.")
+                    else:
+                        print("learning_activity table does not exist yet. Will be created by db.create_all()")
+                    
+                    # Check if quiz_details table exists and add explanation column if needed
+                    cursor.execute("""
+                        SELECT name FROM sqlite_master 
+                        WHERE type='table' AND name='quiz_details'
+                    """)
+                    quiz_details_exists = cursor.fetchone()
+                    
+                    if quiz_details_exists:
+                        cursor.execute("PRAGMA table_info(quiz_details)")
+                        columns = [column[1] for column in cursor.fetchall()]
+                        
+                        if 'explanation' not in columns:
+                            print("Adding explanation column to quiz_details table...")
+                            cursor.execute("""
+                                ALTER TABLE quiz_details 
+                                ADD COLUMN explanation TEXT
+                            """)
+                            conn.commit()
+                            print("✓ Successfully added explanation column.")
+                        else:
+                            print("✓ explanation column already exists.")
+                    else:
+                        print("quiz_details table does not exist yet. Will be created by db.create_all()")
+                    
+                    # Check if quizzes table exists and add category column if needed
+                    cursor.execute("""
+                        SELECT name FROM sqlite_master 
+                        WHERE type='table' AND name='quizzes'
+                    """)
+                    quizzes_exists = cursor.fetchone()
+                    
+                    if quizzes_exists:
+                        cursor.execute("PRAGMA table_info(quizzes)")
+                        columns = [column[1] for column in cursor.fetchall()]
+                        
+                        if 'category' not in columns:
+                            print("Adding category column to quizzes table...")
+                            cursor.execute("""
+                                ALTER TABLE quizzes 
+                                ADD COLUMN category VARCHAR(50)
+                            """)
+                            conn.commit()
+                            print("✓ Successfully added category column.")
+                        else:
+                            print("✓ category column already exists.")
+                    else:
+                        print("quizzes table does not exist yet. Will be created by db.create_all()")
+                    
+                    # Check if learning_goals table exists and migrate to new schema if needed
+                    cursor.execute("""
+                        SELECT name FROM sqlite_master 
+                        WHERE type='table' AND name='learning_goals'
+                    """)
+                    goals_exists = cursor.fetchone()
+                    
+                    if goals_exists:
+                        cursor.execute("PRAGMA table_info(learning_goals)")
+                        columns = [column[1] for column in cursor.fetchall()]
+                        
+                        # Migrate from old schema (goal_name, target_value, current_value) to new schema (title, target_score, current_score, status)
+                        if 'goal_name' in columns and 'title' not in columns:
+                            print("Migrating learning_goals table to new schema...")
+                            # Add new columns
+                            if 'title' not in columns:
+                                cursor.execute("ALTER TABLE learning_goals ADD COLUMN title VARCHAR(100)")
+                            if 'target_score' not in columns:
+                                cursor.execute("ALTER TABLE learning_goals ADD COLUMN target_score FLOAT")
+                            if 'current_score' not in columns:
+                                cursor.execute("ALTER TABLE learning_goals ADD COLUMN current_score FLOAT DEFAULT 0.0")
+                            if 'status' not in columns:
+                                cursor.execute("ALTER TABLE learning_goals ADD COLUMN status VARCHAR(20) DEFAULT 'In Progress'")
+                            if 'updated_at' not in columns:
+                                cursor.execute("ALTER TABLE learning_goals ADD COLUMN updated_at DATETIME")
+                            if 'target_date' not in columns:
+                                cursor.execute("ALTER TABLE learning_goals ADD COLUMN target_date DATETIME")
+                            
+                            # Copy data from old columns to new columns
+                            cursor.execute("""
+                                UPDATE learning_goals 
+                                SET title = goal_name,
+                                    target_score = CAST(target_value AS FLOAT),
+                                    current_score = CAST(current_value AS FLOAT),
+                                    status = 'In Progress',
+                                    updated_at = created_at
+                                WHERE title IS NULL OR target_score IS NULL
+                            """)
+                            conn.commit()
+                            print("✓ Successfully migrated learning_goals table.")
+                        else:
+                            # Check if target_date column exists
+                            if 'target_date' not in columns:
+                                print("Adding target_date column to learning_goals table...")
+                                cursor.execute("ALTER TABLE learning_goals ADD COLUMN target_date DATETIME")
+                                conn.commit()
+                                print("✓ Successfully added target_date column.")
+                            else:
+                                print("✓ learning_goals table already migrated or using new schema.")
+                    else:
+                        print("learning_goals table does not exist yet. Will be created by db.create_all()")
+                except sqlite3.Error as e:
+                    print(f"⚠ Migration warning: {e}")
+                    conn.rollback()
+                finally:
+                    conn.close()
+        except Exception as e:
+            print(f"⚠ Migration check failed: {e}")
+            print("   Continuing with db.create_all()...")
+        
+        # Create all tables (will update schema if needed)
         db.create_all()
+        print("✓ Database tables created/updated successfully.")
+        
+        # Check for GEMINI_API_KEY
+        from dotenv import load_dotenv
+        load_dotenv()
+        gemini_key = os.getenv('GEMINI_API_KEY')
+        if not gemini_key:
+            print("⚠ WARNING: GEMINI_API_KEY not found in environment variables.")
+            print("   Please create a .env file with: GEMINI_API_KEY=your_key_here")
+            print("   AI features will not work without this key.")
+        else:
+            print(f"✓ GEMINI_API_KEY loaded successfully (length: {len(gemini_key)})")
+        
+        # Auto-seed questions if database is empty
+        from models.entities import Question
+        if Question.query.count() == 0:
+            try:
+                from seed_questions import seed_questions
+                seed_questions()
+                print("✓ Questions automatically seeded on first run.")
+            except Exception as e:
+                print(f"⚠ Warning: Could not auto-seed questions: {e}")
+                print("   Please run 'python seed_questions.py' manually to add questions.")
 
     # --- AUTHENTICATION CHECK & CACHE CONTROL ---
     @app.before_request
@@ -426,12 +601,25 @@ def create_app():
         # Get user goals using GoalService
         user_goals = GoalService.get_user_goals(current_user.id)[:2]
         
-        # Calculate pending tasks (all activities - in a real app, these would be filtered by student assignments)
-        # For now, we'll count activities with future due dates
-        pending_activities = LearningActivity.query.filter(
-            LearningActivity.due_date >= datetime.utcnow()
-        ).order_by(LearningActivity.due_date.asc()).all()
-        pending_count = len(pending_activities)
+        # Calculate pending tasks - activities assigned to this student
+        if current_user.role == 'Student':
+            from services.activity_service import ActivityService
+            student_activities = ActivityService.get_activities_for_student(current_user.id)
+            # Get submitted activity IDs
+            submitted_activity_ids = set(s.activity_id for s in submissions if s.activity_id)
+            # Count activities not yet submitted
+            pending_activities = [a for a in student_activities if a.id not in submitted_activity_ids]
+            pending_count = len(pending_activities)
+        else:
+            # For instructors/admins, count all upcoming activities (for class performance monitoring - FR14)
+            # Filter activities with due dates in the future or no due date (ongoing activities)
+            pending_activities = LearningActivity.query.filter(
+                or_(
+                    LearningActivity.due_date >= datetime.utcnow(),
+                    LearningActivity.due_date == None
+                )
+            ).order_by(LearningActivity.due_date.asc()).all()
+            pending_count = len(pending_activities)
         
         # Calculate total submissions
         total_submissions = len(submissions)
@@ -469,11 +657,60 @@ def create_app():
                                recommendations=recommendations,
                                adaptive_insights=adaptive_insights)
 
+    @app.route('/courses')
+    @login_required
+    def student_courses():
+        from models.entities import Enrollment, Course
+        # Get courses where this student is enrolled
+        enrollments = Enrollment.query.filter_by(student_id=current_user.id, status='active').all()
+        enrolled_courses = []
+        for enrollment in enrollments:
+            course = Course.query.get(enrollment.course_id)
+            if course and course.is_active:
+                enrolled_courses.append({
+                    'course': course,
+                    'enrolled_at': enrollment.enrolled_at
+                })
+        return render_template('student_courses.html', enrolled_courses=enrolled_courses)
+
+    @app.route('/courses/<int:course_id>')
+    @login_required
+    def student_course_detail(course_id):
+        from models.entities import Course, Enrollment
+        # Get course
+        course = Course.query.get_or_404(course_id)
+        if not course.is_active:
+            flash('Course is not active.', 'danger')
+            return redirect(url_for('student_courses'))
+        
+        # Verify student is enrolled in this course
+        enrollment = Enrollment.query.filter_by(
+            student_id=current_user.id, 
+            course_id=course_id, 
+            status='active'
+        ).first()
+        
+        if not enrollment:
+            flash('You are not enrolled in this course.', 'danger')
+            return redirect(url_for('student_courses'))
+        
+        return render_template('student_course_detail.html', 
+                             course=course, 
+                             enrolled_at=enrollment.enrolled_at)
+
     @app.route('/assignments')
     @login_required
     def view_assignments():
-        all_activities = LearningActivity.query.order_by(LearningActivity.due_date.asc()).all()
         now = datetime.utcnow()
+
+        # Filter assignments for students based on student_id
+        if current_user.role == 'Student':
+            # Get activities assigned to this student (student_id is None for all students, or matches current_user.id)
+            from services.activity_service import ActivityService
+            all_activities = ActivityService.get_activities_for_student(current_user.id)
+        else:
+            # For instructors/admins, show all activities
+            all_activities = LearningActivity.query.order_by(LearningActivity.due_date.asc()).all()
 
         # Student submissions to mark completed assignments (including quiz submissions)
         user_subs = Submission.query.filter_by(student_id=current_user.id).all()
@@ -537,21 +774,27 @@ def create_app():
     @app.route('/instructor/assignments')
     @role_required('Instructor')
     def instructor_assignments():
-        activities = LearningActivity.query.order_by(LearningActivity.due_date.asc()).all()
         now = datetime.utcnow()
         
-        # Calculate submission stats for each activity
-        # Same logic as instructor_assignment_detail
+        # Use SQL with LEFT JOIN + GROUP BY for efficient stats calculation
+        # Calculate: Total submissions, Graded (score NOT NULL), Pending (score NULL or no grade)
+        stats_query = db.session.query(
+            LearningActivity,
+            func.count(func.distinct(Submission.id)).label('total_submissions'),
+            func.sum(case((Grade.score.isnot(None), 1), else_=0)).label('graded_submissions')
+        ).outerjoin(Submission, Submission.activity_id == LearningActivity.id)\
+         .outerjoin(Grade, Grade.submission_id == Submission.id)\
+         .group_by(LearningActivity.id)\
+         .order_by(LearningActivity.due_date.asc()).all()
+        
+        # Build activity_stats list from query results
         activity_stats = []
-        for activity in activities:
-            if not activity or not hasattr(activity, 'id'):
-                continue
-            submissions = Submission.query.filter_by(activity_id=activity.id).all()
-            total_submissions = len(submissions)
-            # Graded = instructor approved
-            graded_submissions = len([s for s in submissions if s.grade and s.grade.instructor_approved])
-            # Pending = has AI grade but not approved yet
-            pending_submissions = len([s for s in submissions if s.grade and not s.grade.instructor_approved])
+        for activity, total, graded in stats_query:
+            # Handle None values from SQL (when no submissions exist)
+            total_submissions = total or 0
+            graded_submissions = int(graded) if graded else 0
+            # Pending = Total - Graded (submissions without grade or with NULL score)
+            pending_submissions = total_submissions - graded_submissions
             
             activity_stats.append({
                 'activity': activity,
@@ -567,16 +810,55 @@ def create_app():
     @app.route('/instructor/assignments/create', methods=['GET', 'POST'])
     @role_required('Instructor')
     def instructor_create_assignment():
+        # Get students enrolled in courses taught by this instructor
+        from models.entities import User, Course, Enrollment
+        # Get courses where this instructor teaches
+        instructor_courses = Course.query.filter_by(instructor_id=current_user.id, is_active=True).all()
+        course_ids = [c.id for c in instructor_courses]
+        
+        # Get all enrollments for these courses
+        enrolled_students = []
+        if course_ids:
+            enrollments = Enrollment.query.filter(
+                Enrollment.course_id.in_(course_ids),
+                Enrollment.status == 'active'
+            ).all()
+            # Get unique student IDs
+            student_ids = list(set([e.student_id for e in enrollments]))
+            # Get student objects
+            enrolled_students = User.query.filter(
+                User.id.in_(student_ids),
+                User.role == 'Student'
+            ).order_by(User.username.asc()).all()
+        
+        # Use enrolled students, fallback to all students if no courses assigned
+        all_students = enrolled_students if enrolled_students else User.query.filter_by(role='Student').order_by(User.username.asc()).all()
+        
         if request.method == 'POST':
             title = request.form.get('title')
             activity_type = request.form.get('activity_type')
             due_date_str = request.form.get('due_date')
             description = request.form.get('description')
             quiz_category = request.form.get('quiz_category') if activity_type == 'QUIZ' else None
+            student_id_str = request.form.get('student_id', '').strip()
+            
+            # Parse student_id - empty string means assign to all students
+            student_id = None
+            if student_id_str and student_id_str != '':
+                try:
+                    student_id = int(student_id_str)
+                    # Verify student exists
+                    student = User.query.get(student_id)
+                    if not student or student.role != 'Student':
+                        flash('Invalid student selected.', 'danger')
+                        return render_template('instructor_assignment_create.html', students=all_students)
+                except ValueError:
+                    flash('Invalid student ID format.', 'danger')
+                    return render_template('instructor_assignment_create.html', students=all_students)
 
             if not title or not activity_type:
                 flash('Title and type are required.', 'danger')
-                return redirect(url_for('instructor_create_assignment'))
+                return render_template('instructor_assignment_create.html', students=all_students)
 
             due_date = None
             if due_date_str:
@@ -584,22 +866,25 @@ def create_app():
                     due_date = datetime.strptime(due_date_str, '%Y-%m-%d')
                 except ValueError:
                     flash('Invalid date format. Use YYYY-MM-DD.', 'danger')
-                    return redirect(url_for('instructor_create_assignment'))
+                    return render_template('instructor_assignment_create.html', students=all_students)
 
-            new_activity = LearningActivity(
+            # Use ActivityService to create activity
+            from services.activity_service import ActivityService
+            new_activity = ActivityService.create_new_activity(
                 instructor_id=current_user.id,
                 title=title,
                 activity_type=activity_type,
                 description=description,
                 quiz_category=quiz_category,
-                due_date=due_date
+                due_date=due_date,
+                student_id=student_id
             )
-            db.session.add(new_activity)
-            db.session.commit()
-            flash('Assignment created.', 'success')
+            
+            student_name = "all students" if student_id is None else User.query.get(student_id).username
+            flash(f'Assignment created successfully for {student_name}.', 'success')
             return redirect(url_for('instructor_assignments'))
 
-        return render_template('instructor_assignment_create.html')
+        return render_template('instructor_assignment_create.html', students=all_students)
 
     @app.route('/speaking', methods=['GET', 'POST'])
     @role_required('Student')
@@ -674,6 +959,8 @@ def create_app():
             if ai_res and ai_res.get('pronunciation_score') is not None:
                 success = GradingService.process_speaking_evaluation(new_sub.id, ai_res)
                 if success:
+                    # Update goal progress for Speaking category
+                    GoalService.update_goal_progress(current_user.id, 'Speaking')
                     NotificationService.notify_grade_ready(current_user.id, new_sub.id)
                     flash("Speaking analyzed successfully!", "success")
                     # Redirect to show results with submission_id parameter
@@ -740,12 +1027,6 @@ def create_app():
                                total_recordings=total_recordings,
                                analysis_results=analysis_results)
 
-    @app.route('/instructor/library')
-    @role_required('Instructor')
-    def instructor_library():
-        activities = LearningActivity.query.order_by(LearningActivity.due_date.asc()).all()
-        return render_template('instructor_library.html', activities=activities)
-
     @app.route('/quizzes')
     @login_required
     def quizzes():
@@ -761,17 +1042,52 @@ def create_app():
         activity_id = request.args.get('activity_id', type=int)
         category = None
         
-        # If started from assignment, get category from activity
+        # Get category from POST request if available
+        if request.method == 'POST':
+            category = request.form.get('category')
+            if category and category.strip() == '':
+                category = None
+            # Keep 'mixed' as 'mixed' - don't convert to None (needed for filtering)
+            # Note: For question fetching, 'mixed' means all categories, but we still save it as 'mixed'
+        
+        # If started from assignment, get category from activity and verify student access
         if activity_id:
             activity = LearningActivity.query.get(activity_id)
-            if activity and activity.activity_type == 'QUIZ':
-                category = activity.quiz_category
+            if activity:
+                # Verify student has access to this activity
+                if current_user.role == 'Student':
+                    if activity.student_id is not None and activity.student_id != current_user.id:
+                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                            from flask import jsonify
+                            return jsonify({'success': False, 'message': 'You do not have access to this assignment.'}), 403
+                        flash("You do not have access to this assignment.", "danger")
+                        return redirect(url_for('assignments'))
+                
+                if activity.activity_type == 'QUIZ':
+                    category = activity.quiz_category
+        
+        # Check if questions are available before attempting to get them
+        available, message = QuizService.check_questions_available(category)
+        if not available:
+            # Check if this is an AJAX request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                from flask import jsonify
+                return jsonify({'success': False, 'message': message}), 400
+            flash(message, "danger")
+            return redirect(url_for('quizzes'))
         
         # Get questions using QuizService with optional category
-        questions = QuizService.get_questions(limit=5, category=category)
+        # For 'mixed', pass None to get questions from all categories
+        question_category = None if category == 'mixed' else category
+        questions = QuizService.get_questions(limit=5, category=question_category)
         
         if not questions:
-            flash("No questions available.", "danger")
+            # This shouldn't happen if check_questions_available passed, but handle it anyway
+            error_msg = f"No questions found for category '{category}'." if category else "No questions found."
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                from flask import jsonify
+                return jsonify({'success': False, 'message': error_msg}), 400
+            flash(error_msg, "danger")
             return redirect(url_for('quizzes'))
         
         # Store questions in session for quiz flow
@@ -780,55 +1096,254 @@ def create_app():
         session['quiz_answers'] = {}
         session['quiz_current'] = 0
         session['quiz_started'] = True
+        session['quiz_category'] = category  # Store category for later use
         if activity_id:
             session['quiz_activity_id'] = activity_id
         
+        # Check if this is an AJAX request
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            from flask import jsonify
+            return jsonify({
+                'success': True,
+                'redirect': url_for('quiz_question')
+            })
+        
         return redirect(url_for('quiz_question'))
 
-    @app.route('/quiz/question', methods=['GET', 'POST'])
+    @app.route('/quiz/question', methods=['GET'])
     @login_required
     def quiz_question():
+        """Display the dynamic quiz interface"""
         from flask import session
         
         if not session.get('quiz_started'):
             flash("Please start a quiz first.", "danger")
             return redirect(url_for('quizzes'))
         
+        # The new dynamic interface loads questions via JavaScript API
+        # So we just render the template
+        return render_template('quiz_question.html')
+
+    @app.route('/quiz/questions', methods=['GET'])
+    @login_required
+    def get_quiz_questions():
+        """API endpoint to fetch all quiz questions as JSON"""
+        from flask import session, jsonify
+        
+        if not session.get('quiz_started'):
+            return jsonify({'error': 'No quiz started'}), 400
+        
         question_ids = session.get('quiz_questions', [])
-        current_idx = session.get('quiz_current', 0)
-        # answers stored with string keys in session
-        answers = session.get('quiz_answers', {})
+        questions = []
         
-        if request.method == 'POST':
-            question_id = request.form.get('question_id', type=int)
-            answer = request.form.get('answer', '')
+        for q_id in question_ids:
+            question = Question.query.get(q_id)
+            if question:
+                questions.append({
+                    'id': question.id,
+                    'question_text': question.question_text,
+                    'option_a': question.option_a,
+                    'option_b': question.option_b,
+                    'option_c': question.option_c,
+                    'option_d': question.option_d,
+                    'correct_answer': question.correct_answer,
+                    'category': question.category
+                })
+        
+        return jsonify({
+            'questions': questions,
+            'total': len(questions)
+        })
+    
+    @app.route('/quiz/submit', methods=['POST'])
+    @login_required
+    def submit_quiz():
+        """API endpoint to submit quiz answers and calculate score"""
+        from flask import session, jsonify
+        
+        if not session.get('quiz_started'):
+            return jsonify({'error': 'No quiz started'}), 400
+        
+        data = request.get_json()
+        answers = data.get('answers', {})  # {question_id: answer}
+        time_spent = data.get('time_spent', 0)  # in seconds
+        
+        question_ids = session.get('quiz_questions', [])
+        
+        # Convert answers to string keys format (for compatibility)
+        answers_dict = {str(q_id): answers.get(str(q_id), '') for q_id in question_ids}
+        
+        # Calculate score using QuizService
+        correct, total, score = QuizService.calculate_final_score(question_ids, answers_dict)
+
+        # Build per-question details for result page with AI explanations
+        from services.ai_service import AIService
+        import concurrent.futures
+        import threading
+        
+        details = []
+        incorrect_questions = []  # Store questions that need AI explanations
+        
+        for q_id in question_ids:
+            question = Question.query.get(q_id)
+            user_answer = answers.get(str(q_id), '')
+            correct_answer = question.correct_answer if question else None
+            is_correct = user_answer and question and user_answer.upper() == correct_answer.upper()
             
-            if question_id:
-                answers[str(question_id)] = answer
-                session['quiz_answers'] = dict(answers)
+            detail_item = {
+                'question_text': question.question_text if question else '',
+                'user_answer': user_answer,
+                'correct_answer': correct_answer,
+                'is_correct': is_correct,
+                'explanation': None  # Will be populated by AI
+            }
             
-            # Move to next question
-            current_idx += 1
-            session['quiz_current'] = current_idx
+            # If incorrect, add to list for AI explanation generation
+            if not is_correct and question and user_answer:
+                incorrect_questions.append({
+                    'detail_item': detail_item,
+                    'question_text': question.question_text,
+                    'user_answer': user_answer,
+                    'correct_answer': correct_answer
+                })
             
-            if current_idx >= len(question_ids):
-                return redirect(url_for('finish_quiz'))
+            details.append(detail_item)
         
-        # Get current question
-        if current_idx >= len(question_ids):
-            return redirect(url_for('finish_quiz'))
+        # Generate AI explanations for incorrect answers (with timeout for performance)
+        if incorrect_questions:
+            def generate_explanation(item):
+                try:
+                    explanation = AIService.generate_quiz_explanation(
+                        item['question_text'],
+                        item['user_answer'],
+                        item['correct_answer']
+                    )
+                    item['detail_item']['explanation'] = explanation
+                except Exception as e:
+                    print(f"Error generating explanation: {e}")
+                    item['detail_item']['explanation'] = "Generating AI analysis... Please try again later."
+            
+            # Use ThreadPoolExecutor for parallel processing (meets NFR1: 10-second response time)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+                futures = {executor.submit(generate_explanation, item): item for item in incorrect_questions}
+                # Wait for all with timeout (max 8 seconds to leave buffer for other operations)
+                done, not_done = concurrent.futures.wait(futures.keys(), timeout=8.0)
+                
+                # For any that didn't complete, set a placeholder
+                for future in not_done:
+                    future.cancel()
+                    # Find the corresponding item and set placeholder
+                    item = futures[future]
+                    if item['detail_item']['explanation'] is None:
+                        item['detail_item']['explanation'] = "Generating AI analysis... Please refresh the page in a moment."
         
-        question = Question.query.get(question_ids[current_idx])
-        if not question:
-            flash("Question not found.", "danger")
-            return redirect(url_for('quizzes'))
+        # Save quiz result and detailed answers using QuizService
+        quiz_category = session.get('quiz_category')  # Get category from session
         
-        is_last = (current_idx == len(question_ids) - 1)
-        previous_answer = answers.get(question.id) if question.id in answers else None
+        # If category is None, try to determine from questions
+        if quiz_category is None:
+            # Get first question to determine category
+            if question_ids:
+                first_question = Question.query.get(question_ids[0])
+                if first_question and first_question.category:
+                    quiz_category = first_question.category.lower()
         
-        return render_template('quiz_question.html', question=question, 
-                             current=current_idx + 1, total=len(question_ids),
-                             is_last=is_last, previous_answer=previous_answer)
+        quiz_title = "Grammar Quiz"
+        
+        # Determine quiz title and category based on assignment or standalone quiz
+        if quiz_category:
+            # Map category to title
+            category_titles = {
+                'grammar': 'Grammar Quiz',
+                'vocabulary': 'Vocabulary Quiz',
+                'reading': 'Reading Quiz',
+                'mixed': 'Mixed Quiz'
+            }
+            quiz_title = category_titles.get(quiz_category.lower(), 'Quiz')
+        else:
+            # Default to Grammar if no category found
+            quiz_category = 'grammar'
+            quiz_title = 'Grammar Quiz'
+        
+        # Check if this was an assignment submission
+        activity_id = session.get('quiz_activity_id')
+        if activity_id:
+            activity = LearningActivity.query.get(activity_id)
+            if activity:
+                quiz_title = activity.title
+                # Use activity's category if available
+                if activity.quiz_category:
+                    quiz_category = activity.quiz_category
+                
+                # Create Submission
+                new_sub = Submission(
+                    student_id=current_user.id,
+                    activity_id=activity.id,
+                    submission_type='QUIZ',
+                    text_content=f"Quiz completed: {activity.title} (Score: {score}%)"
+                )
+                db.session.add(new_sub)
+                db.session.flush() # get id
+                
+                # Create Grade
+                # Quiz grades are auto-approved since they're automatically graded
+                new_grade = Grade(
+                    submission_id=new_sub.id,
+                    score=score,
+                    general_feedback=f"Auto-graded quiz. Correct: {correct}/{total}",
+                    instructor_approved=True  # Auto-approved for quizzes
+                )
+                db.session.add(new_grade)
+                db.session.commit() # Commit submission and grade
+        
+        QuizService.save_result(current_user.id, quiz_title, score, details=details, category=quiz_category)
+        
+        # Clear session
+        session.pop('quiz_started', None)
+        session.pop('quiz_questions', None)
+        session.pop('quiz_answers', None)
+        session.pop('quiz_current', None)
+        session.pop('quiz_activity_id', None)
+        session.pop('quiz_category', None)  # Clear category from session
+        
+        return jsonify({
+            'success': True,
+            'score': score,
+            'correct': correct,
+            'total': total,
+            'time_spent': time_spent,
+            'redirect': url_for('quiz_result', score=score, correct=correct, total=total)
+        })
+    
+    @app.route('/quiz/result')
+    @login_required
+    def quiz_result():
+        """Display quiz result page"""
+        score = request.args.get('score', type=float, default=0)
+        correct = request.args.get('correct', type=int, default=0)
+        total = request.args.get('total', type=int, default=0)
+        
+        # Fetch the most recent quiz for this user to get details
+        details = []
+        if total > 0:
+            recent_quiz = Quiz.query.filter_by(user_id=current_user.id).order_by(Quiz.date_taken.desc()).first()
+            if recent_quiz:
+                detail_rows = QuizDetail.query.filter_by(quiz_id=recent_quiz.id).all()
+                for d in detail_rows:
+                    details.append({
+                        'question_text': d.question_text,
+                        'user_answer': d.user_answer,
+                        'correct_answer': d.correct_answer,
+                        'is_correct': d.is_correct,
+                        'explanation': d.explanation if hasattr(d, 'explanation') else None,  # Get AI-generated explanation
+                    })
+        
+        return render_template('quiz_result.html', 
+                             score=score, 
+                             correct=correct, 
+                             total=total, 
+                             details=details, 
+                             is_review=False)
 
     @app.route('/quiz/finish', methods=['GET', 'POST'])
     @login_required
@@ -860,7 +1375,32 @@ def create_app():
             })
         
         # Save quiz result and detailed answers using QuizService
+        quiz_category = session.get('quiz_category')  # Get category from session
+        
+        # If category is None, try to determine from questions
+        if quiz_category is None:
+            # Get first question to determine category
+            if question_ids:
+                first_question = Question.query.get(question_ids[0])
+                if first_question and first_question.category:
+                    quiz_category = first_question.category.lower()
+        
         quiz_title = "Grammar Quiz"
+        
+        # Determine quiz title and category based on assignment or standalone quiz
+        if quiz_category:
+            # Map category to title
+            category_titles = {
+                'grammar': 'Grammar Quiz',
+                'vocabulary': 'Vocabulary Quiz',
+                'reading': 'Reading Quiz',
+                'mixed': 'Mixed Quiz'
+            }
+            quiz_title = category_titles.get(quiz_category.lower(), 'Quiz')
+        else:
+            # Default to Grammar if no category found
+            quiz_category = 'grammar'
+            quiz_title = 'Grammar Quiz'
         
         # Check if this was an assignment submission
         activity_id = session.get('quiz_activity_id')
@@ -868,6 +1408,9 @@ def create_app():
             activity = LearningActivity.query.get(activity_id)
             if activity:
                 quiz_title = activity.title
+                # Use activity's category if available
+                if activity.quiz_category:
+                    quiz_category = activity.quiz_category
                 
                 # Create Submission
                 new_sub = Submission(
@@ -891,7 +1434,10 @@ def create_app():
                 db.session.commit() # Commit submission and grade
                 flash("Assignment marked as completed!", "success")
         
-        QuizService.save_result(current_user.id, quiz_title, score, details=details)
+        QuizService.save_result(current_user.id, quiz_title, score, details=details, category=quiz_category)
+        
+        # Update goal progress for Quiz category
+        GoalService.update_goal_progress(current_user.id, 'Quiz')
         
         # Clear session
         session.pop('quiz_started', None)
@@ -899,6 +1445,7 @@ def create_app():
         session.pop('quiz_answers', None)
         session.pop('quiz_current', None)
         session.pop('quiz_activity_id', None)
+        session.pop('quiz_category', None)  # Clear category from session
         
         return render_template('quiz_result.html', score=score, correct=correct, total=total, details=details, is_review=False)
 
@@ -941,96 +1488,301 @@ def create_app():
 
     @app.route('/goals', methods=['GET', 'POST'])
     @login_required
+    @role_required('Student')
     def goals():
         if request.method == 'POST':
+            try:
+                # Verify user is logged in
+                if not current_user or not current_user.is_authenticated:
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'status': 'error', 'success': False, 'message': 'User not authenticated. Please log in again.'}), 401
+                    flash('Please log in to create goals.', 'error')
+                    return redirect(url_for('login'))
+                
             # Handle goal creation
-            goal_name = request.form.get('goal_name')
-            target_value = request.form.get('target_value', type=int)
-            current_value = request.form.get('current_value', type=int, default=0)
-            category = request.form.get('category', 'General')  # Category for future use
-            
-            if goal_name and target_value:
-                category = request.form.get('category', 'General')
-                # Use GoalService to create goal
-                new_goal = GoalService.set_goal(
+                title = request.form.get('goal_name') or request.form.get('title')
+                category = request.form.get('category')
+                target_score_raw = request.form.get('target_value') or request.form.get('target_score')
+                target_date_str = request.form.get('target_date')
+                
+                # Convert to float - handle comma as decimal separator (European format)
+                target_score = None
+                if target_score_raw:
+                    try:
+                        # Replace comma with dot for European decimal format
+                        target_score_str = str(target_score_raw).replace(',', '.')
+                        target_score = float(target_score_str)
+                    except (ValueError, TypeError) as e:
+                        print(f"Error converting target_score to float: {str(e)}, value: {target_score_raw}")
+                        target_score = None
+                
+                # Parse target date - prioritize European format (DD.MM.YYYY)
+                target_date_obj = None
+                if target_date_str:
+                    date_str = str(target_date_str).strip()
+                    if date_str:
+                        try:
+                            # Try DD.MM.YYYY format first (European format)
+                            target_date_obj = datetime.strptime(date_str, '%d.%m.%Y')
+                        except (ValueError, TypeError):
+                            try:
+                                # Try standard HTML date format (YYYY-MM-DD)
+                                target_date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+                            except (ValueError, TypeError):
+                                try:
+                                    # Try DD/MM/YYYY format
+                                    target_date_obj = datetime.strptime(date_str, '%d/%m/%Y')
+                                except (ValueError, TypeError):
+                                    print(f"Warning: Could not parse date format: {date_str}")
+                                    target_date_obj = None
+                
+                # Validate target date is not in the past
+                if target_date_obj:
+                    today = datetime.now().date()
+                    target_date_only = target_date_obj.date() if hasattr(target_date_obj, 'date') else target_date_obj
+                    if target_date_only < today:
+                        error_msg = 'Target date cannot be in the past. Please select today or a future date.'
+                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                            return jsonify({'status': 'error', 'success': False, 'message': error_msg}), 400
+                        flash(error_msg, 'error')
+                        return redirect(url_for('goals'))
+                
+                # Validate required fields
+                if not title or not title.strip():
+                    error_msg = 'Goal name is required.'
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'status': 'error', 'success': False, 'message': error_msg}), 400
+                    flash(error_msg, 'error')
+                    return redirect(url_for('goals'))
+                
+                if not category:
+                    error_msg = 'Category is required.'
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'status': 'error', 'success': False, 'message': error_msg}), 400
+                    flash(error_msg, 'error')
+                    return redirect(url_for('goals'))
+                
+                if target_score is None:
+                    error_msg = 'Target score is required.'
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'status': 'error', 'success': False, 'message': error_msg}), 400
+                    flash(error_msg, 'error')
+                    return redirect(url_for('goals'))
+                
+                # Validate category
+                valid_categories = ['Writing', 'Speaking', 'Quiz', 'Grammar', 'Vocabulary', 'Reading', 'Overall']
+                if category not in valid_categories:
+                    error_msg = f'Invalid category. Must be one of: {", ".join(valid_categories)}.'
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'status': 'error', 'success': False, 'message': error_msg}), 400
+                    flash(error_msg, 'error')
+                    return redirect(url_for('goals'))
+                
+                # Validate target score range
+                if target_score < 0 or target_score > 100:
+                    error_msg = 'Target score must be between 0 and 100.'
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'status': 'error', 'success': False, 'message': error_msg}), 400
+                    flash(error_msg, 'error')
+                    return redirect(url_for('goals'))
+                
+                # Check for duplicate active goals in same category
+                existing_goals = GoalService.get_user_goals(current_user.id)
+                duplicate = any(g.category == category and g.status == 'In Progress' for g in existing_goals)
+                if duplicate:
+                    error_msg = f'You already have an active goal for {category}. Please complete or delete it first.'
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'status': 'error', 'success': False, 'message': error_msg}), 400
+                    flash(error_msg, 'warning')
+                    return redirect(url_for('goals'))
+                
+                # Use GoalService to create goal (current_score is auto-calculated, starts at 0)
+                new_goal = GoalService.create_goal(
                     user_id=current_user.id,
-                    goal_name=goal_name,
-                    target_value=target_value,
-                    current_value=current_value,
-                    category=category
+                    title=title.strip(),
+                    category=category,
+                    target_score=float(target_score),
+                    current_score=0.0,  # Always start at 0, auto-updated
+                    target_date=target_date_obj
                 )
                 
                 # Return JSON for AJAX requests
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify({'success': True, 'message': 'Goal added successfully!'}), 200
+                    return jsonify({'status': 'success', 'success': True, 'message': 'Goal added successfully!'}), 200
                 
                 flash('Goal added successfully!', 'success')
                 return redirect(url_for('goals'))
-            else:
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify({'success': False, 'message': 'Please fill in all required fields.'}), 400
                 
-                flash('Please fill in all required fields.', 'error')
+            except Exception as e:
+                # Advanced error logging with traceback
+                error_traceback = traceback.format_exc()
+                error_message = str(e)
+                error_type = type(e).__name__
+                
+                print("=" * 80)
+                print("ERROR CREATING GOAL - Full Traceback:")
+                print(error_traceback)
+                print("=" * 80)
+                print(f"Error message: {error_message}")
+                print(f"Error type: {error_type}")
+                print(f"User ID: {current_user.id if current_user and current_user.is_authenticated else 'Not authenticated'}")
+                print(f"Request data: title={request.form.get('goal_name')}, category={request.form.get('category')}, target_score={request.form.get('target_value')}, target_date={request.form.get('target_date')}")
+                print("=" * 80)
+                
+                # Always return JSON for AJAX requests, even on error
+                # Return exact error message so user can see it in browser
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({
+                        'status': 'error',
+                        'success': False,
+                        'message': f'Error creating goal: {error_message}',
+                        'error_type': error_type,
+                        'details': 'Check server logs for full traceback.'
+                    }), 500
+                flash(f'Error creating goal: {error_message}', 'error')
                 return redirect(url_for('goals'))
         
         # GET request - display goals using GoalService
+        # Note: datetime is already imported at the top of the file
         user_goals = GoalService.get_user_goals(current_user.id)
-        return render_template('goals.html', goals=user_goals)
+        goals_summary = GoalService.get_goals_summary(current_user.id)
+        return render_template('goals.html', goals=user_goals, goals_summary=goals_summary, now=datetime.utcnow())
     
     @app.route('/goals/<int:goal_id>', methods=['GET', 'PUT'])
     @login_required
+    @role_required('Student')
     def get_or_update_goal(goal_id):
-        goal = GoalRepository.get_goal_by_id(goal_id)
-        
-        if not goal:
-            return jsonify({'success': False, 'message': 'Goal not found'}), 404
-        
-        # Ensure user can only access their own goals
-        if goal.user_id != current_user.id:
-            return jsonify({'success': False, 'message': 'Permission denied'}), 403
-        
-        if request.method == 'GET':
-            # Return goal data
-            return jsonify({
-                'success': True,
-                'goal': {
-                    'id': goal.id,
-                    'goal_name': goal.goal_name,
-                    'category': goal.category or 'General',
-                    'target_value': goal.target_value,
-                    'current_value': goal.current_value
-                }
-            })
-        
-        elif request.method == 'PUT':
-            # Update goal
-            goal_name = request.form.get('goal_name')
-            target_value = request.form.get('target_value', type=int)
-            current_value = request.form.get('current_value', type=int)
-            category = request.form.get('category', 'General')
+        try:
+            # Verify user is logged in
+            if not current_user or not current_user.is_authenticated:
+                return jsonify({'status': 'error', 'success': False, 'message': 'User not authenticated. Please log in again.'}), 401
             
-            updated_goal = GoalService.update_goal(
-                goal_id=goal_id,
-                goal_name=goal_name,
-                target_value=target_value,
-                current_value=current_value,
-                category=category
-            )
+            goal = GoalRepository.get_goal_by_id(goal_id)
             
-            if updated_goal:
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify({'success': True, 'message': 'Goal updated successfully!'}), 200
-                flash('Goal updated successfully!', 'success')
-                return redirect(url_for('goals'))
-            else:
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify({'success': False, 'message': 'Failed to update goal'}), 500
-                flash('Failed to update goal.', 'error')
-                return redirect(url_for('goals'))
+            if not goal:
+                return jsonify({'status': 'error', 'success': False, 'message': 'Goal not found'}), 404
+            
+            # Ensure user can only access their own goals
+            if goal.user_id != current_user.id:
+                return jsonify({'status': 'error', 'success': False, 'message': 'Permission denied'}), 403
+            
+            if request.method == 'GET':
+                # Return goal data
+                return jsonify({
+                    'status': 'success',
+                    'success': True,
+                    'goal': {
+                        'id': goal.id,
+                        'goal_name': goal.title,  # For backward compatibility
+                        'title': goal.title,
+                        'category': goal.category,
+                        'target_value': goal.target_score,  # For backward compatibility
+                        'target_score': goal.target_score,
+                        'current_value': goal.current_score,  # For backward compatibility
+                        'current_score': goal.current_score,
+                        'status': goal.status,
+                        'target_date': goal.target_date.isoformat() if goal.target_date else None
+                    }
+                })
+            
+            elif request.method == 'PUT':
+                # Update goal
+                title = request.form.get('goal_name') or request.form.get('title')
+                target_score_raw = request.form.get('target_value') or request.form.get('target_score')
+                category = request.form.get('category')
+                status = request.form.get('status')
+                target_date_str = request.form.get('target_date')
+                
+                # Convert to float - handle comma as decimal separator (European format)
+                target_score = None
+                if target_score_raw:
+                    try:
+                        # Replace comma with dot for European decimal format
+                        target_score_str = str(target_score_raw).replace(',', '.')
+                        target_score = float(target_score_str)
+                    except (ValueError, TypeError):
+                        target_score = None
+                
+                # Parse target date - prioritize European format (DD.MM.YYYY)
+                target_date_obj = None
+                if target_date_str:
+                    date_str = str(target_date_str).strip()
+                    if date_str:
+                        try:
+                            # Try DD.MM.YYYY format first (European format)
+                            target_date_obj = datetime.strptime(date_str, '%d.%m.%Y')
+                        except (ValueError, TypeError):
+                            try:
+                                # Try standard HTML date format (YYYY-MM-DD)
+                                target_date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+                            except (ValueError, TypeError):
+                                try:
+                                    # Try DD/MM/YYYY format
+                                    target_date_obj = datetime.strptime(date_str, '%d/%m/%Y')
+                                except (ValueError, TypeError):
+                                    print(f"Warning: Could not parse date format: {date_str}")
+                                    target_date_obj = None
+                
+                # Validate target date is not in the past
+                if target_date_obj:
+                    today = datetime.now().date()
+                    target_date_only = target_date_obj.date() if hasattr(target_date_obj, 'date') else target_date_obj
+                    if target_date_only < today:
+                        error_msg = 'Target date cannot be in the past. Please select today or a future date.'
+                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                            return jsonify({'status': 'error', 'success': False, 'message': error_msg}), 400
+                        flash(error_msg, 'error')
+                        return redirect(url_for('goals'))
+                
+                # Don't allow updating current_score manually - it's auto-updated
+                updated_goal = GoalService.update_goal(
+                    goal_id=goal_id,
+                    title=title,
+                    category=category,
+                    target_score=target_score,
+                    status=status,
+                    target_date=target_date_obj
+                )
+                
+                if updated_goal:
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'status': 'success', 'success': True, 'message': 'Goal updated successfully!'}), 200
+                    flash('Goal updated successfully!', 'success')
+                    return redirect(url_for('goals'))
+                else:
+                    error_msg = 'Failed to update goal. Goal not found.'
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({'status': 'error', 'success': False, 'message': error_msg}), 404
+                    flash(error_msg, 'error')
+                    return redirect(url_for('goals'))
 
-    @app.route('/delete-goal/<int:goal_id>', methods=['POST'])
+        except Exception as e:
+            # Advanced error logging with traceback
+            error_traceback = traceback.format_exc()
+            print("=" * 80)
+            print("ERROR IN get_or_update_goal - Full Traceback:")
+            print(error_traceback)
+            print("=" * 80)
+            print(f"Error message: {str(e)}")
+            print(f"Error type: {type(e).__name__}")
+            print(f"Goal ID: {goal_id}")
+            print(f"User ID: {current_user.id if current_user and current_user.is_authenticated else 'Not authenticated'}")
+            print("=" * 80)
+            
+            # Always return JSON for AJAX requests, even on error
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({
+                    'status': 'error',
+                    'success': False,
+                    'message': f'Error processing goal request: {str(e)}. Please check the server logs for details.'
+                }), 500
+            flash(f'Error: {str(e)}', 'error')
+            return redirect(url_for('goals'))
+
+    @app.route('/goals/<int:goal_id>/complete', methods=['POST'])
     @login_required
-    def delete_goal(goal_id):
+    @role_required('Student')
+    def mark_goal_completed(goal_id):
         goal = GoalRepository.get_goal_by_id(goal_id)
         
         if not goal:
@@ -1039,14 +1791,55 @@ def create_app():
             flash('Goal not found.', 'error')
             return redirect(url_for('goals'))
         
-        # Ensure user can only delete their own goals
+        # Ensure user can only complete their own goals
         if goal.user_id != current_user.id:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify({'success': False, 'message': 'Permission denied'}), 403
-            flash('You do not have permission to delete this goal.', 'error')
+            flash('You do not have permission to complete this goal.', 'error')
             return redirect(url_for('goals'))
         
         try:
+            # Use GoalService to mark as completed
+            updated_goal = GoalService.mark_as_completed(goal_id)
+            
+            if updated_goal:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': True, 'message': 'Goal marked as completed!'}), 200
+                flash('Goal marked as completed!', 'success')
+                return redirect(url_for('goals'))
+            else:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'message': 'Failed to complete goal'}), 500
+                flash('Failed to complete goal.', 'error')
+                return redirect(url_for('goals'))
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': str(e)}), 500
+            flash(f'Error: {str(e)}', 'error')
+            return redirect(url_for('goals'))
+
+    @app.route('/delete-goal/<int:goal_id>', methods=['POST'])
+    @login_required
+    @role_required('Student')
+    def delete_goal(goal_id):
+        try:
+            goal = GoalRepository.get_goal_by_id(goal_id)
+            
+            if not goal:
+                error_msg = 'Goal not found'
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'message': error_msg}), 404
+                flash(error_msg, 'error')
+                return redirect(url_for('goals'))
+            
+            # Ensure user can only delete their own goals
+            if goal.user_id != current_user.id:
+                error_msg = 'Permission denied'
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'success': False, 'message': error_msg}), 403
+                flash('You do not have permission to delete this goal.', 'error')
+                return redirect(url_for('goals'))
+            
             # Use GoalService to delete goal
             success = GoalService.delete_goal(goal_id)
             
@@ -1056,14 +1849,18 @@ def create_app():
                 flash('Goal deleted successfully!', 'success')
                 return redirect(url_for('goals'))
             else:
+                error_msg = 'Failed to delete goal'
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify({'success': False, 'message': 'Failed to delete goal'}), 500
-                flash('An error occurred while deleting the goal.', 'error')
+                    return jsonify({'success': False, 'message': error_msg}), 500
+                flash(error_msg, 'error')
                 return redirect(url_for('goals'))
         except Exception as e:
+            # Log error for debugging
+            print(f"Error deleting goal: {str(e)}")
+            # Always return JSON for AJAX requests, even on error
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'success': False, 'message': str(e)}), 500
-            flash('An error occurred while deleting the goal.', 'error')
+                return jsonify({'success': False, 'message': f'Error deleting goal: {str(e)}'}), 500
+            flash(f'Error: {str(e)}', 'error')
             return redirect(url_for('goals'))
     
     @app.route('/profile')
@@ -1307,6 +2104,18 @@ def create_app():
     def instructor_dashboard():
         from datetime import timedelta
         from collections import defaultdict
+        from models.entities import Course, Enrollment
+        
+        # Get courses taught by this instructor
+        instructor_courses = Course.query.filter_by(instructor_id=current_user.id, is_active=True).all()
+        # Get student count for each course
+        courses_with_students = []
+        for course in instructor_courses:
+            enrollments = Enrollment.query.filter_by(course_id=course.id, status='active').all()
+            courses_with_students.append({
+                'course': course,
+                'student_count': len(enrollments)
+            })
         
         all_subs = Submission.query.all()
         all_quizzes = Quiz.query.all()
@@ -1359,6 +2168,91 @@ def create_app():
                                grade_mid=grade_mid,
                                grade_low=grade_low)
 
+    @app.route('/instructor/courses')
+    @role_required('Instructor')
+    def instructor_courses():
+        from models.entities import Course, Enrollment, LearningActivity, Submission
+        # Get courses taught by this instructor
+        instructor_courses_list = Course.query.filter_by(instructor_id=current_user.id, is_active=True).all()
+        # Get stats for each course
+        courses_with_students = []
+        for course in instructor_courses_list:
+            enrollments = Enrollment.query.filter_by(course_id=course.id, status='active').all()
+            student_ids = [e.student_id for e in enrollments]
+            
+            # Count assignments for this course
+            assignments = LearningActivity.query.filter_by(instructor_id=current_user.id).all()
+            # Count assignments that have submissions from this course's students
+            assignment_count = 0
+            graded_count = 0
+            total_scores = []
+            
+            if student_ids:
+                # Get all submissions from students in this course
+                course_submissions = Submission.query.filter(Submission.student_id.in_(student_ids)).all()
+                
+                # Count unique activities (assignments)
+                activity_ids = set([s.activity_id for s in course_submissions if s.activity_id])
+                assignment_count = len(activity_ids)
+                
+                # Count graded submissions
+                graded_submissions = [s for s in course_submissions if s.grade and s.grade.score is not None]
+                graded_count = len(graded_submissions)
+                
+                # Calculate average score
+                for s in graded_submissions:
+                    if s.grade and s.grade.score is not None:
+                        total_scores.append(s.grade.score)
+            
+            avg_score = round(sum(total_scores) / len(total_scores), 1) if total_scores else 0.0
+            
+            courses_with_students.append({
+                'course': course,
+                'student_count': len(enrollments),
+                'assignment_count': assignment_count,
+                'graded_count': graded_count,
+                'avg_score': avg_score
+            })
+        return render_template('instructor_courses.html', courses_with_students=courses_with_students)
+
+    @app.route('/instructor/courses/<int:course_id>')
+    @role_required('Instructor')
+    def instructor_course_detail(course_id):
+        from models.entities import Course, Enrollment, User, Submission, LearningActivity
+        # Get course and verify instructor owns it
+        course = Course.query.get_or_404(course_id)
+        if course.instructor_id != current_user.id:
+            flash('You do not have access to this course.', 'danger')
+            return redirect(url_for('instructor_courses'))
+        
+        # Get all students enrolled in this course
+        enrollments = Enrollment.query.filter_by(course_id=course_id, status='active').all()
+        student_ids = [e.student_id for e in enrollments]
+        students = User.query.filter(User.id.in_(student_ids), User.role == 'Student').all()
+        
+        # Get course statistics
+        all_submissions = Submission.query.filter(Submission.student_id.in_(student_ids)).all() if student_ids else []
+        graded_submissions = [s for s in all_submissions if s.grade and s.grade.score is not None]
+        avg_score = round(sum(s.grade.score for s in graded_submissions) / len(graded_submissions), 1) if graded_submissions else 0.0
+        
+        # Get recent submissions (last 10, ordered by date)
+        recent_submissions = Submission.query.filter(
+            Submission.student_id.in_(student_ids)
+        ).order_by(Submission.created_at.desc()).limit(10).all() if student_ids else []
+        
+        # Get assignments for this course (instructor's assignments)
+        course_assignments = LearningActivity.query.filter_by(instructor_id=current_user.id).order_by(LearningActivity.created_at.desc()).limit(10).all()
+        
+        return render_template('instructor_course_detail.html', 
+                             course=course, 
+                             students=students,
+                             student_count=len(students),
+                             total_submissions=len(all_submissions),
+                             graded_submissions=len(graded_submissions),
+                             avg_score=avg_score,
+                             recent_submissions=recent_submissions,
+                             course_assignments=course_assignments)
+
     @app.route('/instructor/students')
     @role_required('Instructor')
     def instructor_students():
@@ -1374,10 +2268,20 @@ def create_app():
         quizzes = Quiz.query.filter_by(user_id=student.id).order_by(Quiz.id.desc()).all()
         goals = LearningGoal.query.filter_by(user_id=student.id).all()
 
+        # Get student's enrolled courses
+        from models.entities import Enrollment, Course
+        enrollments = Enrollment.query.filter_by(student_id=student.id, status='active').all()
+        student_courses = []
+        for enrollment in enrollments:
+            course = Course.query.get(enrollment.course_id)
+            if course and course.is_active:
+                student_courses.append(course)
+
         graded_subs = [s for s in submissions if s.grade]
         avg_score = round(sum(s.grade.score for s in graded_subs) / len(graded_subs), 1) if graded_subs else 0.0
         total_submissions = len(submissions)
-        pending_submissions = len([s for s in submissions if not s.grade])
+        pending_submissions_list = [s for s in submissions if not s.grade]
+        pending_submissions = len(pending_submissions_list)
 
         return render_template(
             'instructor_student_detail.html',
@@ -1385,9 +2289,11 @@ def create_app():
             submissions=submissions,
             quizzes=quizzes,
             goals=goals,
+            student_courses=student_courses,
             avg_score=avg_score,
             total_submissions=total_submissions,
-            pending_submissions=pending_submissions
+            pending_submissions=pending_submissions,
+            pending_submissions_list=pending_submissions_list
         )
 
     @app.route('/instructor/export/pdf/<int:student_id>')
@@ -1883,6 +2789,8 @@ def create_app():
             if ai_res and ai_res.get('score') is not None:
                 success = GradingService.process_evaluation(new_sub.id, ai_res)
                 if success:
+                    # Update goal progress for Writing category
+                    GoalService.update_goal_progress(current_user.id, 'Writing')
                     NotificationService.notify_grade_ready(current_user.id, new_sub.id)
                     flash("Submission analyzed successfully!", "success")
                     # Reload the submission with grade to show results on the same page
@@ -2155,20 +3063,40 @@ def create_app():
             return redirect(url_for('admin_users'))
         
         if request.method == 'POST':
-            username = request.form.get('username')
-            email = request.form.get('email')
-            password = request.form.get('password')  # Optional
-            role = request.form.get('role')
+            username = request.form.get('username', '').strip()
+            email = request.form.get('email', '').strip()
+            password = request.form.get('password', '').strip()  # Optional
+            role = request.form.get('role', '').strip()
             
-            # Validate (skip password if not provided)
-            errors = AdminService.validate_user_data(username, email, None if not password else password, role)
-            # Remove password error if password is empty
-            if not password:
-                errors = [e for e in errors if 'Password' not in e]
-            # Check if username/email conflicts with other users
+            # Validate role is provided
+            if not role:
+                flash('Role is required', 'danger')
+                return render_template('admin_user_edit.html', user=user)
+            
+            # Manual validation (don't use AdminService.validate_user_data for updates as it does duplicate checks without excluding current user)
+            errors = []
+            
+            if not username or len(username) == 0:
+                errors.append("Username is required")
+            elif len(username) > 50:
+                errors.append("Username must be 50 characters or less")
+            
+            if not email or len(email) == 0:
+                errors.append("Email is required")
+            elif '@' not in email:
+                errors.append("Invalid email format")
+            
+            if password and len(password) < 6:
+                errors.append("Password must be at least 6 characters")
+            
+            if role and role not in ['Student', 'Instructor', 'Admin']:
+                errors.append("Invalid role. Must be Student, Instructor, or Admin")
+            
+            # Check if username/email conflicts with OTHER users (exclude current user)
             existing_username = User.query.filter_by(username=username).first()
             if existing_username and existing_username.id != user_id:
                 errors.append("Username already exists")
+            
             existing_email = User.query.filter_by(email=email).first()
             if existing_email and existing_email.id != user_id:
                 errors.append("Email already exists")
@@ -2179,11 +3107,17 @@ def create_app():
                 return render_template('admin_user_edit.html', user=user)
             
             try:
-                AdminRepository.update_user(user_id, username, email, password if password else None, role)
-                flash('User updated successfully!', 'success')
+                # Always update role if provided (even if same value)
+                updated_user = AdminRepository.update_user(user_id, username, email, password if password else None, role)
+                if updated_user:
+                    flash(f'User updated successfully! Role changed to {role}.', 'success')
+                else:
+                    flash('User not found', 'danger')
                 return redirect(url_for('admin_users'))
             except Exception as e:
                 flash(f'Error updating user: {str(e)}', 'danger')
+                import traceback
+                traceback.print_exc()
         
         return render_template('admin_user_edit.html', user=user)
     
@@ -2213,6 +3147,7 @@ def create_app():
     @role_required('Admin')
     def admin_create_course():
         instructors = AdminRepository.get_users_by_role('Instructor')
+        students = AdminRepository.get_users_by_role('Student')
         
         if request.method == 'POST':
             name = request.form.get('name')
@@ -2220,21 +3155,43 @@ def create_app():
             description = request.form.get('description')
             instructor_id = request.form.get('instructor_id', type=int) or None
             is_active = request.form.get('is_active') == 'on'
+            # Get selected student IDs (multiple selection)
+            student_ids = request.form.getlist('student_ids')
             
             errors = AdminService.validate_course_data(name, code, description)
             if errors:
                 for error in errors:
                     flash(error, 'danger')
-                return render_template('admin_course_create.html', instructors=instructors)
+                return render_template('admin_course_create.html', instructors=instructors, students=students)
             
             try:
-                AdminRepository.create_course(name, code, description, instructor_id, is_active)
-                flash('Course created successfully!', 'success')
+                # Create the course
+                course = AdminRepository.create_course(name, code, description, instructor_id, is_active)
+                
+                # Enroll selected students
+                enrolled_count = 0
+                if student_ids:
+                    for student_id_str in student_ids:
+                        try:
+                            student_id = int(student_id_str)
+                            enrollment = AdminRepository.create_enrollment(student_id, course.id, 'active')
+                            if enrollment:
+                                enrolled_count += 1
+                        except (ValueError, Exception) as e:
+                            # Skip invalid student IDs, continue with others
+                            continue
+                
+                if enrolled_count > 0:
+                    flash(f'Course created successfully! {enrolled_count} student(s) enrolled.', 'success')
+                else:
+                    flash('Course created successfully!', 'success')
                 return redirect(url_for('admin_courses'))
             except Exception as e:
                 flash(f'Error creating course: {str(e)}', 'danger')
+                import traceback
+                traceback.print_exc()
         
-        return render_template('admin_course_create.html', instructors=instructors)
+        return render_template('admin_course_create.html', instructors=instructors, students=students)
     
     @app.route('/admin/courses/<int:course_id>/edit', methods=['GET', 'POST'])
     @role_required('Admin')
@@ -2245,6 +3202,12 @@ def create_app():
             return redirect(url_for('admin_courses'))
         
         instructors = AdminRepository.get_users_by_role('Instructor')
+        students = AdminRepository.get_users_by_role('Student')
+        # Get already enrolled student IDs
+        existing_enrollments = AdminRepository.get_enrollments_by_course(course_id)
+        enrolled_student_ids = {e.student_id for e in existing_enrollments}
+        # Filter out already enrolled students
+        available_students = [s for s in students if s.id not in enrolled_student_ids]
         
         if request.method == 'POST':
             name = request.form.get('name')
@@ -2252,6 +3215,8 @@ def create_app():
             description = request.form.get('description')
             instructor_id = request.form.get('instructor_id', type=int) or None
             is_active = request.form.get('is_active') == 'on'
+            # Get selected student IDs (for adding new enrollments)
+            student_ids = request.form.getlist('student_ids')
             
             errors = AdminService.validate_course_data(name, code, description)
             # Check if code conflicts with other courses
@@ -2262,16 +3227,40 @@ def create_app():
             if errors:
                 for error in errors:
                     flash(error, 'danger')
-                return render_template('admin_course_edit.html', course=course, instructors=instructors)
+                return render_template('admin_course_edit.html', course=course, instructors=instructors, 
+                                     available_students=available_students, enrolled_student_ids=enrolled_student_ids)
             
             try:
+                # Update the course
                 AdminRepository.update_course(course_id, name, code, description, instructor_id, is_active)
-                flash('Course updated successfully!', 'success')
+                
+                # Enroll selected students (new enrollments only)
+                enrolled_count = 0
+                if student_ids:
+                    for student_id_str in student_ids:
+                        try:
+                            student_id = int(student_id_str)
+                            # Only enroll if not already enrolled
+                            if student_id not in enrolled_student_ids:
+                                enrollment = AdminRepository.create_enrollment(student_id, course_id, 'active')
+                                if enrollment:
+                                    enrolled_count += 1
+                        except (ValueError, Exception) as e:
+                            # Skip invalid student IDs, continue with others
+                            continue
+                
+                if enrolled_count > 0:
+                    flash(f'Course updated successfully! {enrolled_count} new student(s) enrolled.', 'success')
+                else:
+                    flash('Course updated successfully!', 'success')
                 return redirect(url_for('admin_courses'))
             except Exception as e:
                 flash(f'Error updating course: {str(e)}', 'danger')
+                import traceback
+                traceback.print_exc()
         
-        return render_template('admin_course_edit.html', course=course, instructors=instructors)
+        return render_template('admin_course_edit.html', course=course, instructors=instructors, 
+                             available_students=available_students, enrolled_student_ids=enrolled_student_ids)
     
     @app.route('/admin/courses/<int:course_id>/delete', methods=['POST'])
     @role_required('Admin')

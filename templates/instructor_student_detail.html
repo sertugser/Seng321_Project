@@ -5,149 +5,534 @@
 {% block extra_css %}
 <style>
     .student-profile-page {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 0 auto;
+        padding: 32px 24px;
+        min-height: calc(100vh - 64px);
     }
 
-    .profile-header {
-        display: flex;
-        justify-content: space-between;
+    .student-profile-page::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .student-profile-page::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .student-profile-page::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 4px;
+    }
+
+    .student-profile-page::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
+    }
+
+    .page-top-section {
+        margin-bottom: 24px;
+    }
+
+    .back-link-top {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        text-decoration: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        font-weight: 500;
+        white-space: nowrap;
+        height: fit-content;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .back-link-top:hover {
+        color: #6366f1;
+        background: rgba(99, 102, 241, 0.1);
+        border-color: #6366f1;
+    }
+
+    .back-link-top svg {
+        width: 16px;
+        height: 16px;
+        stroke-width: 2;
+    }
+
+    /* Student Info Header - Compact, Top Right */
+    .page-top-section {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
         align-items: center;
         margin-bottom: 24px;
-        flex-wrap: wrap;
-        gap: 16px;
+        gap: 20px;
+        width: 100%;
     }
 
-    .profile-main {
+    @media (max-width: 1024px) {
+        .page-top-section {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+    }
+
+    .page-top-section-left {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 0;
     }
 
-    .profile-avatar {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        color: #ffffff;
+    .page-top-section-center {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2rem;
-        font-weight: 700;
+        min-width: 0;
+        max-width: 550px;
+        margin: 0 auto;
     }
 
-    .profile-info h1 {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin: 0 0 4px 0;
-        color: var(--text-main);
+    .page-top-section-right {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        justify-content: flex-end;
     }
 
-    .profile-info p {
-        margin: 0;
+    .student-info-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        background: var(--card-bg);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        max-width: fit-content;
+        height: fit-content;
+    }
+
+    .student-info-header-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .student-info-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .student-info-name {
         font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    .student-info-email {
+        font-size: 0.75rem;
         color: var(--text-secondary);
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    .student-info-courses {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .course-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        background: rgba(99, 102, 241, 0.1);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        border-radius: 6px;
+        font-size: 0.6875rem;
+        color: #6366f1;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .course-badge svg {
+        width: 10px;
+        height: 10px;
+        stroke-width: 2;
+    }
+
+
+    /* Hide only main content profile elements, not sidebar profile */
+    .profile-main-left {
+        display: none;
+    }
+
+    .profile-main-right {
+        display: none;
+    }
+
+    /* Only hide profile elements in main content area, not sidebar */
+    .student-profile-page .profile-avatar,
+    .student-profile-page .profile-info {
+        display: none;
     }
 
     .profile-stats {
-        display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        width: 100%;
+        max-width: 500px;
+        margin: 0;
     }
 
     .profile-stat-card {
         background: var(--card-bg);
-        border-radius: 12px;
-        padding: 16px 20px;
+        border-radius: 8px;
+        padding: 12px 14px;
         border: 1px solid var(--border-color);
-        min-width: 140px;
+        min-width: 0;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        height: fit-content;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .profile-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: #6366f1;
     }
 
     .profile-stat-label {
-        font-size: 0.75rem;
+        font-size: 0.625rem;
         color: var(--text-secondary);
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 4px;
+        letter-spacing: 0.08em;
+        margin-bottom: 3px;
+        font-weight: 600;
+        line-height: 1.2;
     }
 
     .profile-stat-value {
-        font-size: 1.3rem;
+        font-size: 1.125rem;
         font-weight: 700;
         color: var(--text-main);
+        letter-spacing: -0.02em;
+        line-height: 1.2;
     }
 
     .profile-layout {
         display: grid;
-        grid-template-columns: 2fr 1.5fr;
+        grid-template-columns: 1.8fr 1.2fr;
+        gap: 20px;
+        margin-bottom: 24px;
+    }
+
+    .profile-layout-bottom {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
         gap: 20px;
         margin-top: 24px;
     }
 
     .card {
         background: var(--card-bg);
-        border-radius: 12px;
+        border-radius: 16px;
         border: 1px solid var(--border-color);
         padding: 20px;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        min-height: fit-content;
+    }
+
+    .card.recent-submissions {
+        min-height: 350px;
+    }
+
+    .card.goals-quizzes {
+        min-height: 350px;
+    }
+
+    .card:hover {
+        box-shadow: var(--shadow-md);
     }
 
     .card h2 {
-        font-size: 1rem;
-        font-weight: 600;
+        font-size: 1.25rem;
+        font-weight: 700;
         color: var(--text-main);
-        margin: 0 0 12px 0;
+        margin: 0 0 20px 0;
+        letter-spacing: -0.01em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .card h2 svg {
+        width: 20px;
+        height: 20px;
+        color: #6366f1;
+        stroke-width: 2;
     }
 
     .submissions-list {
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        max-height: 360px;
+        gap: 0;
+        max-height: 500px;
         overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .submissions-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+    .submissions-table thead {
+        background: var(--card-bg);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .submissions-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-main);
+        border-bottom: 2px solid var(--border-color);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .submissions-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-main);
+    }
+
+    .submissions-table tbody tr {
+        transition: background 0.2s ease;
+    }
+
+    .submissions-table tbody tr:hover {
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .submissions-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .submissions-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .submissions-list::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .submissions-list::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 3px;
+    }
+
+    .submissions-list::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
     }
 
     .submission-item {
-        border-radius: 10px;
+        border-radius: 12px;
         border: 1px solid var(--border-color);
-        padding: 10px 12px;
+        padding: 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 0.85rem;
+        background: var(--card-bg);
+        transition: all 0.2s ease;
+    }
+
+    .submission-item:hover {
+        border-color: #6366f1;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        transform: translateX(2px);
+    }
+
+    /* Pending Submissions Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 800px;
+        width: 100%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border-color);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-close:hover {
+        background: var(--hover-bg);
+        color: var(--text-main);
+    }
+
+    .modal-close svg {
+        width: 20px;
+        height: 20px;
     }
 
     .submission-meta {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 6px;
+        flex: 1;
     }
 
     .submission-type-badge {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 20px;
         font-size: 0.7rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        background: rgba(99, 102, 241, 0.08);
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
         color: #6366f1;
+        font-weight: 600;
+        width: fit-content;
     }
 
     .submission-date {
         color: var(--text-secondary);
-        font-size: 0.75rem;
+        font-size: 0.8125rem;
     }
 
     .submission-score {
-        font-weight: 600;
+        font-weight: 700;
         color: var(--text-main);
+        font-size: 1.125rem;
+        margin-bottom: 8px;
+    }
+
+    .submission-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
     }
 
     .submission-actions a {
-        font-size: 0.75rem;
-        color: var(--accent);
+        font-size: 0.8125rem;
+        color: #6366f1;
         text-decoration: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+
+    .submission-actions a:first-child {
+        background: rgba(99, 102, 241, 0.1);
+    }
+
+    .submission-actions a:first-child:hover {
+        background: rgba(99, 102, 241, 0.2);
+    }
+
+    .submission-actions a.btn-warning {
+        background: #f59e0b !important;
+        color: white !important;
+        padding: 8px 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: none;
+    }
+
+    .submission-actions a.btn-warning:hover {
+        background: #d97706 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+
+    .submission-actions a.btn-warning svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .section-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .section-label svg {
+        width: 16px;
+        height: 16px;
+        color: #6366f1;
+        stroke-width: 2;
     }
 
     .goals-list,
@@ -155,240 +540,922 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
-        font-size: 0.85rem;
+        margin-bottom: 16px;
     }
 
     .goal-item,
     .quiz-item {
-        border-radius: 10px;
+        border-radius: 12px;
         border: 1px solid var(--border-color);
-        padding: 8px 10px;
+        padding: 14px 16px;
+        background: var(--card-bg);
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
+        color: var(--text-main);
     }
 
-    .back-link {
-        font-size: 0.8rem;
+    .goal-item {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .goal-item:hover {
+        border-color: #6366f1;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        transform: translateX(2px);
+    }
+
+    .goal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .goal-name {
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 0.875rem;
+    }
+
+    .goal-progress-text {
+        font-size: 0.8125rem;
         color: var(--text-secondary);
-        text-decoration: none;
+        font-weight: 500;
     }
 
-    /* Academic Reports Section */
+    .goal-progress-bar {
+        width: 100%;
+        height: 8px;
+        background: rgba(99, 102, 241, 0.1);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .goal-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+
+    .quiz-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .quiz-item:hover {
+        border-color: #6366f1;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+    }
+
+    .quiz-item a {
+        font-size: 0.8125rem;
+        color: #6366f1;
+        text-decoration: none;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 6px;
+        background: rgba(99, 102, 241, 0.1);
+        transition: all 0.2s ease;
+    }
+
+    .quiz-item a:hover {
+        background: rgba(99, 102, 241, 0.2);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 32px 24px;
+    }
+
+    .empty-state-icon {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 12px;
+        color: var(--text-secondary);
+        opacity: 0.5;
+    }
+
+    .empty-state-text {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin: 0 0 16px 0;
+    }
+
+    .empty-state-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: #6366f1;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .empty-state-cta:hover {
+        background: #4f46e5;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .empty-message {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        padding: 16px;
+        text-align: center;
+        font-style: italic;
+    }
+
+
+    /* Academic Reports Section - Bottom Left */
     .academic-reports-section {
-        margin-top: 20px;
+        margin-top: 0;
+        grid-column: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
     }
 
     .academic-reports-card {
         background: var(--card-bg);
         border-radius: 12px;
         border: 1px solid var(--border-color);
-        padding: 20px;
+        padding: 14px 16px;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .academic-reports-card:hover {
+        box-shadow: var(--shadow-md);
     }
 
     .academic-reports-card h3 {
         font-size: 1rem;
-        font-weight: 600;
+        font-weight: 700;
         color: var(--text-main);
         margin: 0 0 12px 0;
+        letter-spacing: -0.01em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .academic-reports-card h3 svg {
+        width: 20px;
+        height: 20px;
+        color: #6366f1;
+        stroke-width: 2;
     }
 
     .academic-reports-content {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 10px;
     }
 
     .academic-reports-description {
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         color: var(--text-secondary);
-        line-height: 1.5;
+        line-height: 1.4;
         margin: 0;
     }
 
     .academic-reports-buttons {
         display: flex;
-        flex-direction: column;
-        gap: 10px;
-        align-items: stretch;
+        gap: 8px;
+        flex-wrap: wrap;
     }
 
     .export-btn {
         text-decoration: none;
-        padding: 10px 18px;
-        border-radius: 10px;
-        font-size: 0.875rem;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.8125rem;
         font-weight: 600;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
+        gap: 6px;
         transition: all 0.2s ease;
         border: none;
         cursor: pointer;
+        white-space: nowrap;
+        flex: 1;
+        min-width: 120px;
     }
 
+
     .export-btn-pdf {
-        background: #ff4757;
+        background: #6366f1;
         color: #fff !important;
-        box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        border: 1px solid #6366f1;
     }
 
     .export-btn-pdf:hover {
+        background: #4f46e5;
+        border-color: #4f46e5;
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
     }
 
     .export-btn-csv {
-        background: #2ed573;
-        color: #fff !important;
-        box-shadow: 0 4px 15px rgba(46, 213, 115, 0.3);
+        background: var(--card-bg);
+        color: #6366f1 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--border-color);
     }
 
     .export-btn-csv:hover {
+        background: var(--hover-bg);
+        border-color: #6366f1;
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
     }
 
     .export-btn svg {
         width: 16px;
         height: 16px;
         flex-shrink: 0;
+        stroke-width: 2;
+    }
+
+    /* Category Breakdown Section - Below Academic Reports */
+    .category-breakdown-section {
+        margin-top: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .category-breakdown-section .chart-card {
+        flex: 1;
+        min-height: 320px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    @media (max-width: 1024px) {
+        .profile-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .student-profile-page {
+            max-width: 100%;
+            padding: 24px 20px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .student-profile-page {
+            padding: 20px 16px;
+            max-width: 100%;
+        }
+
+        .page-top-section {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .page-top-section-left,
+        .page-top-section-center,
+        .page-top-section-right {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .page-top-section-right .student-info-header {
+            margin-left: 0;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .profile-layout-bottom {
+            grid-template-columns: 1fr;
+        }
+
+        .charts-section {
+            grid-column: 1 !important;
+        }
+
+        .profile-stats {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            max-width: 100%;
+        }
+
+        .page-top-section-center .profile-stats {
+            max-width: 100%;
+        }
+
+        .profile-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .submissions-table {
+            font-size: 0.8125rem;
+        }
+
+        .submissions-table th,
+        .submissions-table td {
+            padding: 10px 12px;
+        }
+
+        .profile-stat-card {
+            min-width: 0;
+            padding: 10px 12px;
+        }
+
+        .profile-stat-value {
+            font-size: 1rem;
+        }
+
+        .profile-stat-label {
+            font-size: 0.6rem;
+        }
+
+        .academic-reports-buttons {
+            flex-direction: column;
+        }
+
+        .export-btn {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .back-link-top {
+            font-size: 0.8125rem;
+            padding: 6px 12px;
+        }
+    }
+
+    /* Performance Charts Section */
+    .charts-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        grid-column: 2;
+        height: 100%;
+    }
+
+    .chart-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        padding: 18px 20px;
+        box-shadow: var(--shadow-sm);
+        height: 100%;
+        min-height: 320px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chart-card h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 14px 0;
+        letter-spacing: -0.01em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .chart-card h3 svg {
+        width: 18px;
+        height: 18px;
+        color: #6366f1;
+        stroke-width: 2;
+    }
+
+    .chart-wrapper {
+        position: relative;
+        height: 280px;
+        flex: 1;
+    }
+
+    .category-breakdown {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex: 1;
+        min-height: 280px;
+    }
+
+    .category-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .category-item:hover {
+        border-color: #6366f1;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+    }
+
+    .category-name {
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 0.875rem;
+    }
+
+    .category-value {
+        font-weight: 700;
+        color: var(--text-main);
+        font-size: 1rem;
+    }
+
+    @media (max-width: 1024px) {
+        .charts-section {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
 
 {% block content %}
 <div class="student-profile-page">
-    <div class="profile-header">
-        <div class="profile-main">
-            <div class="profile-avatar">
-                {{ student.username[0] | upper }}
-            </div>
-            <div class="profile-info">
-                <h1>{{ student.username }}</h1>
-                <p>{{ student.email }}</p>
+    <div class="page-top-section">
+        <div class="page-top-section-left">
+            <a href="{{ url_for('instructor_students') }}" class="back-link-top">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"></path>
+                </svg>
+                Back to Students
+            </a>
+        </div>
+        
+        <div class="page-top-section-center">
+            <div class="profile-stats">
+                <div class="profile-stat-card">
+                    <div class="profile-stat-label">Total Submissions</div>
+                    <div class="profile-stat-value">{{ total_submissions }}</div>
+                </div>
+                <div class="profile-stat-card">
+                    <div class="profile-stat-label">Average Score</div>
+                    <div class="profile-stat-value">{{ avg_score }}</div>
+                </div>
+                <div class="profile-stat-card clickable" id="pendingAIcard" onclick="togglePendingModal()">
+                    <div class="profile-stat-label">Pending AI</div>
+                    <div class="profile-stat-value">{{ pending_submissions }}</div>
+                </div>
             </div>
         </div>
-        <div class="profile-stats">
-            <div class="profile-stat-card">
-                <div class="profile-stat-label">Total Submissions</div>
-                <div class="profile-stat-value">{{ total_submissions }}</div>
-            </div>
-            <div class="profile-stat-card">
-                <div class="profile-stat-label">Average Score</div>
-                <div class="profile-stat-value">{{ avg_score }}</div>
-            </div>
-            <div class="profile-stat-card">
-                <div class="profile-stat-label">Pending AI</div>
-                <div class="profile-stat-value">{{ pending_submissions }}</div>
+        
+        <div class="page-top-section-right">
+            <!-- Student Info Header - Compact, Top Right -->
+            <div class="student-info-header">
+                <div class="student-info-header-content">
+                    <div class="student-info-left">
+                        <span class="student-info-name">{{ student.username }}</span>
+                        <span class="student-info-email">{{ student.email }}</span>
+                        {% if student_courses %}
+                        <div class="student-info-courses">
+                            {% for course in student_courses %}
+                            <span class="course-badge">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                </svg>
+                                {{ course.code }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="profile-layout">
-        <div class="card">
-            <h2>Recent Submissions</h2>
+        <div class="card recent-submissions">
+            <h2>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"></path>
+                </svg>
+                Recent Submissions
+            </h2>
             {% if submissions %}
             <div class="submissions-list">
-                {% for s in submissions %}
-                <div class="submission-item">
-                    <div class="submission-meta">
-                        <span class="submission-type-badge">{{ s.submission_type }}</span>
-                        <span class="submission-date">
-                            {{ s.created_at.strftime('%b %d, %Y %H:%M') if s.created_at else 'N/A' }}
-                        </span>
-                    </div>
-                    <div class="submission-meta" style="text-align: right;">
-                        <span class="submission-score">
-                            {% if s.grade and s.grade.score is not none %}
-                                {{ s.grade.score }}%
-                            {% else %}
-                                Pending
-                            {% endif %}
-                        </span>
-                        <div class="submission-actions">
-                            <a href="{{ url_for('view_feedback', submission_id=s.id) }}">View report</a>
-                            <a href="{{ url_for('adjust_grade', submission_id=s.id) }}" class="btn btn-sm btn-warning" style="margin-left: 8px; padding: 4px 12px; background: #f59e0b; color: white; border-radius: 6px; text-decoration: none; font-size: 0.875rem; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                                Adjust Grade
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+                <table class="submissions-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Score</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in submissions %}
+                        <tr>
+                            <td>
+                                <span class="submission-type-badge">{{ s.submission_type }}</span>
+                            </td>
+                            <td>
+                                <span class="submission-date">
+                                    {{ s.created_at.strftime('%b %d, %Y %H:%M') if s.created_at else 'N/A' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if s.grade and s.grade.score is not none %}
+                                    <span class="submission-score">{{ s.grade.score }}%</span>
+                                {% else %}
+                                    <span style="color: var(--text-secondary);">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if s.grade and s.grade.score is not none %}
+                                    <span style="color: #10b981; font-weight: 600;">Graded</span>
+                                {% else %}
+                                    <span style="color: var(--text-secondary);">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="submission-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <a href="{{ url_for('view_feedback', submission_id=s.id) }}" style="font-size: 0.8125rem;">View</a>
+                                    {% if s.grade %}
+                                    <a href="{{ url_for('adjust_grade', submission_id=s.id) }}" class="btn-warning" style="font-size: 0.8125rem; padding: 4px 10px;">
+                                        Adjust
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
             {% else %}
-            <p>No submissions yet.</p>
+            <div class="empty-state">
+                <svg class="empty-state-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"></path>
+                </svg>
+                <p class="empty-state-text">No submissions yet.</p>
+                <a href="/instructor/assignments" class="empty-state-cta">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="12"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                    View Assignments
+                </a>
+            </div>
             {% endif %}
         </div>
 
-        <div class="card">
-            <h2>Goals & Quizzes</h2>
+        <div class="card goals-quizzes">
+            <h2>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 0 0 1.946-.806 3.42 3.42 0 0 1 4.438 0 3.42 3.42 0 0 0 1.946.806 3.42 3.42 0 0 1 3.138 3.138 3.42 3.42 0 0 0 .806 1.946 3.42 3.42 0 0 1 0 4.438 3.42 3.42 0 0 0-.806 1.946 3.42 3.42 0 0 1-3.138 3.138 3.42 3.42 0 0 0-1.946.806 3.42 3.42 0 0 1-4.438 0 3.42 3.42 0 0 0-1.946-.806 3.42 3.42 0 0 1-3.138-3.138 3.42 3.42 0 0 0-.806-1.946 3.42 3.42 0 0 1 0-4.438 3.42 3.42 0 0 0 .806-1.946 3.42 3.42 0 0 1 3.138-3.138z"></path>
+                </svg>
+                Goals & Quizzes
+            </h2>
             <div class="goals-list">
-                <strong>Goals</strong>
+                <div class="section-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                    Goals
+                </div>
                 {% if goals %}
                     {% for g in goals %}
                     <div class="goal-item">
-                        {{ g.goal_name }}: {{ g.current_value }}/{{ g.target_value }}
+                        <div class="goal-header">
+                            <span class="goal-name">{{ g.goal_name }}</span>
+                            <span class="goal-progress-text">{{ g.current_score }}/{{ g.target_score }}</span>
+                        </div>
+                        <div class="goal-progress-bar">
+                            {% set progress_percent = ((g.current_score / g.target_score * 100) if g.target_score > 0 else 0) | round(1) %}
+                            {% set progress_percent = 100 if progress_percent > 100 else progress_percent %}
+                            <div class="goal-progress-fill" style="width: {{ progress_percent }}%"></div>
+                        </div>
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p style="font-size: 0.8rem; color: var(--text-secondary);">No goals defined.</p>
+                    <p class="empty-message">No goals defined.</p>
                 {% endif %}
             </div>
 
-            <div class="quizzes-list" style="margin-top: 12px;">
-                <strong>Quizzes</strong>
+            <div class="quizzes-list">
+                <div class="section-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"></path>
+                    </svg>
+                    Quizzes
+                </div>
                 {% if quizzes %}
                     {% for q in quizzes %}
                     <div class="quiz-item">
-                        {{ q.quiz_title }} - Score: {{ q.score }}
-                        <a href="{{ url_for('quiz_review', quiz_id=q.id) }}" style="margin-left:8px; font-size:0.75rem; color: var(--accent); text-decoration:none;">
-                            View review
+                        <div>
+                            <strong>{{ q.quiz_title }}</strong> - Score: {{ q.score }}%
+                        </div>
+                        <a href="{{ url_for('quiz_review', quiz_id=q.id) }}">
+                            View Review
                         </a>
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p style="font-size: 0.8rem; color: var(--text-secondary);">No quiz records.</p>
+                    <p class="empty-message">No quiz records.</p>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <!-- Academic Reports Section -->
-    <div class="academic-reports-section">
-        <div class="academic-reports-card">
-            <h3>Academic Reports</h3>
-            <div class="academic-reports-content">
-                <p class="academic-reports-description">Export {{ student.username }}'s full academic history to PDF or CSV files.</p>
-                <div class="academic-reports-buttons">
-                    <a href="{{ url_for('instructor_export_pdf', student_id=student.id) }}" download class="export-btn export-btn-pdf">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
+    <!-- Bottom Section: Charts & Academic Reports -->
+    <div class="profile-layout-bottom">
+        <!-- Left Column: Academic Reports + Category Breakdown -->
+        <div class="academic-reports-section">
+            <!-- Academic Reports - Top -->
+            <div class="academic-reports-card">
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2z"></path>
+                    </svg>
+                    Academic Reports
+                </h3>
+                <div class="academic-reports-content">
+                    <p class="academic-reports-description">Export {{ student.username }}'s full academic history to PDF or CSV files.</p>
+                    <div class="academic-reports-buttons">
+                        <a href="{{ url_for('instructor_export_pdf', student_id=student.id) }}" download class="export-btn export-btn-pdf">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                            Export PDF
+                        </a>
+                        <a href="{{ url_for('instructor_export_csv', student_id=student.id) }}" download class="export-btn export-btn-csv">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Export CSV
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Breakdown - Below Academic Reports -->
+            {% set graded_subs_count = submissions|selectattr('grade')|list|length %}
+            {% if submissions and graded_subs_count > 0 %}
+            <div class="category-breakdown-section">
+                <div class="chart-card">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm0 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10m-6 0a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2m0 0V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"></path>
                         </svg>
-                        Export PDF
-                    </a>
-                    <a href="{{ url_for('instructor_export_csv', student_id=student.id) }}" download class="export-btn export-btn-csv">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        Export CSV
-                    </a>
+                        Category Breakdown
+                    </h3>
+                    <div class="category-breakdown">
+                        {% set category_scores = {} %}
+                        {% for s in submissions %}
+                            {% if s.grade and s.grade.score is not none %}
+                                {% set cat = s.submission_type %}
+                                {% if cat not in category_scores %}
+                                    {% set _ = category_scores.update({cat: []}) %}
+                                {% endif %}
+                                {% set _ = category_scores[cat].append(s.grade.score) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% for category, scores in category_scores.items() %}
+                            {% set avg = (scores | sum / scores | length) | round(1) %}
+                            <div class="category-item">
+                                <span class="category-name">{{ category }}</span>
+                                <span class="category-value">{{ avg }}%</span>
+                            </div>
+                        {% endfor %}
+                        {% if not category_scores %}
+                            <p class="empty-message">No category data available.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column: Performance Trend -->
+        {% if submissions and graded_subs_count > 0 %}
+        <div class="charts-section">
+            <div class="chart-card">
+                <h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13l4-4 4 4M3 17l4-4 4 4m5-8h4m-2 4h4m-6 4h4"></path>
+                    </svg>
+                    Performance Trend
+                </h3>
+                <div class="chart-wrapper">
+                    <canvas id="performanceTrendChart"></canvas>
                 </div>
             </div>
         </div>
+        {% else %}
+        <!-- Empty state for charts when no data -->
+        <div class="charts-section">
+            <div class="chart-card">
+                <p class="empty-message">No performance data available yet.</p>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
-    <div style="margin-top:16px;">
-        <a href="{{ url_for('instructor_students') }}" class="back-link">← Back to Students</a>
+    <!-- Pending Submissions Modal -->
+    <div class="modal-overlay" id="pendingModal" onclick="event.target === this && togglePendingModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">Pending Submissions</h3>
+                <button class="modal-close" onclick="togglePendingModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            {% if pending_submissions_list %}
+            <table class="submissions-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in pending_submissions_list %}
+                    <tr>
+                        <td>
+                            <span class="submission-type-badge">{{ s.submission_type }}</span>
+                        </td>
+                        <td>
+                            <span class="submission-date">
+                                {{ s.created_at.strftime('%b %d, %Y %H:%M') if s.created_at else 'N/A' }}
+                            </span>
+                        </td>
+                        <td>
+                            <span style="color: #f59e0b; font-weight: 600;">Pending Review</span>
+                        </td>
+                        <td>
+                            <div class="submission-actions" style="display: flex; gap: 8px;">
+                                <a href="{{ url_for('adjust_grade', submission_id=s.id) }}" class="btn-warning" style="font-size: 0.8125rem; padding: 4px 10px;">
+                                    Review
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="empty-message" style="text-align: center; padding: 32px;">No pending submissions.</p>
+            {% endif %}
+        </div>
     </div>
 </div>
+
+<script>
+function togglePendingModal() {
+    const modal = document.getElementById('pendingModal');
+    if (modal) {
+        modal.classList.toggle('active');
+    }
+}
+
+{% if submissions %}
+document.addEventListener('DOMContentLoaded', function() {
+    // Prepare performance trend data
+    const submissions = [
+        {% for s in submissions | sort(attribute='created_at') %}
+        {
+            date: '{{ s.created_at.strftime("%Y-%m-%d") if s.created_at else "" }}',
+            score: {{ s.grade.score if (s.grade and s.grade.score is not none) else 'null' }},
+            type: '{{ s.submission_type }}'
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    // Filter submissions with grades and group by date
+    const submissionsWithGrades = submissions.filter(s => s.score !== null);
+    const dates = [...new Set(submissionsWithGrades.map(s => s.date))].sort();
+    
+    // Calculate average score per date
+    const dateScores = {};
+    dates.forEach(date => {
+        const daySubs = submissionsWithGrades.filter(s => s.date === date);
+        if (daySubs.length > 0) {
+            const avg = daySubs.reduce((sum, s) => sum + s.score, 0) / daySubs.length;
+            dateScores[date] = Math.round(avg * 10) / 10;
+        }
+    });
+
+    // Prepare chart data
+    const chartLabels = dates.map(d => {
+        const date = new Date(d);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    const chartData = dates.map(d => dateScores[d] || 0);
+
+    // Create performance trend chart
+    const ctx = document.getElementById('performanceTrendChart');
+    if (ctx && chartLabels.length > 0) {
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: 'Average Score',
+                    data: chartData,
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#6366f1',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'var(--card-bg)',
+                        titleColor: 'var(--text-main)',
+                        bodyColor: 'var(--text-main)',
+                        borderColor: 'var(--border-color)',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Score: ' + context.parsed.y + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'var(--border-color)',
+                            display: false
+                        },
+                        ticks: {
+                            color: 'var(--text-secondary)',
+                            font: { size: 11 }
+                        }
+                    },
+                    y: {
+                        min: 0,
+                        max: 100,
+                        grid: {
+                            color: 'var(--border-color)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: 'var(--text-secondary)',
+                            font: { size: 11 },
+                            stepSize: 20,
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endif %}
 {% endblock %}
 
 

@@ -29,64 +29,98 @@
         display: flex;
         align-items: center;
         gap: 6px;
-        padding: 8px 16px;
-        background: #6366f1;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         color: #ffffff;
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         font-weight: 600;
-        font-size: 0.8125rem;
+        font-size: 0.875rem;
         cursor: pointer;
         transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
 
     .btn-add-goal:hover {
-        background: #4f46e5;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
     }
 
     .btn-add-goal svg {
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
         stroke-width: 2;
     }
 
-    /* 3-Column Grid */
-    .goals-grid {
+    /* Summary Panel */
+    .goals-summary-panel {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 16px;
-        align-items: stretch;
+        margin-bottom: 32px;
+        padding: 20px;
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .summary-item {
+        text-align: center;
+    }
+
+    .summary-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .summary-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--text-main);
+        letter-spacing: -0.02em;
+    }
+
+    .summary-value.percentage {
+        color: var(--accent);
+    }
+
+    /* Goals Grid */
+    .goals-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
         width: 100%;
     }
 
     .goal-card {
         background: var(--card-bg);
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 24px;
         border: 1px solid var(--border-color);
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        text-align: center;
         position: relative;
-        opacity: 1;
-        min-height: 280px;
-        height: 100%;
-        box-sizing: border-box;
-    }
-
-    .goal-card.fade-out {
-        opacity: 0;
-        transform: scale(0.95);
-        transition: opacity 0.3s ease, transform 0.3s ease;
+        box-shadow: var(--shadow-sm);
     }
 
     .goal-card:hover {
         border-color: var(--accent);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
     }
 
-    /* Delete Icon - Top Right Corner */
+    .goal-card.completed {
+        opacity: 0.85;
+        background: linear-gradient(135deg, var(--card-bg) 0%, rgba(16, 185, 129, 0.05) 100%);
+    }
+
+    /* Delete Button */
     .goal-delete-btn {
         position: absolute;
         top: 16px;
@@ -96,10 +130,10 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: rgba(148, 163, 184, 0.1);
-        border: 1px solid var(--border-color);
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.2);
         cursor: pointer;
-        color: #94a3b8;
+        color: #ef4444;
         transition: all 0.2s ease;
         border-radius: 8px;
         padding: 0;
@@ -107,127 +141,223 @@
     }
 
     .goal-delete-btn:hover {
-        color: #ef4444; /* text-red-500 */
-        background-color: rgba(239, 68, 68, 0.1); /* bg-red-50 */
+        background: rgba(239, 68, 68, 0.2);
+        transform: scale(1.1);
     }
 
     .goal-delete-btn svg {
-        width: 18px;
-        height: 18px;
-        stroke-width: 2;
+        width: 16px;
+        height: 16px;
+    }
+
+    .goal-header {
+        margin-bottom: 16px;
     }
 
     .goal-name {
-        font-size: 1rem;
-        font-weight: 600;
+        font-size: 1.125rem;
+        font-weight: 700;
         color: var(--text-main);
-        margin-bottom: 12px;
-        width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        padding: 0 48px;
-        line-height: 1.5;
-        min-height: 1.5em;
-        text-align: center;
-        box-sizing: border-box;
+        margin: 0 0 8px 0;
+        padding-right: 40px;
     }
-    
+
+    .goal-meta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
     .goal-category {
         display: inline-block;
-        padding: 4px 10px;
+        padding: 4px 12px;
         border-radius: 12px;
-        font-size: 0.6875rem;
+        font-size: 0.75rem;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 16px;
         background: rgba(99, 102, 241, 0.1);
         color: #6366f1;
         border: 1px solid rgba(99, 102, 241, 0.2);
     }
-    
-    [data-theme="dark"] .goal-category {
-        background: rgba(129, 140, 248, 0.15);
-        color: #818cf8;
-        border-color: rgba(129, 140, 248, 0.3);
+
+    .goal-category.writing {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+        border-color: rgba(59, 130, 246, 0.2);
     }
 
-    /* Thin Circular Progress Ring */
-    .progress-ring-container {
-        position: relative;
-        width: 80px;
-        height: 80px;
-        margin-bottom: 16px;
-        flex-shrink: 0;
+    .goal-category.speaking {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6;
+        border-color: rgba(139, 92, 246, 0.2);
     }
 
-    .progress-ring {
+    .goal-category.quiz {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .goal-status {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .goal-status.in-progress {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+
+    .goal-status.completed {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    /* Progress Section */
+    .goal-progress-section {
+        margin: 20px 0;
+    }
+
+    .progress-bar-container {
         width: 100%;
+        height: 12px;
+        background: var(--hover-bg);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 12px;
+    }
+
+    .progress-bar-fill {
         height: 100%;
-        transform: rotate(-90deg);
+        background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        border-radius: 6px;
+        transition: width 0.6s ease;
+        position: relative;
     }
 
-    .progress-ring-circle {
-        fill: none;
-        stroke-width: 3;
-        stroke-linecap: round;
+    .progress-bar-fill.completed {
+        background: linear-gradient(90deg, #10b981, #16a34a);
     }
 
-    .progress-ring-bg {
-        stroke: var(--hover-bg);
+    .progress-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+        gap: 8px;
     }
 
-    .progress-ring-fill {
-        stroke: var(--accent);
-        stroke-dasharray: 226;
-        transition: stroke-dashoffset 0.6s ease;
-    }
-
-    .progress-text {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+    .progress-stat {
         font-size: 0.875rem;
-        font-weight: 700;
         color: var(--text-main);
+        font-weight: 600;
     }
 
-    .goal-progress-info {
+    .progress-stat-label {
         font-size: 0.75rem;
         color: var(--text-secondary);
-        margin-bottom: 16px;
-        width: 100%;
-        flex-shrink: 0;
+        margin-right: 4px;
     }
 
-    .btn-edit {
-        padding: 8px 16px;
-        background: transparent;
+    .progress-remaining {
         color: var(--accent);
-        border: 1px solid var(--accent);
+        font-weight: 700;
+    }
+
+    .progress-remaining.negative {
+        color: #10b981;
+    }
+
+    .goal-info {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .goal-info svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .auto-updated-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border-radius: 8px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+
+    /* Action Buttons */
+    .goal-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: auto;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn-goal-action {
+        flex: 1;
+        padding: 10px 16px;
         border-radius: 8px;
         font-weight: 600;
         font-size: 0.8125rem;
         cursor: pointer;
         transition: all 0.2s ease;
-        width: 100%;
-        margin-top: auto;
-        flex-shrink: 0;
+        border: 1px solid var(--border-color);
+        background: var(--card-bg);
+        color: var(--text-main);
+    }
+
+    .btn-goal-action:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-edit {
+        color: var(--accent);
+        border-color: var(--accent);
     }
 
     .btn-edit:hover {
         background: var(--accent);
-        color: var(--white);
+        color: #ffffff;
     }
 
+    .btn-complete {
+        color: #10b981;
+        border-color: #10b981;
+    }
 
-    /* Goals Container */
-    #goalsContainer {
-        position: relative;
-        width: 100%;
-        margin-top: 0;
+    .btn-complete:hover {
+        background: #10b981;
+        color: #ffffff;
+    }
+
+    .btn-delete {
+        color: #ef4444;
+        border-color: #ef4444;
+    }
+
+    .btn-delete:hover {
+        background: #ef4444;
+        color: #ffffff;
     }
 
     /* Empty State */
@@ -251,17 +381,8 @@
     .empty-state-illustration {
         width: 160px;
         height: 160px;
-        color: #6366f1; /* indigo-600 */
+        color: #6366f1;
         opacity: 0.6;
-    }
-
-    [data-theme="dark"] .empty-state-illustration {
-        opacity: 0.8;
-    }
-
-    .empty-state-illustration svg {
-        width: 100%;
-        height: 100%;
     }
 
     .empty-state-text {
@@ -272,7 +393,7 @@
         margin: 0;
     }
 
-    /* Modal */
+    /* Modal Styles */
     .modal {
         display: none;
         position: fixed;
@@ -287,16 +408,20 @@
         justify-content: center;
     }
 
+    .modal.active {
+        display: flex;
+    }
+
     .modal-content {
-        background-color: #ffffff; /* bg-white */
+        background-color: #ffffff;
         margin: auto;
-        padding: 32px; /* p-8 */
-        border-radius: 24px; /* rounded-3xl */
+        padding: 32px;
+        border-radius: 24px;
         border: 1px solid var(--border-color);
         width: 90%;
-        max-width: 480px;
+        max-width: 520px;
         position: relative;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* shadow-xl */
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
     }
 
     [data-theme="dark"] .modal-content {
@@ -304,7 +429,7 @@
     }
 
     .close-button {
-        color: #64748b; /* text-slate-500 */
+        color: #64748b;
         position: absolute;
         top: 20px;
         right: 24px;
@@ -321,8 +446,8 @@
     }
 
     .close-button:hover {
-        color: #1e293b; /* text-slate-800 */
-        background-color: #f1f5f9; /* bg-slate-100 */
+        color: #1e293b;
+        background-color: #f1f5f9;
     }
 
     [data-theme="dark"] .close-button:hover {
@@ -331,7 +456,7 @@
     }
 
     .modal-content h3 {
-        color: #1e293b; /* text-slate-800 */
+        color: #1e293b;
         margin-bottom: 24px;
         font-size: 1.5rem;
         font-weight: 700;
@@ -343,27 +468,25 @@
     }
 
     .form-group {
-        margin-bottom: 16px;
+        margin-bottom: 20px;
     }
 
     .form-label {
         display: block;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
         font-weight: 600;
-        font-size: 0.75rem;
+        font-size: 0.8125rem;
         color: var(--text-main);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
     }
 
     .form-input,
     .form-select {
         width: 100%;
         padding: 12px 16px;
-        border: 1px solid #e2e8f0; /* border-slate-200 */
-        border-radius: 12px; /* rounded-xl */
-        background: #ffffff; /* bg-white */
-        color: #1e293b; /* text-slate-800 */
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #ffffff;
+        color: #1e293b;
         font-size: 0.9375rem;
         transition: all 0.2s ease;
         box-sizing: border-box;
@@ -379,8 +502,14 @@
     .form-input:focus,
     .form-select:focus {
         outline: none;
-        border-color: #4f46e5; /* border-indigo-600 */
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); /* ring-indigo-600 */
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .form-input[readonly] {
+        background: var(--hover-bg);
+        cursor: not-allowed;
+        color: var(--text-secondary);
     }
 
     .form-select {
@@ -393,32 +522,33 @@
         padding-right: 40px;
     }
 
+    .form-help {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+
     .btn-submit {
         width: 100%;
         padding: 14px 24px;
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); /* Indigo gradient */
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         color: #ffffff;
         border: none;
-        border-radius: 12px; /* rounded-xl */
+        border-radius: 12px;
         font-weight: 600;
         font-size: 0.9375rem;
         cursor: pointer;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); /* shadow-lg shadow-indigo-200 */
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         margin-top: 8px;
     }
 
     .btn-submit:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
     }
 
-    .btn-submit:active {
-        transform: translateY(0);
-    }
-
-    /* Delete Confirmation Modal */
+    /* Delete Modal */
     .delete-modal {
         display: none;
         position: fixed;
@@ -433,16 +563,20 @@
         justify-content: center;
     }
 
+    .delete-modal.active {
+        display: flex;
+    }
+
     .delete-modal-content {
         background-color: #ffffff;
         margin: auto;
         padding: 32px;
-        border-radius: 24px; /* rounded-3xl */
+        border-radius: 24px;
         border: 1px solid var(--border-color);
         width: 90%;
         max-width: 420px;
         position: relative;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
     }
 
     [data-theme="dark"] .delete-modal-content {
@@ -454,7 +588,6 @@
         margin-bottom: 12px;
         font-size: 1.5rem;
         font-weight: 700;
-        letter-spacing: -0.02em;
     }
 
     [data-theme="dark"] .delete-modal-content h3 {
@@ -465,11 +598,6 @@
         color: #64748b;
         margin-bottom: 24px;
         font-size: 0.9375rem;
-        line-height: 1.6;
-    }
-
-    [data-theme="dark"] .delete-modal-content p {
-        color: #cbd5e1;
     }
 
     .delete-modal-actions {
@@ -480,60 +608,40 @@
 
     .btn-cancel {
         padding: 12px 24px;
-        background: #f1f5f9; /* bg-slate-100 */
-        color: #475569; /* text-slate-600 */
+        background: #f1f5f9;
+        color: #475569;
         border: none;
         border-radius: 12px;
         font-weight: 600;
-        font-size: 0.9375rem;
         cursor: pointer;
         transition: all 0.2s ease;
     }
 
     .btn-cancel:hover {
-        background: #e2e8f0; /* bg-slate-200 */
-        color: #334155; /* text-slate-700 */
-    }
-
-    [data-theme="dark"] .btn-cancel {
-        background: #334155;
-        color: #cbd5e1;
-    }
-
-    [data-theme="dark"] .btn-cancel:hover {
-        background: #475569;
+        background: #e2e8f0;
     }
 
     .btn-delete-confirm {
         padding: 12px 24px;
-        background: #ef4444; /* bg-red-500 */
+        background: #ef4444;
         color: #ffffff;
         border: none;
         border-radius: 12px;
         font-weight: 600;
-        font-size: 0.9375rem;
         cursor: pointer;
         transition: all 0.2s ease;
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
     }
 
     .btn-delete-confirm:hover {
-        background: #dc2626; /* bg-red-600 */
-        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
-        transform: translateY(-1px);
+        background: #dc2626;
     }
 
-    .btn-delete-confirm:active {
-        transform: translateY(0);
-    }
-
-    @media (max-width: 968px) {
-        .goals-grid {
-            grid-template-columns: repeat(2, 1fr);
+    @media (max-width: 768px) {
+        .goals-summary-panel {
+            grid-template-columns: 1fr;
+            gap: 16px;
         }
-    }
 
-    @media (max-width: 640px) {
         .goals-grid {
             grid-template-columns: 1fr;
         }
@@ -556,44 +664,115 @@
     </button>
 </div>
 
+<!-- Summary Panel -->
+{% if goals_summary %}
+<div class="goals-summary-panel">
+    <div class="summary-item">
+        <div class="summary-label">Active Goals</div>
+        <div class="summary-value">{{ goals_summary.active_count }}</div>
+    </div>
+    <div class="summary-item">
+        <div class="summary-label">Completed Goals</div>
+        <div class="summary-value">{{ goals_summary.completed_count }}</div>
+    </div>
+    <div class="summary-item">
+        <div class="summary-label">Average Progress</div>
+        <div class="summary-value percentage">{{ goals_summary.average_progress }}%</div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Goals Container -->
 <div id="goalsContainer">
     <div class="goals-grid" id="goalsGrid" style="display: {% if goals|length > 0 %}grid{% else %}none{% endif %};">
         {% for goal in goals %}
-        <div class="goal-card" id="goal-card-{{ goal.id }}">
-            <!-- Delete Button - Top Right Corner -->
-            <button class="goal-delete-btn" onclick="openDeleteModal({{ goal.id }}, '{{ goal.goal_name }}')" title="Delete Goal">
+        {% set target = goal.target_score if goal.target_score else 100 %}
+        {% set current = goal.current_score if goal.current_score is defined else 0 %}
+        {% set progress_percent = ((current / target) * 100) if target > 0 else 0 %}
+        {% set progress_percent = progress_percent if progress_percent <= 100 else 100 %}
+        {% set remaining = target - current %}
+        {% if goal.updated_at and now %}
+            {% set days_ago = (now - goal.updated_at).days %}
+        {% else %}
+            {% set days_ago = None %}
+        {% endif %}
+        
+        <div class="goal-card {% if goal.status == 'Completed' %}completed{% endif %}" id="goal-card-{{ goal.id }}">
+            <!-- Delete Button -->
+            <button class="goal-delete-btn" onclick="openDeleteModal({{ goal.id }}, '{{ goal.title or goal.goal_name }}')" title="Delete Goal">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                 </svg>
             </button>
             
-            <h3 class="goal-name">{{ goal.goal_name }}</h3>
-            
-            {% if goal.category %}
-            <span class="goal-category">{{ goal.category }}</span>
-            {% endif %}
-            
-            <div class="progress-ring-container">
-                <svg class="progress-ring" viewBox="0 0 80 80">
-                    <circle class="progress-ring-circle progress-ring-bg" cx="40" cy="40" r="36"></circle>
-                    {% set progress_percent = ((goal.current_value / goal.target_value) * 100) if goal.target_value > 0 else 0 %}
-                    {% set progress_percent = progress_percent if progress_percent <= 100 else 100 %}
-                    <circle class="progress-ring-circle progress-ring-fill" cx="40" cy="40" r="36" 
-                            style="stroke-dashoffset: {{ 226 - (226 * (progress_percent / 100)) }};"></circle>
-                </svg>
-                <div class="progress-text">{{ progress_percent | round }}%</div>
+            <div class="goal-header">
+                <h3 class="goal-name">{{ goal.title or goal.goal_name }}</h3>
+                <div class="goal-meta">
+                    <span class="goal-category {{ goal.category.lower() }}">{{ goal.category }}</span>
+                    <span class="goal-status {% if goal.status == 'Completed' %}completed{% else %}in-progress{% endif %}">{{ goal.status }}</span>
+                </div>
             </div>
             
-            <div class="goal-progress-info">{{ goal.current_value }} / {{ goal.target_value }}</div>
+            <!-- Progress Section -->
+            <div class="goal-progress-section">
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill {% if goal.status == 'Completed' %}completed{% endif %}" style="width: {{ progress_percent }}%;"></div>
+                </div>
+                
+                <div class="progress-stats">
+                    <div class="progress-stat">
+                        <span class="progress-stat-label">Current / Target:</span>
+                        <span>{{ current | round(1) }} / {{ target | round(1) }}</span>
+                    </div>
+                    <div class="progress-stat">
+                        <span class="progress-stat-label">Remaining:</span>
+                        <span class="progress-remaining {% if remaining <= 0 %}negative{% endif %}">
+                            {% if remaining > 0 %}+{{ remaining | round(1) }}{% else %}Achieved!{% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="goal-info">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>Last updated: {% if days_ago is none %}No recent activity{% elif days_ago == 0 %}Today{% elif days_ago == 1 %}1 day ago{% else %}{{ days_ago }} days ago{% endif %}</span>
+                    <span class="auto-updated-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        Auto-updated
+                    </span>
+                </div>
+                
+                {% if goal.target_date %}
+                <div class="goal-info" style="margin-top: 4px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span>Target date: {{ goal.target_date.strftime('%B %d, %Y') if goal.target_date else 'Not set' }}</span>
+                </div>
+                {% endif %}
+            </div>
             
-            <button class="btn-edit" onclick="editGoal({{ goal.id }})">Edit</button>
+            <!-- Action Buttons -->
+            <div class="goal-actions">
+                <button class="btn-goal-action btn-edit" onclick="editGoal({{ goal.id }})">Edit</button>
+                {% if goal.status != 'Completed' %}
+                <button class="btn-goal-action btn-complete" onclick="markAsCompleted({{ goal.id }})">Mark Complete</button>
+                {% endif %}
+            </div>
         </div>
         {% endfor %}
     </div>
 
-    <!-- Single Empty State - Centered -->
+    <!-- Empty State -->
     <div class="empty-state" id="emptyState" style="display: {% if goals|length > 0 %}none{% else %}flex{% endif %};">
         <div class="empty-state-content">
             <div class="empty-state-illustration">
@@ -605,7 +784,6 @@
                             <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
                         </linearGradient>
                     </defs>
-                    <!-- Target Icon -->
                     <g transform="translate(100, 100)">
                         <circle cx="0" cy="0" r="40" fill="none" stroke="currentColor" stroke-width="3" opacity="0.3"/>
                         <circle cx="0" cy="0" r="25" fill="none" stroke="currentColor" stroke-width="3" opacity="0.5"/>
@@ -613,69 +791,55 @@
                     </g>
                 </svg>
             </div>
-            <div class="empty-state-text">You haven't set any goals yet.</div>
-        </div>
-    </div>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="delete-modal" style="display: none;">
-    <div class="delete-modal-content">
-        <h3>Delete Goal</h3>
-        <p id="deleteModalMessage">Are you sure you want to delete this goal? This action cannot be undone.</p>
-        <div class="delete-modal-actions">
-            <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
-            <button class="btn-delete-confirm" id="confirmDeleteBtn" onclick="confirmDelete()">Yes, Delete</button>
-        </div>
-    </div>
-</div>
-
-<!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="delete-modal" style="display: none;">
-    <div class="delete-modal-content">
-        <h3>Delete Goal</h3>
-        <p id="deleteModalMessage">Are you sure you want to delete this goal? This action cannot be undone.</p>
-        <div class="delete-modal-actions">
-            <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
-            <button class="btn-delete-confirm" id="confirmDeleteBtn" onclick="confirmDelete()">Yes, Delete</button>
+            <div class="empty-state-text">You haven't set any goals yet.<br>Start by creating your first learning goal!</div>
         </div>
     </div>
 </div>
 
 <!-- Add/Edit Goal Modal -->
-<div id="addGoalModal" class="modal" style="display: none;">
+<div id="addGoalModal" class="modal">
     <div class="modal-content">
         <span class="close-button" onclick="closeGoalModal()">&times;</span>
         <h3 id="modalTitle">Add New Learning Goal</h3>
         <form id="addGoalForm" onsubmit="submitGoal(event)">
             <input type="hidden" id="goal_id" name="goal_id" value="">
+            
             <div class="form-group">
-                <label class="form-label" for="goal_name">Goal Name</label>
+                <label class="form-label" for="goal_name">Goal Name *</label>
                 <input type="text" id="goal_name" name="goal_name" class="form-input" placeholder="e.g., Master IELTS Speaking" required>
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="category">Category</label>
+                <label class="form-label" for="category">Category *</label>
                 <select id="category" name="category" class="form-select" required>
                     <option value="">Select a category</option>
-                    <option value="Speaking">Speaking</option>
                     <option value="Writing">Writing</option>
+                    <option value="Speaking">Speaking</option>
+                    <option value="Quiz">Quiz</option>
                     <option value="Grammar">Grammar</option>
                     <option value="Vocabulary">Vocabulary</option>
                     <option value="Reading">Reading</option>
-                    <option value="General">General</option>
+                    <option value="Overall">Overall</option>
                 </select>
+                <div class="form-help">Score is auto-updated based on your assessment results in this category</div>
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="target_value">Target Value</label>
-                <input type="number" id="target_value" name="target_value" class="form-input" placeholder="e.g., 5 (Weekly Essays)" min="1" required>
-                <small style="color: #64748b; font-size: 0.75rem; margin-top: 4px; display: block;">Weekly target count</small>
+                <label class="form-label" for="target_value">Target Score *</label>
+                <input type="number" id="target_value" name="target_value" class="form-input" placeholder="e.g., 85" min="0" max="100" step="0.1" required>
+                <div class="form-help">Target score between 0-100</div>
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="current_value">Current Value</label>
-                <input type="number" id="current_value" name="current_value" class="form-input" placeholder="e.g., 0" value="0" min="0" required>
+                <label class="form-label" for="current_value">Current Score</label>
+                <input type="number" id="current_value" name="current_value" class="form-input" value="0" readonly>
+                <div class="form-help">Auto-updated from your latest assessment results</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="target_date">Target Date (Optional)</label>
+                <input type="date" id="target_date" name="target_date" class="form-input" min="">
+                <div class="form-help">Set a deadline for this goal (must be today or later)</div>
             </div>
 
             <button type="submit" class="btn-submit">
@@ -686,36 +850,99 @@
     </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="delete-modal">
+    <div class="delete-modal-content">
+        <h3>Delete Goal</h3>
+        <p id="deleteModalMessage">Are you sure you want to delete this goal? This action cannot be undone.</p>
+        <div class="delete-modal-actions">
+            <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+            <button class="btn-delete-confirm" id="confirmDeleteBtn" onclick="confirmDelete()">Yes, Delete</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    let goalToDelete = null;
+
+    // Set minimum date to today when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        const targetDateInput = document.getElementById('target_date');
+        if (targetDateInput) {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            targetDateInput.setAttribute('min', todayStr);
+        }
+    });
+
     function openGoalModal(goalId = null) {
         const modal = document.getElementById('addGoalModal');
-        const form = document.getElementById('addGoalForm');
+        const form = document.getElementById('addGoalModal');
         const modalTitle = document.getElementById('modalTitle');
         const goalIdInput = document.getElementById('goal_id');
+        const targetDateInput = document.getElementById('target_date');
         
-        modal.style.display = 'flex';
+        // Set minimum date to today
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        if (targetDateInput) {
+            targetDateInput.setAttribute('min', todayStr);
+        }
+        
+        modal.classList.add('active');
         
         if (goalId) {
-            // Edit mode - load goal data
             modalTitle.textContent = 'Edit Learning Goal';
             fetch(`/goals/${goalId}`)
-                .then(response => response.json())
+                .then(async response => {
+                    // Check if response is JSON
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        const text = await response.text();
+                        console.error('Server returned non-JSON response:', text.substring(0, 200));
+                        throw new Error('Server Error: Could not load goal. Please try again.');
+                    }
+                    
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success && data.goal) {
                         const goal = data.goal;
-                        document.getElementById('goal_name').value = goal.goal_name || '';
-                        document.getElementById('category').value = goal.category || 'General';
-                        document.getElementById('target_value').value = goal.target_value || '';
-                        document.getElementById('current_value').value = goal.current_value || '0';
+                        const targetDateInput = document.getElementById('target_date');
+                        
+                        // Set minimum date to today for edit mode
+                        const today = new Date();
+                        const todayStr = today.toISOString().split('T')[0];
+                        if (targetDateInput) {
+                            targetDateInput.setAttribute('min', todayStr);
+                        }
+                        
+                        document.getElementById('goal_name').value = goal.title || goal.goal_name || '';
+                        document.getElementById('category').value = goal.category || '';
+                        document.getElementById('target_value').value = goal.target_score || goal.target_value || '';
+                        document.getElementById('current_value').value = goal.current_score !== undefined ? goal.current_score : (goal.current_value || '0');
+                        if (goal.target_date && targetDateInput) {
+                            const date = new Date(goal.target_date);
+                            const dateStr = date.toISOString().split('T')[0];
+                            // Only set if date is today or in the future
+                            if (dateStr >= todayStr) {
+                                targetDateInput.value = dateStr;
+                            } else {
+                                // If existing date is in past, clear it
+                                targetDateInput.value = '';
+                            }
+                        }
                         goalIdInput.value = goal.id;
+                    } else {
+                        throw new Error(data.message || 'Failed to load goal');
                     }
                 })
                 .catch(error => {
                     console.error('Error loading goal:', error);
+                    alert(error.message || 'Could not load goal. Please try again.');
                     resetGoalForm();
                 });
         } else {
-            // Add mode
             resetGoalForm();
         }
     }
@@ -724,16 +951,25 @@
         const form = document.getElementById('addGoalForm');
         const modalTitle = document.getElementById('modalTitle');
         const goalIdInput = document.getElementById('goal_id');
+        const targetDateInput = document.getElementById('target_date');
         
         form.reset();
         document.getElementById('current_value').value = '0';
         document.getElementById('category').value = '';
         goalIdInput.value = '';
         modalTitle.textContent = 'Add New Learning Goal';
+        
+        // Set minimum date to today
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        if (targetDateInput) {
+            targetDateInput.setAttribute('min', todayStr);
+            targetDateInput.value = ''; // Clear the date input
+        }
     }
 
     function closeGoalModal() {
-        document.getElementById('addGoalModal').style.display = 'none';
+        document.getElementById('addGoalModal').classList.remove('active');
         resetGoalForm();
     }
 
@@ -745,18 +981,30 @@
         const submitBtn = form.querySelector('.btn-submit');
         const submitText = document.getElementById('submitText');
         const submitLoading = document.getElementById('submitLoading');
+        const targetDateInput = document.getElementById('target_date');
         
-        // Show loading state
+        // Validate target date if provided
+        if (targetDateInput && targetDateInput.value) {
+            const selectedDate = new Date(targetDateInput.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+            selectedDate.setHours(0, 0, 0, 0);
+            
+            if (selectedDate < today) {
+                alert('Target date cannot be in the past. Please select today or a future date.');
+                targetDateInput.focus();
+                return;
+            }
+        }
+        
         submitText.style.display = 'none';
         submitLoading.style.display = 'inline';
         submitBtn.disabled = true;
         
-        // Determine if edit or create
         const goalId = document.getElementById('goal_id').value;
         const url = goalId ? `/goals/${goalId}` : '/goals';
         const method = goalId ? 'PUT' : 'POST';
         
-        // Submit via fetch (AJAX)
         fetch(url, {
             method: method,
             body: formData,
@@ -764,28 +1012,33 @@
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => {
-            if (response.redirected) {
+        .then(async response => {
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                // If not JSON, it's likely an HTML error page
+                const text = await response.text();
+                console.error('Server returned non-JSON response:', text.substring(0, 200));
+                throw new Error('Server Error: Could not save goal. Please try again.');
+            }
+            
+            // Parse JSON response
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
                 // Success - reload page to show new goal
                 window.location.reload();
-            } else if (response.ok) {
-                return response.json().then(data => {
-                    if (data.success) {
-                        // Success - reload page to show new goal
-                        window.location.reload();
-                    } else {
-                        throw new Error(data.message || 'Failed to add goal');
-                    }
-                });
             } else {
-                return response.json().then(data => {
-                    throw new Error(data.message || 'Failed to add goal');
-                });
+                // Error from server
+                throw new Error(data.message || 'Failed to save goal');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert(error.message || 'An error occurred while adding the goal. Please try again.');
+            // Display user-friendly error message
+            const errorMessage = error.message || 'An error occurred while saving the goal. Please try again.';
+            alert(errorMessage);
+            
             // Reset button state
             submitText.style.display = 'inline';
             submitLoading.style.display = 'none';
@@ -797,27 +1050,65 @@
         openGoalModal(goalId);
     }
 
-    window.onclick = function(event) {
-        const modal = document.getElementById('addGoalModal');
-        if (event.target == modal) {
-            closeGoalModal();
-        }
+    function markAsCompleted(goalId) {
+        if (!confirm('Mark this goal as completed?')) return;
+        
+        fetch(`/goals/${goalId}/complete`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(async response => {
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Server returned non-JSON response:', text.substring(0, 200));
+                throw new Error('Server Error: Could not complete goal. Please try again.');
+            }
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                window.location.reload();
+            } else {
+                throw new Error(data.message || 'Failed to complete goal');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error.message || 'An error occurred. Please try again.');
+        });
     }
-
-    // Delete Goal Functions
-    let goalToDelete = null;
 
     function openDeleteModal(goalId, goalName) {
         goalToDelete = goalId;
         const modal = document.getElementById('deleteModal');
         const message = document.getElementById('deleteModalMessage');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        // Reset button state in case modal was previously used
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Delete';
+        }
+        
         message.textContent = `Are you sure you want to delete "${goalName}"? This action cannot be undone.`;
-        modal.style.display = 'flex';
+        modal.classList.add('active');
     }
 
     function closeDeleteModal() {
         const modal = document.getElementById('deleteModal');
-        modal.style.display = 'none';
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        // Reset button state when closing modal
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Delete';
+        }
+        
+        modal.classList.remove('active');
         goalToDelete = null;
     }
 
@@ -825,67 +1116,88 @@
         if (!goalToDelete) return;
 
         const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        // Prevent multiple simultaneous delete operations
+        if (confirmBtn.disabled) {
+            console.log('Delete operation already in progress');
+            return;
+        }
+        
         const originalText = confirmBtn.textContent;
+        const currentGoalId = goalToDelete; // Store current goal ID to avoid race conditions
         confirmBtn.disabled = true;
         confirmBtn.textContent = 'Deleting...';
 
-        // Delete via AJAX
-        fetch(`/delete-goal/${goalToDelete}`, {
+        // Set a timeout to prevent button from staying disabled forever
+        const timeoutId = setTimeout(() => {
+            if (confirmBtn.disabled) {
+                console.error('Delete operation timed out');
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = originalText;
+                alert('The delete operation is taking too long. Please try again.');
+            }
+        }, 30000); // 30 second timeout
+
+        fetch(`/delete-goal/${currentGoalId}`, {
             method: 'POST',
             headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/json'
+                'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                throw new Error('Failed to delete goal');
+        .then(async response => {
+            clearTimeout(timeoutId); // Clear timeout on response
+            
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Server returned non-JSON response:', text.substring(0, 200));
+                throw new Error('Server Error: Could not delete goal. Please try again.');
             }
-        })
-        .then(data => {
-            if (data.success) {
-                // Find and fade out the card
-                const card = document.getElementById(`goal-card-${goalToDelete}`);
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                const card = document.getElementById(`goal-card-${currentGoalId}`);
                 if (card) {
-                    card.classList.add('fade-out');
-                    
-                    // Remove card after animation
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.95)';
                     setTimeout(() => {
                         card.remove();
-                        
-                        // Check if grid is empty - use single empty state
                         const grid = document.getElementById('goalsGrid');
                         const emptyState = document.getElementById('emptyState');
-                        const remainingCards = grid.querySelectorAll('.goal-card:not(.fade-out)');
-                        
+                        const remainingCards = grid.querySelectorAll('.goal-card');
                         if (remainingCards.length === 0 && emptyState) {
-                            // Show single empty state and hide grid
                             emptyState.style.display = 'flex';
                             grid.style.display = 'none';
-                        } else if (remainingCards.length > 0 && emptyState) {
-                            // Hide empty state and show grid
-                            emptyState.style.display = 'none';
-                            grid.style.display = 'grid';
                         }
                     }, 300);
                 }
-                
                 closeDeleteModal();
             } else {
                 throw new Error(data.message || 'Failed to delete goal');
             }
         })
         .catch(error => {
+            clearTimeout(timeoutId); // Clear timeout on error
             console.error('Error:', error);
-            alert(error.message || 'An error occurred while deleting the goal. Please try again.');
+            alert(error.message || 'An error occurred. Please try again.');
             confirmBtn.disabled = false;
             confirmBtn.textContent = originalText;
+        })
+        .finally(() => {
+            // Ensure button is restored even if something unexpected happens
+            if (confirmBtn && confirmBtn.disabled && confirmBtn.textContent === 'Deleting...') {
+                setTimeout(() => {
+                    if (confirmBtn.disabled) {
+                        confirmBtn.disabled = false;
+                        confirmBtn.textContent = originalText;
+                    }
+                }, 100);
+            }
         });
     }
 
-    // Close modals when clicking outside
     window.onclick = function(event) {
         const addModal = document.getElementById('addGoalModal');
         const deleteModal = document.getElementById('deleteModal');
@@ -898,7 +1210,6 @@
         }
     }
 
-    // Close modals on Escape key
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             closeGoalModal();
@@ -907,4 +1218,3 @@
     });
 </script>
 {% endblock %}
-

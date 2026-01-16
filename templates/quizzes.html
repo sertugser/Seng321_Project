@@ -14,6 +14,11 @@
         background: #0f172a; /* Slate 900 */
     }
 
+    /* Override content-wrapper padding for quizzes page */
+    .content-wrapper {
+        padding: 0 !important;
+    }
+
     /* Main Wrapper - Flex Column, Full Screen, Start Alignment */
     .quizzes-container {
         display: flex;
@@ -28,39 +33,248 @@
         overflow: hidden; /* Disable container scrolling */
     }
 
-    /* Header with Filter Bar - Top Left, Milimetrik Alignment with sidebar-top border line */
+    /* Header with Filter Bar - Centered with Proper Spacing */
     .quizzes-header {
         width: 100%;
-        padding-left: 0; /* Override content-wrapper padding */
-        padding-top: 0; /* Hard-override: Remove all pt-8, pt-10 values - force zero vertical space */
-        padding-bottom: 16px; /* pb-4 */
-        padding-right: 0; /* Override content-wrapper padding */
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 40px 32px 24px 32px;
         display: flex;
         flex-direction: column;
-        gap: 16px; /* Match assignments exactly - title and subtitle spacing */
+        gap: 24px;
         background: transparent;
         border: none;
         box-shadow: none;
-        margin: 0;
-        margin-top: -8px; /* Fine-tuned negative margin: Reduced from -16px to -8px (4-8px down adjustment) - milimetrik alignment with sidebar-top border line */
-        margin-left: 32px; /* pl-8 */
-        margin-right: 32px;
+        box-sizing: border-box;
+    }
+
+    .quizzes-title-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        gap: 16px;
+        min-width: 0; /* Allow flex items to shrink */
     }
 
     .quizzes-title {
-        font-size: 1.5rem;
+        font-size: 2rem;
         font-weight: 700;
         color: var(--text-main);
         letter-spacing: -0.02em;
         margin: 0;
+        text-align: center;
+        width: 100%;
+    }
+
+    /* Filter Bar with Button - Centered Layout */
+    .filter-bar-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    /* Start Quiz Button - Aligned with Filter Bar */
+    .btn-start-quiz-top {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: var(--white) !important;
+        padding: 6px 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        white-space: nowrap;
+        flex-shrink: 0;
+        line-height: 1.5;
+        height: fit-content;
+    }
+
+    .btn-start-quiz-top:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    }
+
+    .btn-start-quiz-top:active {
+        transform: translateY(0);
+    }
+
+    .btn-start-quiz-top svg {
+        width: 14px;
+        height: 14px;
+        stroke-width: 2;
+        flex-shrink: 0;
+    }
+
+    /* Quiz Selection Modal */
+    .quiz-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .quiz-modal.active {
+        display: flex;
+    }
+
+    .quiz-modal-content {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 32px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+    }
+
+    .quiz-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .quiz-modal-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+    }
+
+    .quiz-modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .quiz-modal-close:hover {
+        background: var(--hover-bg);
+        color: var(--text-main);
+    }
+
+    .quiz-category-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .quiz-category-card {
+        background: var(--card-bg);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        position: relative;
+    }
+
+    .quiz-category-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .quiz-category-card:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(99, 102, 241, 0.15);
+    }
+
+    .quiz-category-card.loading {
+        opacity: 0.6;
+        cursor: wait;
+        pointer-events: none;
+    }
+
+    .quiz-category-card.loading .quiz-category-icon {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    .quiz-category-icon {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 12px;
+        background: rgba(99, 102, 241, 0.1);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent);
+    }
+
+    .quiz-category-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin: 0;
+    }
+
+    .quiz-modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .btn-modal-cancel {
+        padding: 10px 20px;
+        background: var(--hover-bg);
+        color: var(--text-main);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-modal-cancel:hover {
+        background: var(--active-bg);
     }
 
 
-    /* Filter Bar - Flex Start, Gap 4, Full Width (Matches assignments) */
+    /* Filter Bar - Centered */
     .filter-bar {
         display: flex;
-        justify-content: flex-start;
-        gap: 12px; /* Match assignments exactly */
+        justify-content: center;
+        gap: 12px;
         flex-wrap: wrap;
         width: 100%;
         padding: 0;
@@ -105,60 +319,60 @@
         box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3); /* Soft shadow */
     }
 
-    /* Scrollable Container - Below Filter Bar (No Scrolling) */
+    /* Scrollable Container - Below Filter Bar */
     .quizzes-grid-container {
         width: 100%;
         max-width: 1400px;
-        overflow: hidden; /* Disable all scrolling */
-        padding: 32px;
-        padding-right: 32px;
+        margin: 0 auto;
+        overflow: visible; /* Allow cards to expand on hover */
+        padding: 12px 32px 32px 32px; /* Add top padding for hover expansion */
     }
 
-    /* Quiz Cards Grid - 3 Columns */
+    /* Quiz Cards Grid - Responsive Columns */
     .quizzes-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 24px;
+        grid-template-columns: repeat(1, 1fr);
+        gap: 16px;
         width: 100%;
         padding-bottom: 20px;
+        overflow: visible; /* Allow cards to expand on hover */
     }
 
-    @media (min-width: 1400px) {
-        .quizzes-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    @media (min-width: 1000px) and (max-width: 1399px) {
+    @media (min-width: 640px) {
         .quizzes-grid {
             grid-template-columns: repeat(2, 1fr);
         }
     }
 
-    @media (max-width: 999px) {
+    @media (min-width: 1024px) {
         .quizzes-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(4, 1fr);
         }
     }
 
-    /* Quiz Card - Modern Design */
+    /* Quiz Card - Compact Design */
     .quiz-card {
         background: var(--card-bg);
-        border-radius: 30px; /* rounded-3xl */
-        padding: 24px;
+        border-radius: 12px;
+        padding: 16px;
         border: 1px solid var(--border-color);
         box-shadow: var(--shadow-sm);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 12px;
         cursor: pointer;
+        max-width: 300px;
+        width: 100%;
+        margin: 0 auto;
     }
 
     .quiz-card:hover {
         transform: translateY(-4px);
         box-shadow: var(--shadow-lg);
         border-color: var(--accent);
+        z-index: 10; /* Ensure hovered card appears above others */
+        position: relative;
     }
 
     .quiz-header {
@@ -169,7 +383,7 @@
     }
 
     .quiz-title {
-        font-size: 1.125rem;
+        font-size: 0.9375rem;
         font-weight: 700;
         color: var(--text-main);
         line-height: 1.3;
@@ -192,45 +406,72 @@
         border: 1px solid rgba(99, 102, 241, 0.2);
     }
 
+    /* Dynamic badge colors based on category */
+    .badge-grammar {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+        border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    .badge-vocabulary {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6;
+        border-color: rgba(139, 92, 246, 0.2);
+    }
+
+    .badge-reading {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .badge-mixed {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.2);
+    }
+
     .quiz-meta {
         display: flex;
-        align-items: center;
-        gap: 16px;
-        font-size: 0.8125rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 0.75rem;
         color: var(--text-secondary);
     }
 
     .quiz-meta-item {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
     }
 
     .quiz-meta-item svg {
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
         stroke-width: 2;
         opacity: 0.7;
     }
 
     .btn-start-quiz {
         width: 100%;
-        padding: 12px 20px;
+        padding: 10px 16px;
         background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         color: var(--white);
         border: none;
-        border-radius: 12px;
+        border-radius: 8px;
         font-weight: 600;
-        font-size: 0.9375rem;
+        font-size: 0.8125rem;
         cursor: pointer;
         transition: all 0.3s ease;
         text-decoration: none;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        gap: 6px;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
         margin-top: auto;
+        flex-shrink: 0;
     }
 
     .btn-start-quiz:hover {
@@ -254,11 +495,13 @@
         flex: 1;
         width: 100%;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
         padding: 0;
         margin: 0;
         min-height: 0; /* Allow flex shrinking */
+        overflow-y: auto;
+        overflow-x: visible; /* Allow cards to expand horizontally if needed */
     }
 
     /* Empty State - Clean Design (No Borders/Shadows, Direct on Background) */
@@ -326,31 +569,30 @@
         }
 
         .quizzes-header {
-            margin-bottom: 20px;
-            gap: 12px;
+            padding: 30px 20px 20px 20px;
+            gap: 20px;
         }
 
         .quizzes-title {
-            font-size: 1.25rem;
+            font-size: 1.5rem;
         }
 
-        .quizzes-container {
-            height: auto;
-            min-height: 100vh;
+        .filter-bar-wrapper {
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
         }
 
-        .quizzes-header {
-            padding-left: 0;
-            padding-top: 0; /* Hard-override: Remove all pt- values */
-            padding-bottom: 12px;
-            padding-right: 0;
-            margin-top: -4px; /* Fine-tuned negative margin on mobile: Reduced adjustment for milimetrik alignment */
-            margin-left: 20px;
-            margin-right: 20px;
+        .filter-bar {
+            width: 100%;
+            justify-content: center;
         }
 
-        .quizzes-title {
-            font-size: 1.25rem;
+        .btn-start-quiz-top {
+            width: 100%;
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            flex-shrink: 0;
         }
 
         .filter-bar {
@@ -376,7 +618,21 @@
         }
 
         .quiz-card {
-            padding: 20px;
+            padding: 14px;
+            max-width: 100%;
+        }
+
+        .quiz-title {
+            font-size: 0.875rem;
+        }
+
+        .quiz-meta {
+            font-size: 0.6875rem;
+        }
+
+        .btn-start-quiz {
+            padding: 8px 14px;
+            font-size: 0.75rem;
         }
 
         .empty-state-illustration {
@@ -400,38 +656,45 @@
     <!-- Header with Title and Filter Bar -->
     <div class="quizzes-header">
         <h1 class="quizzes-title">Interactive Quizzes</h1>
-        <div class="filter-bar">
-            <button class="filter-pill active" data-filter="all">All</button>
-            <button class="filter-pill" data-filter="grammar">Grammar</button>
-            <button class="filter-pill" data-filter="vocabulary">Vocab</button>
-            <button class="filter-pill" data-filter="reading">Reading</button>
-        </div>
-    </div>
-
-    <!-- Start New Quiz -->
-    <div class="start-quiz-section" style="margin: 20px 0; text-align: center;">
-        <form action="{{ url_for('start_quiz') }}" method="POST" style="display: inline;">
-            <button type="submit" class="btn-start-quiz-large" style="padding: 15px 30px; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer;">
+        <div class="filter-bar-wrapper">
+            <div class="filter-bar">
+                <button class="filter-pill active" data-filter="all">All</button>
+                <button class="filter-pill" data-filter="grammar">Grammar</button>
+                <button class="filter-pill" data-filter="vocabulary">Vocab</button>
+                <button class="filter-pill" data-filter="reading">Reading</button>
+            </div>
+            <button type="button" class="btn-start-quiz-top" onclick="openQuizModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
                 Start New Quiz
             </button>
-        </form>
+        </div>
     </div>
 
     {% if quizzes and quizzes|length > 0 %}
     <div class="quizzes-content-area">
         <div class="quizzes-grid-container">
-        <div class="quizzes-grid">
+            <div class="quizzes-grid">
             {% for quiz in quizzes %}
-            <div class="quiz-card">
+            <div class="quiz-card" data-category="{% if quiz.category %}{{ quiz.category.lower() }}{% else %}unknown{% endif %}">
                 <div class="quiz-header">
                     <h3 class="quiz-title">{{ quiz.quiz_title or quiz.title }}</h3>
-                    <span class="quiz-type-badge">
-                        {% if 'grammar' in (quiz.quiz_title or quiz.title or '')|lower %}
-                            Grammar
-                        {% elif 'vocab' in (quiz.quiz_title or quiz.title or '')|lower %}
-                            Vocab
-                        {% elif 'reading' in (quiz.quiz_title or quiz.title or '')|lower %}
-                            Reading
+                    <span class="quiz-type-badge {% if quiz.category %}badge-{{ quiz.category.lower() }}{% endif %}">
+                        {% if quiz.category %}
+                            {% if quiz.category.lower() == 'grammar' %}
+                                Grammar
+                            {% elif quiz.category.lower() == 'vocabulary' %}
+                                Vocabulary
+                            {% elif quiz.category.lower() == 'reading' %}
+                                Reading
+                            {% elif quiz.category.lower() == 'mixed' %}
+                                Mixed
+                            {% else %}
+                                {{ quiz.category|title }}
+                            {% endif %}
                         {% else %}
                             Quiz
                         {% endif %}
@@ -528,6 +791,65 @@
     {% endif %}
 </div>
 
+<!-- Quiz Selection Modal -->
+<div id="quizModal" class="quiz-modal">
+    <div class="quiz-modal-content">
+        <div class="quiz-modal-header">
+            <h2 class="quiz-modal-title">Select Quiz Category</h2>
+            <button class="quiz-modal-close" onclick="closeQuizModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="quiz-category-grid">
+            <div class="quiz-category-card" id="quiz-category-grammar" data-category="grammar">
+                <div class="quiz-category-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                </div>
+                <h3 class="quiz-category-name">Grammar</h3>
+            </div>
+            <div class="quiz-category-card" id="quiz-category-vocabulary" data-category="vocabulary">
+                <div class="quiz-category-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                </div>
+                <h3 class="quiz-category-name">Vocabulary</h3>
+            </div>
+            <div class="quiz-category-card" id="quiz-category-reading" data-category="reading">
+                <div class="quiz-category-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                </div>
+                <h3 class="quiz-category-name">Reading</h3>
+            </div>
+            <div class="quiz-category-card" id="quiz-category-mixed" data-category="mixed">
+                <div class="quiz-category-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <h3 class="quiz-category-name">Mixed</h3>
+            </div>
+        </div>
+        <div class="quiz-modal-actions">
+            <button class="btn-modal-cancel" onclick="closeQuizModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // Filter functionality
     const filterPills = document.querySelectorAll('.filter-pill');
@@ -535,20 +857,147 @@
 
     filterPills.forEach(pill => {
         pill.addEventListener('click', function() {
+            // Remove active class from all pills
             filterPills.forEach(p => p.classList.remove('active'));
+            // Add active class to clicked pill
             this.classList.add('active');
             const filter = this.dataset.filter;
 
-            // Filter logic - hide/show cards based on filter
+            // Filter logic - hide/show cards based on data-category attribute
             quizCards.forEach(card => {
-                const cardType = card.querySelector('.quiz-type-badge').textContent.toLowerCase();
-                if (filter === 'all' || cardType.includes(filter)) {
+                const cardCategory = card.getAttribute('data-category');
+                
+                // Handle "all" filter - show all cards except unknown
+                if (filter === 'all') {
+                    if (cardCategory === 'unknown') {
+                        card.style.display = 'none';
+                    } else {
+                        card.style.display = 'flex';
+                    }
+                    return;
+                }
+                
+                // Handle "vocabulary" filter - match both "vocabulary" and "vocab"
+                if (filter === 'vocabulary') {
+                    if (cardCategory === 'vocabulary' || cardCategory === 'vocab') {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                    return;
+                }
+                
+                // Handle other filters (grammar, reading, mixed)
+                if (cardCategory === filter) {
                     card.style.display = 'flex';
                 } else {
                     card.style.display = 'none';
                 }
             });
         });
+    });
+
+    // Quiz Modal Functions
+    function openQuizModal() {
+        document.getElementById('quizModal').classList.add('active');
+    }
+
+    function closeQuizModal() {
+        document.getElementById('quizModal').classList.remove('active');
+    }
+
+    // Initialize quiz category card click handlers
+    document.addEventListener('DOMContentLoaded', function() {
+        const categoryCards = document.querySelectorAll('.quiz-category-card');
+        
+        categoryCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const category = this.getAttribute('data-category');
+                if (category) {
+                    startQuiz(category);
+                }
+            });
+        });
+    });
+
+    // Start quiz with selected category
+    async function startQuiz(category) {
+        // Show loading state
+        const categoryCards = document.querySelectorAll('.quiz-category-card');
+        categoryCards.forEach(card => {
+            card.classList.add('loading');
+        });
+
+        try {
+            // Prepare form data
+            const formData = new FormData();
+            if (category && category !== 'mixed') {
+                formData.append('category', category);
+            } else if (category === 'mixed') {
+                // For mixed, don't send category (will get all categories)
+                formData.append('category', 'mixed');
+            }
+
+            // Send POST request to create quiz
+            const response = await fetch('{{ url_for("start_quiz") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+
+            // Check if response is JSON
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const data = await response.json();
+                
+                if (data.success && data.redirect) {
+                    // Close modal and redirect
+                    closeQuizModal();
+                    window.location.href = data.redirect;
+                } else {
+                    // Handle error from JSON response
+                    alert(data.message || 'Error starting quiz. Please try again.');
+                    categoryCards.forEach(card => {
+                        card.classList.remove('loading');
+                    });
+                }
+            } else {
+                // Handle HTML redirect response
+                if (response.redirected) {
+                    closeQuizModal();
+                    window.location.href = response.url;
+                } else if (response.ok) {
+                    // Fallback: redirect to quiz question page
+                    closeQuizModal();
+                    window.location.href = '{{ url_for("quiz_question") }}';
+                } else {
+                    // Handle error
+                    const errorText = await response.text();
+                    alert('Error starting quiz: ' + (errorText || 'Unknown error'));
+                    categoryCards.forEach(card => {
+                        card.classList.remove('loading');
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error starting quiz:', error);
+            alert('An error occurred while starting the quiz. Please try again.');
+            
+            // Remove loading state
+            categoryCards.forEach(card => {
+                card.classList.remove('loading');
+            });
+        }
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('quizModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeQuizModal();
+        }
     });
 </script>
 {% endblock %}

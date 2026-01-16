@@ -5,58 +5,119 @@
 {% block extra_css %}
 <style>
     .create-page {
-        max-width: 900px;
+        max-width: 1400px;
         margin: 0 auto;
-        padding: 32px 20px;
-    }
-
-    .create-card {
-        background: var(--card-bg);
-        border-radius: 24px;
-        border: 1px solid var(--border-color);
-        padding: 40px;
-        box-shadow: var(--shadow-md);
+        padding: 24px 20px;
         position: relative;
-        overflow: hidden;
     }
 
-    [data-theme="dark"] .create-card {
-        background: #1e293b;
-        border-color: var(--border-dark);
-    }
-
-    .create-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
-    }
-
-    .page-header {
+    /* Top Header with Actions */
+    .page-top-header {
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 32px;
-        padding-bottom: 20px;
-        border-bottom: 2px solid var(--border-color);
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
     }
 
-    .page-header h1 {
+    .page-top-header h1 {
         font-size: 1.875rem;
         font-weight: 800;
         color: var(--text-main);
         margin: 0;
         letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
-    .page-header svg {
+    .page-top-header h1 svg {
         width: 32px;
         height: 32px;
         color: #6366f1;
         stroke-width: 2;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    /* 2-Column Grid Layout */
+    .form-layout {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 24px;
+        align-items: stretch;
+    }
+
+    /* Left Column - Main Info */
+    .main-info-column {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .info-card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    [data-theme="dark"] .info-card {
+        background: #1e293b;
+        border-color: var(--border-dark);
+    }
+
+    /* Right Column - Settings Sidebar (Sticky) */
+    .settings-sidebar {
+        position: sticky;
+        top: 24px;
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        align-self: stretch;
+        display: flex;
+        flex-direction: column;
+    }
+
+    [data-theme="dark"] .settings-sidebar {
+        background: #1e293b;
+        border-color: var(--border-dark);
+    }
+
+
+    /* Section Headers with Icons */
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-header svg {
+        width: 20px;
+        height: 20px;
+        color: #6366f1;
+        stroke-width: 2;
+        flex-shrink: 0;
+    }
+
+    .section-header h3 {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
     .form-group {
@@ -100,7 +161,7 @@
     .form-group textarea:focus {
         outline: none;
         border-color: #6366f1;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1), 0 0 0 1px rgba(99, 102, 241, 0.2);
         transform: translateY(-1px);
     }
 
@@ -125,33 +186,32 @@
         padding-right: 45px;
     }
 
-    .form-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 32px;
-        padding-top: 24px;
-        border-top: 1px solid var(--border-color);
-    }
+    /* Floating Action Bar */
 
     .btn-save {
-        padding: 14px 32px;
+        padding: 12px 24px;
         background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         color: #ffffff;
         border: none;
-        border-radius: 12px;
+        border-radius: 10px;
         font-weight: 700;
-        font-size: 1rem;
+        font-size: 0.9375rem;
         cursor: pointer;
         transition: all 0.3s ease;
-        display: flex;
+        display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        height: 44px;
+        width: 165px;
+        box-sizing: border-box;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        white-space: nowrap;
     }
 
     .btn-save:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
     }
 
     .btn-save:active {
@@ -165,19 +225,24 @@
     }
 
     .btn-cancel {
-        padding: 14px 32px;
+        padding: 12px 24px;
         background: transparent;
         color: var(--text-secondary);
-        border: 2px solid var(--border-color);
-        border-radius: 12px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 10px;
         font-weight: 600;
-        font-size: 1rem;
+        font-size: 0.9375rem;
         cursor: pointer;
         transition: all 0.2s ease;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
+        height: 44px;
+        width: 165px;
+        box-sizing: border-box;
+        white-space: nowrap;
     }
 
     .btn-cancel:hover {
@@ -199,28 +264,344 @@
         line-height: 1.5;
     }
 
+    /* Type-specific form groups */
+    .type-specific-group {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .type-specific-group.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Radio button groups */
+    .radio-group {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+
+    .radio-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+
+    .radio-option input[type="radio"] {
+        width: auto;
+        margin: 0;
+        cursor: pointer;
+        accent-color: #6366f1;
+    }
+
+    .radio-option label {
+        margin: 0;
+        font-weight: 500;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    /* Modern Toggle Switch */
+    .toggle-group {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 0;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 52px;
+        height: 28px;
+        flex-shrink: 0;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #cbd5e1;
+        transition: 0.3s;
+        border-radius: 28px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+        background-color: #6366f1;
+    }
+
+    .toggle-switch input:checked + .toggle-slider:before {
+        transform: translateX(24px);
+    }
+
+    .toggle-label {
+        font-weight: 500;
+        color: var(--text-main);
+        margin: 0;
+        font-size: 0.875rem;
+        flex: 1;
+    }
+
+    /* Button Group Style for Radio-like toggles */
+    .button-group {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+    }
+
+    .button-group-btn {
+        flex: 1;
+        padding: 10px 16px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-primary);
+        color: var(--text-main);
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+        min-width: 100px;
+    }
+
+    .button-group-btn:hover {
+        border-color: #6366f1;
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .button-group-btn input[type="radio"] {
+        display: none;
+    }
+
+    .button-group-btn.active {
+        background: #6366f1;
+        color: white;
+        border-color: #6366f1;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+
+    [data-theme="dark"] .button-group-btn {
+        background: var(--bg-dark);
+        border-color: var(--border-dark);
+    }
+
+    /* Two column layout for related fields */
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    /* File upload */
+    .file-upload-wrapper {
+        position: relative;
+        margin-top: 8px;
+    }
+
+    .file-upload-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border: 2px dashed var(--border-color);
+        border-radius: 12px;
+        background: var(--bg-primary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .file-upload-label:hover {
+        border-color: #6366f1;
+        background: rgba(99, 102, 241, 0.05);
+        color: #6366f1;
+    }
+
+    .file-upload-label input[type="file"] {
+        display: none;
+    }
+
+    .file-upload-label svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .selected-file {
+        margin-top: 8px;
+        padding: 8px 12px;
+        background: rgba(99, 102, 241, 0.1);
+        border-radius: 8px;
+        font-size: 0.875rem;
+        color: #6366f1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Info box */
+    .info-box {
+        padding: 12px 16px;
+        background: rgba(99, 102, 241, 0.1);
+        border-left: 3px solid #6366f1;
+        border-radius: 8px;
+        margin-top: 8px;
+        font-size: 0.8125rem;
+        color: var(--text-main);
+        line-height: 1.5;
+    }
+
+    /* Section divider */
+    .form-section {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin-bottom: 20px;
+    }
+
+    /* Settings Item with Icon */
+    .settings-item {
+        margin-bottom: 20px;
+    }
+
+    .settings-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .settings-item-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 10px;
+    }
+
+    .settings-item-label svg {
+        width: 16px;
+        height: 16px;
+        color: #6366f1;
+        stroke-width: 2;
+        flex-shrink: 0;
+    }
+
+    .settings-item input[type="date"] {
+        width: 100%;
+        padding: 14px 18px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-main);
+        font-size: 0.9375rem;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    [data-theme="dark"] .settings-item input[type="date"] {
+        background: var(--bg-dark);
+        border-color: var(--border-dark);
+        color: var(--text-primary-dark);
+    }
+
+    .settings-item input[type="date"]:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1), 0 0 0 1px rgba(99, 102, 241, 0.2);
+        transform: translateY(-1px);
+    }
+
+    .settings-item input[type="date"]:hover {
+        border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    @media (max-width: 1024px) {
+        .form-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .settings-sidebar {
+            position: relative;
+            top: 0;
+            max-height: none;
+        }
+    }
+
     @media (max-width: 768px) {
         .create-page {
-            padding: 20px 16px;
+            padding: 20px 16px 100px;
         }
 
-        .create-card {
-            padding: 24px 20px;
-            border-radius: 16px;
-        }
-
-        .page-header h1 {
-            font-size: 1.5rem;
-        }
-
-        .form-actions {
+        .page-top-header {
             flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .header-actions {
+            width: 100%;
+            justify-content: stretch;
         }
 
         .btn-save,
         .btn-cancel {
-            width: 100%;
+            flex: 1;
             justify-content: center;
+        }
+
+        .info-card,
+        .settings-sidebar {
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .button-group {
+            flex-direction: column;
+        }
+
+        .button-group-btn {
+            width: 100%;
         }
     }
 </style>
@@ -228,91 +609,614 @@
 
 {% block content %}
 <div class="create-page">
-    <div class="create-card">
-        <div class="page-header">
+    <!-- Top Header with Actions -->
+    <div class="page-top-header">
+        <h1>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
                 <line x1="16" y1="13" x2="8" y2="13"></line>
                 <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
             </svg>
-            <h1>Create New Assignment</h1>
+            Create New Assignment
+        </h1>
+        <div class="header-actions">
+            <a href="{{ url_for('instructor_assignments') }}" class="btn-cancel">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Cancel
+            </a>
+            <button type="submit" form="assignment-form" class="btn-save">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                Create Assignment
+            </button>
+        </div>
+    </div>
+
+    <form method="POST" id="assignment-form">
+        <div class="form-layout">
+            <!-- Left Column: Main Info -->
+            <div class="main-info-column">
+                <!-- Title & Type Card -->
+                <div class="info-card">
+                    <div class="section-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <h3>Basics</h3>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="title">Title *</label>
+                        <input type="text" id="title" name="title" required placeholder="Enter assignment title">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="activity_type">Type *</label>
+                        <select id="activity_type" name="activity_type" required onchange="updateFormForType()">
+                            <option value="">Select type...</option>
+                            <option value="WRITING">Writing</option>
+                            <option value="SPEAKING">Speaking</option>
+                            <option value="HANDWRITTEN">Handwritten Writing (OCR)</option>
+                            <option value="QUIZ">Quiz (Grammar / Vocab / Reading)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Assignment Details Card (consolidated Task Content + Additional Information) -->
+                <div class="info-card">
+                    <div class="section-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        <h3>Assignment Details</h3>
+                    </div>
+
+                    <!-- General Description at the top -->
+                    <div class="form-group">
+                        <label for="description">General Description</label>
+                        <textarea id="description" name="description" rows="4" placeholder="Enter assignment description or general instructions for students..."></textarea>
+                    </div>
+
+                    <!-- Dynamic Task Content based on Type -->
+                    <!-- Writing-specific fields -->
+                    <div id="writing_fields" class="type-specific-group">
+                        <div class="form-group">
+                            <label for="writing_prompt">Task Prompt *</label>
+                            <textarea id="writing_prompt" name="writing_prompt" rows="4" placeholder="Enter the specific instruction for the student..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="word_limit">Word Limit</label>
+                            <input type="number" id="word_limit" name="word_limit" min="50" max="5000" placeholder="e.g., 300">
+                        </div>
+                    </div>
+
+                    <!-- Speaking-specific fields -->
+                    <div id="speaking_fields" class="type-specific-group">
+                        <div class="form-group">
+                            <label for="speaking_prompt">Task Prompt *</label>
+                            <textarea id="speaking_prompt" name="speaking_prompt" rows="4" placeholder="Enter the specific instruction for the student..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="min_duration">Duration (seconds)</label>
+                            <input type="number" id="min_duration" name="min_duration" min="10" max="300" placeholder="e.g., 30">
+                        </div>
+                    </div>
+
+                    <!-- Handwritten-specific fields -->
+                    <div id="handwritten_fields" class="type-specific-group">
+                        <div class="form-group">
+                            <label>Upload Reference Image</label>
+                            <div class="file-upload-wrapper">
+                                <label class="file-upload-label" for="reference_image">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                    </svg>
+                                    <span>Upload Reference Image (JPG, PNG, etc.)</span>
+                                </label>
+                                <input type="file" id="reference_image" name="reference_image" accept=".jpg,.jpeg,.png,.gif">
+                                <div id="selected_reference_image" class="selected-file" style="display: none;"></div>
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <strong>Note:</strong> Students will upload a handwritten image. The system will automatically convert it to text using OCR before evaluation.
+                        </div>
+                    </div>
+
+                    <!-- Quiz-specific fields -->
+                    <div id="quiz_fields" class="type-specific-group">
+                        <div class="form-group">
+                            <label for="quiz_category">Quiz Category *</label>
+                            <select id="quiz_category" name="quiz_category" onchange="toggleReadingPassage()">
+                                <option value="">Select category...</option>
+                                <option value="grammar">Grammar</option>
+                                <option value="vocabulary">Vocabulary</option>
+                                <option value="reading">Reading</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="reading_passage_group" style="display: none;">
+                            <label for="passage_text">Passage Text</label>
+                            <textarea id="passage_text" name="passage_text" rows="6" placeholder="Enter the reading passage text here..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="num_questions">Question Count</label>
+                            <input type="number" id="num_questions" name="num_questions" min="5" max="50" value="10" placeholder="10">
+                        </div>
+                    </div>
+
+                    <!-- Attachments / Resources -->
+                    <div class="form-group" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+                        <label>Attachments / Resources</label>
+                        <div class="file-upload-wrapper">
+                            <label class="file-upload-label" for="attachment">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <span>Upload File (PDF, DOCX, etc.)</span>
+                            </label>
+                            <input type="file" id="attachment" name="attachment" accept=".pdf,.doc,.docx,.txt">
+                            <div id="selected_file" class="selected-file" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Settings Sidebar (Sticky) -->
+            <div class="settings-sidebar">
+                <div class="section-header">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m9-9h-6M6 12H1m21 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"></path>
+                    </svg>
+                    <h3>Settings</h3>
+                </div>
+
+                <!-- Assign To -->
+                <div class="settings-item">
+                    <label class="settings-item-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Assign To *
+                    </label>
+                    <div class="button-group">
+                        <label class="button-group-btn active" onclick="document.getElementById('assign_all').checked = true; toggleStudentSelect(); updateButtonGroup(document.getElementById('assign_all'), 'assign_to');">
+                            <input type="radio" id="assign_all" name="assign_to" value="all" checked onchange="toggleStudentSelect(); updateButtonGroup(this, 'assign_to');">
+                            All Students
+                        </label>
+                        <label class="button-group-btn" onclick="document.getElementById('assign_specific').checked = true; toggleStudentSelect(); updateButtonGroup(document.getElementById('assign_specific'), 'assign_to');">
+                            <input type="radio" id="assign_specific" name="assign_to" value="specific" onchange="toggleStudentSelect(); updateButtonGroup(this, 'assign_to');">
+                            Select Student
+                        </label>
+                    </div>
+                    <div class="form-group" id="student_select_group" style="display: none; margin-top: 12px;">
+                        <select id="student_id" name="student_id">
+                            <option value="">Choose a student...</option>
+                            {% if students %}
+                                {% for student in students %}
+                                <option value="{{ student.id }}">{{ student.username }} ({{ student.email }})</option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="" disabled>No students available</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Due Date -->
+                <div class="settings-item">
+                    <label class="settings-item-label" for="due_date">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        Due Date
+                    </label>
+                    <input type="date" id="due_date" name="due_date" min="">
+                </div>
+
+                <!-- Visibility Status -->
+                <div class="settings-item">
+                    <label class="settings-item-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        Visibility Status *
+                    </label>
+                    <div class="button-group">
+                        <label class="button-group-btn" onclick="document.getElementById('status_draft').checked = true; updateButtonGroup(document.getElementById('status_draft'), 'visibility_status');">
+                            <input type="radio" id="status_draft" name="visibility_status" value="draft" onchange="updateButtonGroup(this, 'visibility_status');">
+                            Draft
+                        </label>
+                        <label class="button-group-btn active" onclick="document.getElementById('status_published').checked = true; updateButtonGroup(document.getElementById('status_published'), 'visibility_status');">
+                            <input type="radio" id="status_published" name="visibility_status" value="published" checked onchange="updateButtonGroup(this, 'visibility_status');">
+                            Published
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Grading Mode -->
+                <div class="settings-item">
+                    <label class="settings-item-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        Grading Mode *
+                    </label>
+                    <div class="button-group">
+                        <label class="button-group-btn active" onclick="document.getElementById('grading_auto').checked = true; updateButtonGroup(document.getElementById('grading_auto'), 'grading_mode');">
+                            <input type="radio" id="grading_auto" name="grading_mode" value="auto" checked onchange="updateButtonGroup(this, 'grading_mode');">
+                            Auto (AI)
+                        </label>
+                        <label class="button-group-btn" onclick="document.getElementById('grading_manual').checked = true; updateButtonGroup(document.getElementById('grading_manual'), 'grading_mode');">
+                            <input type="radio" id="grading_manual" name="grading_mode" value="manual" onchange="updateButtonGroup(this, 'grading_mode');">
+                            Manual
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submission Attempts -->
+                <div class="settings-item">
+                    <label class="settings-item-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                        Attempts *
+                    </label>
+                    <div class="button-group">
+                        <label class="button-group-btn active" onclick="document.getElementById('attempts_1').checked = true; toggleAttemptsInput(); updateButtonGroup(document.getElementById('attempts_1'), 'attempts_type');">
+                            <input type="radio" id="attempts_1" name="attempts_type" value="1" checked onchange="toggleAttemptsInput(); updateButtonGroup(this, 'attempts_type');">
+                            1
+                        </label>
+                        <label class="button-group-btn" onclick="document.getElementById('attempts_unlimited').checked = true; toggleAttemptsInput(); updateButtonGroup(document.getElementById('attempts_unlimited'), 'attempts_type');">
+                            <input type="radio" id="attempts_unlimited" name="attempts_type" value="unlimited" onchange="toggleAttemptsInput(); updateButtonGroup(this, 'attempts_type');">
+                            Unlimited
+                        </label>
+                        <label class="button-group-btn" onclick="document.getElementById('attempts_custom').checked = true; toggleAttemptsInput(); updateButtonGroup(document.getElementById('attempts_custom'), 'attempts_type');">
+                            <input type="radio" id="attempts_custom" name="attempts_type" value="custom" onchange="toggleAttemptsInput(); updateButtonGroup(this, 'attempts_type');">
+                            Custom
+                        </label>
+                    </div>
+                    <div class="form-group" id="custom_attempts_group" style="display: none; margin-top: 12px;">
+                        <input type="number" id="max_attempts" name="max_attempts" min="2" max="10" placeholder="e.g., 3">
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <form method="POST">
-            <div class="form-group">
-                <label for="title">Assignment Title *</label>
-                <input type="text" id="title" name="title" required placeholder="Enter assignment title">
-                <div class="help-text">Give your assignment a clear and descriptive title.</div>
-            </div>
-
-            <div class="form-group">
-                <label for="activity_type">Assignment Type *</label>
-                <select id="activity_type" name="activity_type" required onchange="toggleCategory()">
-                    <option value="">Select type...</option>
-                    <option value="WRITING">Writing</option>
-                    <option value="SPEAKING">Speaking</option>
-                    <option value="QUIZ">Quiz</option>
-                    <option value="HANDWRITTEN">Handwritten</option>
-                </select>
-                <div class="help-text">Choose the type of assignment you want to create.</div>
-            </div>
-
-            <div class="form-group" id="quiz_category_group" style="display: none;">
-                <label for="quiz_category">Quiz Category</label>
-                <select id="quiz_category" name="quiz_category">
-                    <option value="grammar">Grammar</option>
-                    <option value="vocabulary">Vocabulary</option>
-                    <option value="reading">Reading</option>
-                </select>
-                <div class="help-text">Select the category for this quiz assignment.</div>
-            </div>
-
-            <div class="form-group">
-                <label for="due_date">Due Date</label>
-                <input type="date" id="due_date" name="due_date" placeholder="2026-01-31">
-                <div class="help-text">Set a due date for this assignment (optional). Format: YYYY-MM-DD</div>
-            </div>
-
-            <div class="form-group">
-                <label for="description">Description</label>
-                <textarea id="description" name="description" rows="4" placeholder="Enter assignment description or instructions..."></textarea>
-                <div class="help-text">Provide detailed instructions or description for students (optional).</div>
-            </div>
-
-            <div class="form-actions">
-                <button type="submit" class="btn-save">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                        <polyline points="7 3 7 8 15 8"></polyline>
-                    </svg>
-                    Create Assignment
-                </button>
-                <a href="{{ url_for('instructor_assignments') }}" class="btn-cancel">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                    Cancel
-                </a>
-            </div>
         </form>
     </div>
 </div>
 
 <script>
-    function toggleCategory() {
+    // Update form fields based on selected assignment type
+    function updateFormForType() {
         const typeSelect = document.getElementById('activity_type');
-        const categoryGroup = document.getElementById('quiz_category_group');
-        if (typeSelect.value === 'QUIZ') {
-            categoryGroup.style.display = 'block';
-        } else {
-            categoryGroup.style.display = 'none';
+        const type = typeSelect.value;
+
+        // Hide all type-specific groups
+        const allGroups = document.querySelectorAll('.type-specific-group');
+        allGroups.forEach(group => {
+            group.classList.remove('active');
+            group.style.display = 'none';
+        });
+
+        // Show relevant group based on type
+        if (type === 'WRITING') {
+            const writingGroup = document.getElementById('writing_fields');
+            if (writingGroup) {
+                writingGroup.style.display = 'block';
+                writingGroup.classList.add('active');
+            }
+        } else if (type === 'SPEAKING') {
+            const speakingGroup = document.getElementById('speaking_fields');
+            if (speakingGroup) {
+                speakingGroup.style.display = 'block';
+                speakingGroup.classList.add('active');
+            }
+        } else if (type === 'HANDWRITTEN') {
+            const handwrittenGroup = document.getElementById('handwritten_fields');
+            if (handwrittenGroup) {
+                handwrittenGroup.style.display = 'block';
+                handwrittenGroup.classList.add('active');
+            }
+        } else if (type === 'QUIZ') {
+            const quizGroup = document.getElementById('quiz_fields');
+            if (quizGroup) {
+                quizGroup.style.display = 'block';
+                quizGroup.classList.add('active');
+            }
+            
+            // Show/hide reading passage field based on quiz category
+            toggleReadingPassage();
         }
     }
-    // Initialize state
-    document.addEventListener('DOMContentLoaded', toggleCategory);
+
+    // Toggle reading passage field based on quiz category
+    function toggleReadingPassage() {
+        const quizCategory = document.getElementById('quiz_category');
+        const passageGroup = document.getElementById('reading_passage_group');
+        
+        if (quizCategory && passageGroup) {
+            if (quizCategory.value === 'reading') {
+                passageGroup.style.display = 'block';
+            } else {
+                passageGroup.style.display = 'none';
+            }
+        }
+    }
+
+    // Update button group active state
+    function updateButtonGroup(radio, name) {
+        const group = radio.closest('.button-group');
+        if (group) {
+            group.querySelectorAll('.button-group-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            radio.closest('.button-group-btn').classList.add('active');
+        }
+    }
+
+    // Toggle student select dropdown based on assign_to radio
+    function toggleStudentSelect() {
+        const assignAll = document.getElementById('assign_all');
+        const studentSelectGroup = document.getElementById('student_select_group');
+        const studentSelect = document.getElementById('student_id');
+
+        if (assignAll && assignAll.checked) {
+            studentSelectGroup.style.display = 'none';
+            studentSelect.removeAttribute('required');
+            studentSelect.value = '';
+        } else {
+            studentSelectGroup.style.display = 'block';
+            studentSelect.setAttribute('required', 'required');
+        }
+    }
+
+    // Toggle custom attempts input
+    function toggleAttemptsInput() {
+        const attemptsCustom = document.getElementById('attempts_custom');
+        const customAttemptsGroup = document.getElementById('custom_attempts_group');
+        const maxAttemptsInput = document.getElementById('max_attempts');
+
+        if (attemptsCustom && attemptsCustom.checked) {
+            customAttemptsGroup.style.display = 'block';
+            maxAttemptsInput.setAttribute('required', 'required');
+        } else {
+            customAttemptsGroup.style.display = 'none';
+            maxAttemptsInput.removeAttribute('required');
+            maxAttemptsInput.value = '';
+        }
+    }
+
+    // File upload handler
+    function setupFileUpload() {
+        // Attachment file upload
+        const fileInput = document.getElementById('attachment');
+        const selectedFileDiv = document.getElementById('selected_file');
+
+        if (fileInput && selectedFileDiv) {
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const fileName = file.name;
+                    const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+                    
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert('File size must be less than 10MB.');
+                        fileInput.value = '';
+                        selectedFileDiv.style.display = 'none';
+                        return;
+                    }
+
+                    selectedFileDiv.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <span>${fileName} (${fileSize} MB)</span>
+                    `;
+                    selectedFileDiv.style.display = 'flex';
+                } else {
+                    selectedFileDiv.style.display = 'none';
+                }
+            });
+        }
+
+        // Reference image upload for handwritten
+        const referenceImageInput = document.getElementById('reference_image');
+        const selectedReferenceImageDiv = document.getElementById('selected_reference_image');
+
+        if (referenceImageInput && selectedReferenceImageDiv) {
+            referenceImageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const fileName = file.name;
+                    const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+                    
+                    // Validate image format
+                    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                    if (!validTypes.includes(file.type)) {
+                        alert('Please upload a valid image file (JPG, PNG, or GIF).');
+                        referenceImageInput.value = '';
+                        selectedReferenceImageDiv.style.display = 'none';
+                        return;
+                    }
+                    
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert('File size must be less than 10MB.');
+                        referenceImageInput.value = '';
+                        selectedReferenceImageDiv.style.display = 'none';
+                        return;
+                    }
+
+                    selectedReferenceImageDiv.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <span>${fileName} (${fileSize} MB)</span>
+                    `;
+                    selectedReferenceImageDiv.style.display = 'flex';
+                } else {
+                    selectedReferenceImageDiv.style.display = 'none';
+                }
+            });
+        }
+    }
+
+    // Form validation before submit
+    function validateForm() {
+        const type = document.getElementById('activity_type').value;
+        const form = document.querySelector('form');
+
+        // Validate type-specific required fields
+        if (type === 'WRITING') {
+            const writingPrompt = document.getElementById('writing_prompt');
+            if (!writingPrompt || !writingPrompt.value.trim()) {
+                alert('Task Prompt is required for Writing assignments.');
+                writingPrompt?.focus();
+                return false;
+            }
+        } else if (type === 'SPEAKING') {
+            const speakingPrompt = document.getElementById('speaking_prompt');
+            if (!speakingPrompt || !speakingPrompt.value.trim()) {
+                alert('Task Prompt is required for Speaking assignments.');
+                speakingPrompt?.focus();
+                return false;
+            }
+        } else if (type === 'HANDWRITTEN') {
+            // Handwritten doesn't require prompt, but reference image is optional
+        } else if (type === 'QUIZ') {
+            const quizCategory = document.getElementById('quiz_category');
+            if (!quizCategory || !quizCategory.value) {
+                alert('Quiz Category is required for Quiz assignments.');
+                quizCategory?.focus();
+                return false;
+            }
+            
+            // If reading category selected, validate passage text
+            if (quizCategory.value === 'reading') {
+                const passageText = document.getElementById('passage_text');
+                if (!passageText || !passageText.value.trim()) {
+                    alert('Passage Text is required for Reading quizzes.');
+                    passageText?.focus();
+                    return false;
+                }
+            }
+        }
+
+        // Validate student selection if "Select Student" is chosen
+        const assignSpecific = document.getElementById('assign_specific');
+        if (assignSpecific && assignSpecific.checked) {
+            const studentSelect = document.getElementById('student_id');
+            if (!studentSelect || !studentSelect.value) {
+                alert('Please select a student.');
+                studentSelect?.focus();
+                return false;
+            }
+        }
+
+        // Validate custom attempts
+        const attemptsCustom = document.getElementById('attempts_custom');
+        if (attemptsCustom && attemptsCustom.checked) {
+            const maxAttempts = document.getElementById('max_attempts');
+            if (!maxAttempts || !maxAttempts.value || parseInt(maxAttempts.value) < 2 || parseInt(maxAttempts.value) > 10) {
+                alert('Please enter a valid number of attempts (2-10).');
+                maxAttempts?.focus();
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // File upload handler
+    function setupFileUpload() {
+        const fileInput = document.getElementById('attachment');
+        const selectedFileDiv = document.getElementById('selected_file');
+
+        if (fileInput && selectedFileDiv) {
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const fileName = file.name;
+                    const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+                    
+                    if (file.size > 10 * 1024 * 1024) {
+                        alert('File size must be less than 10MB.');
+                        fileInput.value = '';
+                        selectedFileDiv.style.display = 'none';
+                        return;
+                    }
+
+                    selectedFileDiv.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <span>${fileName} (${fileSize} MB)</span>
+                    `;
+                    selectedFileDiv.style.display = 'flex';
+                } else {
+                    selectedFileDiv.style.display = 'none';
+                }
+            });
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateFormForType();
+        toggleStudentSelect();
+        toggleAttemptsInput();
+        setupFileUpload();
+        toggleReadingPassage();
+
+        // Initialize button group active states
+        document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+            updateButtonGroup(radio, radio.name);
+        });
+
+        // Set minimum date for due_date to today (no past dates allowed)
+        const dueDateInput = document.getElementById('due_date');
+        if (dueDateInput) {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const todayStr = `${year}-${month}-${day}`;
+            dueDateInput.setAttribute('min', todayStr);
+        }
+
+        // Add form submit validation
+        const form = document.getElementById('assignment-form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        }
+    });
 </script>
 {% endblock %}

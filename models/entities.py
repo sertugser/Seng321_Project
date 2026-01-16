@@ -21,13 +21,15 @@ class LearningActivity(db.Model):
     __tablename__ = 'learning_activity'
     id = db.Column(db.Integer, primary_key=True)
     instructor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # None = assigned to all students
     title = db.Column(db.String(100), nullable=False) 
     activity_type = db.Column(db.String(20), nullable=False) # WRITING, SPEAKING, QUIZ
     description = db.Column(db.Text, nullable=True)
     quiz_category = db.Column(db.String(50), nullable=True)  # grammar, vocabulary, reading, etc.
     due_date = db.Column(db.DateTime, nullable=True) 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    instructor = db.relationship('User', backref=db.backref('created_activities', lazy=True))
+    instructor = db.relationship('User', foreign_keys=[instructor_id], backref=db.backref('created_activities', lazy=True))
+    student = db.relationship('User', foreign_keys=[student_id], backref=db.backref('assigned_activities', lazy=True))
 
 # --- 3. Submission Entity ---
 class Submission(db.Model):
@@ -56,16 +58,21 @@ class Grade(db.Model):
     instructor_approved = db.Column(db.Boolean, default=False, nullable=False)  # False = Pending, True = Graded
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# --- 5. LearningGoal Entity (UC7) ---
+# --- 5. LearningGoal Entity (UC7, FR10) ---
 class LearningGoal(db.Model):
     __tablename__ = 'learning_goals'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    goal_name = db.Column(db.String(100), nullable=False) # e.g., "Improve Pronunciation"
-    category = db.Column(db.String(50), nullable=True, default='General')
-    target_value = db.Column(db.Integer, default=100)
-    current_value = db.Column(db.Integer, default=0)
+    title = db.Column(db.String(100), nullable=False)  # e.g., "Improve Writing Coherence"
+    goal_name = db.Column(db.String(100), nullable=False)  # For backward compatibility, same as title
+    category = db.Column(db.String(50), nullable=False)  # Writing, Speaking, Quiz
+    target_score = db.Column(db.Float, nullable=False)  # Target score (0-100)
+    current_score = db.Column(db.Float, default=0.0, nullable=False)  # Current score (0-100)
+    status = db.Column(db.String(20), default='In Progress', nullable=False)  # In Progress, Completed
+    target_date = db.Column(db.DateTime, nullable=True)  # Optional deadline
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user = db.relationship('User', backref=db.backref('learning_goals', lazy=True))
 
 # --- 6. Quiz Entity ---
 class Quiz(db.Model):
@@ -74,6 +81,7 @@ class Quiz(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     quiz_title = db.Column(db.String(100), nullable=False)
     score = db.Column(db.Float, nullable=False)
+    category = db.Column(db.String(50), nullable=True)  # grammar, vocabulary, reading, mixed
     date_taken = db.Column(db.DateTime, default=datetime.utcnow)
 
 # --- 7. QuizDetail Entity (store per-question results) ---
@@ -85,6 +93,7 @@ class QuizDetail(db.Model):
     user_answer = db.Column(db.String(5), nullable=True)
     correct_answer = db.Column(db.String(5), nullable=True)
     is_correct = db.Column(db.Boolean, default=False)
+    explanation = db.Column(db.Text, nullable=True)  # AI-generated explanation
 
 # --- 8. Question Entity ---
 class Question(db.Model):

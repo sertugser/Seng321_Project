@@ -109,6 +109,29 @@
         </div>
 
         <div class="form-group">
+            <label>Add Students (Optional)</label>
+            {% if available_students %}
+            <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; background: var(--card-bg);">
+                {% for student in available_students %}
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
+                    <input type="checkbox" id="student_{{ student.id }}" name="student_ids" value="{{ student.id }}" style="width: auto;">
+                    <label for="student_{{ student.id }}" style="margin: 0; cursor: pointer; flex: 1;">
+                        <strong>{{ student.username }}</strong> - {{ student.email }}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
+                Select students to enroll them in this course. Already enrolled students are not shown.
+            </div>
+            {% else %}
+            <div style="color: var(--text-secondary); font-size: 0.875rem; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg);">
+                All available students are already enrolled in this course.
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
             <div class="checkbox-group">
                 <input type="checkbox" id="is_active" name="is_active" {% if course.is_active %}checked{% endif %}>
                 <label for="is_active" style="margin: 0;">Active</label>

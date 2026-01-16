@@ -23,19 +23,31 @@ class GoalRepository:
         """
         Get all goals for a user
         """
-        return LearningGoal.query.filter_by(user_id=user_id).all()
+        return LearningGoal.query.filter_by(user_id=user_id).order_by(LearningGoal.created_at.desc()).all()
     
     @staticmethod
-    def update_goal(goal_id, current_value=None, target_value=None):
+    def get_active_goals_by_user(user_id):
         """
-        Update goal values
+        Get active (In Progress) goals for a user
+        """
+        return LearningGoal.query.filter_by(
+            user_id=user_id,
+            status='In Progress'
+        ).order_by(LearningGoal.created_at.desc()).all()
+    
+    @staticmethod
+    def update_goal(goal_id, **kwargs):
+        """
+        Update goal fields
         """
         goal = LearningGoal.query.get(goal_id)
         if goal:
-            if current_value is not None:
-                goal.current_value = current_value
-            if target_value is not None:
-                goal.target_value = target_value
+            for key, value in kwargs.items():
+                if hasattr(goal, key):
+                    setattr(goal, key, value)
+                    # Keep goal_name in sync with title
+                    if key == 'title' and value is not None:
+                        goal.goal_name = str(value).strip()
             db.session.commit()
             return goal
         return None
@@ -51,10 +63,3 @@ class GoalRepository:
             db.session.commit()
             return True
         return False
-
-
-
-
-
-
-

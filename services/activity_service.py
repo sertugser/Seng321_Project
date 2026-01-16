@@ -4,15 +4,25 @@ from datetime import datetime
 
 class ActivityService:
     @staticmethod
-    def create_new_activity(instructor_id, title, activity_type, description=None, due_date=None):
+    def create_new_activity(instructor_id, title, activity_type, description=None, due_date=None, student_id=None, quiz_category=None):
         """
         Create a new learning activity
+        Args:
+            instructor_id: ID of the instructor creating the activity
+            title: Activity title
+            activity_type: Type of activity (WRITING, SPEAKING, QUIZ, HANDWRITTEN)
+            description: Optional description
+            due_date: Optional due date
+            student_id: Optional student ID - if None, activity is assigned to all students
+            quiz_category: Optional quiz category (for QUIZ type activities)
         """
         new_activity = LearningActivity(
             instructor_id=instructor_id,
+            student_id=student_id,  # None = assigned to all students
             title=title,
             activity_type=activity_type,
             description=description,
+            quiz_category=quiz_category,
             due_date=due_date
         )
         db.session.add(new_activity)
@@ -34,9 +44,12 @@ class ActivityService:
     def get_activities_for_student(student_id):
         """
         Get activities available for a student
+        Returns activities where student_id is None (all students) or matches the student_id
         """
         return LearningActivity.query.filter(
-            LearningActivity.due_date >= datetime.utcnow()
+            (LearningActivity.student_id == None) | (LearningActivity.student_id == student_id)
+        ).filter(
+            (LearningActivity.due_date == None) | (LearningActivity.due_date >= datetime.utcnow())
         ).order_by(LearningActivity.due_date.asc()).all()
     
     @staticmethod

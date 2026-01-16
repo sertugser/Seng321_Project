@@ -97,13 +97,24 @@ python -m pip install -r requirements.txt
    # TESSERACT_PATH=
    ```
 
-#### Step 5: Run the Application
+#### Step 5: Run Database Migration (If Updating Existing Database)
+If you're updating an existing database, run the migration script to add the `student_id` column:
+```bash
+python migrate_add_student_id.py
+```
+This will add the `student_id` column to the `learning_activity` table without losing existing data.
+
+**Note:** The application will automatically attempt to add missing columns on startup, but running the migration script manually ensures a clean update.
+
+#### Step 6: Run the Application
 ```bash
 python app.py
 ```
 
 The application will:
-- Create the database automatically on first run
+- Create the database automatically on first run (if it doesn't exist)
+- Automatically add missing columns (migration) if needed
+- Auto-seed questions if the database is empty
 - Create necessary directories (static/uploads)
 - Start the Flask development server on `http://127.0.0.1:5000`
 

@@ -1,83 +1,148 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}My Assignments - AAFS AI{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* Page Background - Match Dashboard */
+    /* Page Background - Match Quizzes */
     body {
         background: var(--bg-primary);
+        overflow: hidden; /* Disable page scrolling */
     }
 
     [data-theme="dark"] body {
         background: #0f172a; /* Slate 900 */
     }
 
-    /* Header with Status Chips - Milimetrik Alignment with sidebar-top border line */
-    .assignments-header {
-        margin-top: -8px; /* Fine-tuned negative margin: Reduced from -16px to -8px (4-8px down adjustment) - milimetrik alignment with sidebar-top border line */
-        margin-bottom: 24px;
-        margin-left: 0; /* Override content-wrapper padding */
-        margin-right: 0;
-        padding-left: 32px; /* pl-8 */
-        padding-right: 32px;
-        padding-top: 0; /* Hard-override: Remove all pt-8, pt-10 values - force zero vertical space */
+    /* Override content-wrapper padding for assignments page */
+    .content-wrapper {
+        padding: 0 !important;
+    }
+
+    /* Main Wrapper - Flex Column, Full Screen, Start Alignment (Same as Quizzes) */
+    .assignments-container {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        height: 100vh;
+        width: 100%;
+        align-items: flex-start;
+        justify-content: flex-start;
+        background: var(--bg-primary);
+        padding: 0;
+        margin: 0;
+        overflow: hidden; /* Disable container scrolling */
+        position: relative; /* For absolute positioned empty state */
     }
-    
-    .assignments-header-top {
+
+    /* Header with Filter Bar - Centered with Proper Spacing (Same as Quizzes) */
+    .assignments-header {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 32px 24px 32px;
         display: flex;
-        justify-content: space-between;
+        flex-direction: column;
         align-items: center;
-        flex-wrap: wrap;
+        gap: 12px; /* Başlık ile tabs arası */
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        box-sizing: border-box;
+        text-align: center;
+    }
+
+    .assignments-title-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
         gap: 16px;
+        min-width: 0; /* Allow flex items to shrink */
+        position: relative;
     }
 
     .assignments-title {
-        font-size: 1.5rem;
+        font-size: 2rem;
         font-weight: 700;
         color: var(--text-main);
         letter-spacing: -0.02em;
         margin: 0;
-    }
-    
-    .btn-add-assignment {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 20px;
-        background: #6366f1;
-        color: #ffffff;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        text-decoration: none;
-    }
-    
-    .btn-add-assignment:hover {
-        background: #4f46e5;
-        transform: translateY(-1px);
-    }
-    
-    .btn-add-assignment svg {
-        width: 18px;
-        height: 18px;
-        stroke-width: 2;
+        text-align: center;
+        width: 100%;
     }
 
-    /* Status Chips - Match Image Style (Rounded Rectangular) */
-    .status-chips {
+    .btn-add-assignment {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: var(--white) !important;
+        padding: 6px 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        white-space: nowrap;
+        flex-shrink: 0;
+        line-height: 1.5;
+        height: fit-content;
+        position: absolute;
+        right: 0;
+    }
+
+    @media (max-width: 768px) {
+        .btn-add-assignment {
+            position: static;
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .assignments-title-wrapper {
+            flex-direction: column;
+            gap: 12px;
+        }
+    }
+
+    .btn-add-assignment:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    }
+
+    .btn-add-assignment svg {
+        width: 14px;
+        height: 14px;
+        stroke-width: 2;
+        flex-shrink: 0;
+    }
+
+    /* Filter Bar - Centered (Same as Quizzes) */
+    .filter-bar-wrapper {
         display: flex;
-        gap: 12px;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        gap: 20px;
         flex-wrap: wrap;
     }
 
-    .status-chip {
+    .filter-bar {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        width: 100%;
+        padding: 0;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    /* Filter Pills - Exact same as Quizzes */
+    .filter-pill {
         padding: 6px 14px;
         border-radius: 12px; /* Rounded rectangular, not fully rounded */
         font-size: 0.75rem;
@@ -92,71 +157,106 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        gap: 6px;
     }
+    
 
-    [data-theme="dark"] .status-chip:not(.active) {
+    [data-theme="dark"] .filter-pill:not(.active) {
         background: #ffffff;
         color: #475569;
         border-color: #e2e8f0;
     }
 
-    .status-chip:hover:not(.active) {
+    .filter-pill:hover:not(.active) {
         background: #f8f9fa;
         border-color: #e2e8f0;
     }
 
-    .status-chip.active {
+    .filter-pill.active {
         background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); /* Purple gradient */
         color: #ffffff; /* White text */
         border-color: transparent;
         box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3); /* Soft shadow */
     }
 
-    /* Task Cards - Modern Dashboard Style */
+    /* Scrollable Container - Below Filter Bar (Same as Quizzes) */
+    .assignments-grid-container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        overflow: visible; /* Allow cards to expand on hover */
+        padding: 24px 32px 32px 32px; /* Tabs ile kartlar arası 24px */
+    }
+
+    /* Content Area - Flex 1, Full Width, Perfect Centering (Same as Quizzes) */
+    .assignments-content-area {
+        flex: 1;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        margin: 0;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: visible; /* Allow cards to expand horizontally if needed */
+    }
+    
+    /* Grid content area - for cards layout */
+    #gridContentArea {
+        align-items: flex-start;
+        justify-content: center;
+        min-height: auto;
+        padding-top: 0;
+        width: 100%;
+    }
+
+    /* Assignment Cards Grid - Responsive Columns (3 cols desktop, 2 tablet, 1 mobile) */
     .assignments-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 24px;
+        grid-template-columns: repeat(1, 1fr);
+        gap: 16px;
+        width: 100%;
+        padding-bottom: 20px;
+        overflow: visible; /* Allow cards to expand on hover */
     }
 
+    @media (min-width: 640px) {
+        .assignments-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .assignments-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    /* Assignment Card - Exact same design as Quiz Card */
     .assignment-card {
         background: var(--card-bg);
-        border-radius: 24px; /* Rounded like dashboard cards */
-        padding: 20px;
+        border-radius: 16px;
+        padding: 18px 20px;
         border: 1px solid var(--border-color);
-        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         flex-direction: column;
-        gap: 16px;
-        box-shadow: var(--shadow-sm);
-        position: relative;
-        overflow: hidden;
-    }
-
-    [data-theme="dark"] .assignment-card {
-        background: #1e293b; /* Slate 800 */
-    }
-
-    .assignment-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
-        opacity: 0;
-        transition: opacity 0.3s ease;
+        gap: 12px;
+        cursor: pointer;
+        max-width: 340px;
+        width: 100%;
+        margin: 0 auto;
+        min-width: 320px;
     }
 
     .assignment-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
         border-color: var(--accent);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-    }
-
-    .assignment-card:hover::before {
-        opacity: 1;
+        z-index: 10; /* Ensure hovered card appears above others */
+        position: relative;
     }
 
     .assignment-header {
@@ -166,113 +266,91 @@
         gap: 12px;
     }
 
-    .assignment-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        background: rgba(99, 102, 241, 0.1);
-        color: var(--accent);
-    }
-
-    .assignment-icon svg {
-        width: 20px;
-        height: 20px;
-        stroke-width: 2;
-    }
-
-    .assignment-title-wrapper {
-        flex: 1;
-        min-width: 0;
-    }
-
     .assignment-title {
-        font-size: 1rem;
+        font-size: 0.9375rem;
         font-weight: 700;
         color: var(--text-main);
+        line-height: 1.3;
+        flex: 1;
+        margin: 0;
         letter-spacing: -0.01em;
-        line-height: 1.4;
-        margin: 0 0 4px 0;
     }
 
-    .level-badge {
-        padding: 4px 10px;
-        border-radius: 12px;
+    .assignment-type-badge {
+        padding: 6px 12px;
+        border-radius: 50px;
         font-weight: 600;
-        font-size: 0.6875rem;
+        font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         white-space: nowrap;
-        display: inline-block;
+        flex-shrink: 0;
         background: rgba(99, 102, 241, 0.1);
         color: var(--accent);
         border: 1px solid rgba(99, 102, 241, 0.2);
     }
 
+    /* Dynamic badge colors based on activity type */
+    .badge-writing {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+        border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    .badge-speaking {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6;
+        border-color: rgba(139, 92, 246, 0.2);
+    }
+
+    .badge-quiz {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border-color: rgba(16, 185, 129, 0.2);
+    }
+
     .assignment-meta {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
     }
 
-    .assignment-due-date {
-        font-size: 0.8125rem;
-        color: var(--text-secondary);
+    .assignment-meta-item {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 5px;
     }
 
-    .assignment-due-date svg {
-        width: 16px;
-        height: 16px;
+    .assignment-meta-item svg {
+        width: 14px;
+        height: 14px;
         stroke-width: 2;
-        color: var(--text-secondary);
-    }
-
-    /* Progress Bar */
-    .assignment-progress {
-        width: 100%;
-        height: 6px;
-        background: var(--border-color);
-        border-radius: 3px;
-        overflow: hidden;
-        margin-top: 4px;
-    }
-
-    .assignment-progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
-        border-radius: 3px;
-        transition: width 0.3s ease;
-    }
-
-    .assignment-actions {
-        margin-top: auto;
-        padding-top: 16px;
-        border-top: 1px solid var(--border-color);
+        opacity: 0.7;
     }
 
     .btn-start-task {
         width: 100%;
-        padding: 12px 20px;
+        height: 44px;
+        padding: 10px 16px;
         background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         color: var(--white);
         border: none;
-        border-radius: 12px;
+        border-radius: 8px;
         font-weight: 600;
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
         cursor: pointer;
         transition: all 0.3s ease;
         text-decoration: none;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        gap: 6px;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        margin-top: auto;
+        flex-shrink: 0;
     }
 
     .btn-start-task:hover {
@@ -284,401 +362,434 @@
         width: 16px;
         height: 16px;
         stroke-width: 2.5;
+        transition: transform 0.2s ease;
     }
 
-    /* Modern Empty State */
+    .btn-start-task:hover svg {
+        transform: translateX(2px);
+    }
+
+    /* Empty State - Clean Design (Same as Quizzes) - Static, not scrollable */
     .empty-state {
-        grid-column: 1 / -1;
-        background: var(--card-bg);
-        border-radius: 30px;
-        padding: 80px 40px;
-        border: 1px solid var(--border-color);
+        max-width: 500px;
+        width: 100%;
         text-align: center;
-        max-width: 600px;
-        margin: 80px auto;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        box-shadow: var(--shadow-sm);
+        gap: 24px;
+        background: transparent; /* No white box */
+        border: none; /* No frame */
+        box-shadow: none; /* No shadow */
+        padding: 0;
+        margin: 0;
+        position: relative; /* For proper positioning within container */
     }
-
-    [data-theme="dark"] .empty-state {
-        background: #1e293b; /* Slate 800 */
+    
+    /* Ensure empty state container is properly centered - Fixed position, no scrolling */
+    #emptyStateContainer {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        max-width: 500px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+        pointer-events: none; /* Allow clicking through when hidden */
+    }
+    
+    #emptyStateContainer .empty-state {
+        pointer-events: auto; /* Re-enable pointer events for the content */
     }
 
     .empty-state-illustration {
-        width: 120px;
-        height: 120px;
-        margin: 0 auto 32px;
-        opacity: 0.8;
+        width: 160px;
+        height: 160px;
+        max-width: 200px;
+        margin: 0 auto;
         color: var(--accent);
+        opacity: 0.8;
+    }
+
+    [data-theme="dark"] .empty-state-illustration {
+        opacity: 0.9;
     }
 
     .empty-state-illustration svg {
         width: 100%;
         height: 100%;
-        stroke-width: 1.5;
     }
 
     .empty-state-title {
-        font-size: 1.5rem;
-        font-weight: 700;
+        font-size: 1.75rem;
+        font-weight: 800;
         color: var(--text-main);
-        margin-bottom: 12px;
+        margin: 0;
         letter-spacing: -0.02em;
+        line-height: 1.3;
+    }
+
+    [data-theme="dark"] .empty-state-title {
+        color: #f1f5f9; /* slate-100 */
     }
 
     .empty-state-text {
         font-size: 1rem;
         color: var(--text-secondary);
-        line-height: 1.6;
-        margin-bottom: 24px;
+        margin: 0;
+        line-height: 1.7;
+        max-width: 400px;
     }
 
-    .btn-view-history {
-        padding: 12px 24px;
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        color: var(--white);
-        border: none;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    [data-theme="dark"] .empty-state-text {
+        color: #cbd5e1; /* slate-300 */
     }
 
-    .btn-view-history:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
-    }
-
-    .btn-view-history svg {
-        width: 16px;
-        height: 16px;
-        stroke-width: 2.5;
-    }
-
+    /* Responsive (Same as Quizzes) */
     @media (max-width: 768px) {
-        .assignments-grid {
-            grid-template-columns: 1fr;
+        .assignments-container {
+            padding: 0 16px;
         }
 
-        .status-chips {
+        .assignments-header {
+            padding: 30px 20px 20px 20px;
+            gap: 20px;
+        }
+
+        .assignments-title {
+            font-size: 1.5rem;
+        }
+
+        .filter-bar-wrapper {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .filter-bar {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-add-assignment {
+            width: 100%;
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .filter-bar {
             gap: 8px;
         }
 
-        .status-chip {
+        .filter-pill {
             padding: 5px 12px;
             font-size: 0.6875rem;
         }
 
-        .empty-state {
-            padding: 60px 24px;
-            margin: 40px auto;
+        .assignments-grid-container {
+            padding: 20px;
+        }
+
+        .assignments-content-area {
+            min-height: calc(100vh - 250px);
+            padding: 30px 20px;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #emptyStateContainer {
+            max-width: 90%;
+            padding: 0 20px;
+        }
+
+        .assignments-grid-container {
+            padding: 20px 0;
+        }
+
+        .assignment-card {
+            padding: 18px 20px;
+            max-width: 100%;
+            min-width: unset;
+        }
+
+        .assignment-title {
+            font-size: 0.875rem;
+        }
+
+        .assignment-meta {
+            font-size: 0.6875rem;
+        }
+
+        .btn-start-task {
+            height: 44px;
+            padding: 8px 14px;
+            font-size: 0.75rem;
+        }
+
+        .empty-state-illustration {
+            width: 140px;
+            height: 140px;
+        }
+
+        .empty-state-title {
+            font-size: 1.5rem;
+        }
+
+        .empty-state-text {
+            font-size: 0.9375rem;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Header with Status Chips -->
-<div class="assignments-header">
-    <div class="assignments-header-top">
-        <h1 class="assignments-title">Assigned Tasks</h1>
-        {% if user.role == 'Instructor' %}
-        <a href="{{ url_for('instructor_create_assignment') }}" class="btn-add-assignment">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Add New Assignment
-        </a>
+<div class="assignments-container">
+    <!-- Header with Title and Filter Bar -->
+    <div class="assignments-header">
+        <div class="assignments-title-wrapper">
+            <h1 class="assignments-title">Assigned Tasks</h1>
+            {% if user.role == 'Instructor' %}
+            <a href="{{ url_for('instructor_create_assignment') }}" class="btn-add-assignment">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add New Assignment
+            </a>
+            {% endif %}
+        </div>
+            <div class="filter-bar-wrapper">
+                <div class="filter-bar">
+                    <button class="filter-pill active" onclick="filterTasks('active')">Active</button>
+                    <button class="filter-pill" onclick="filterTasks('pending')">Pending</button>
+                    <button class="filter-pill" onclick="filterTasks('completed')">Completed</button>
+                </div>
+            </div>
+    </div>
+
+    {% if active_activities|length > 0 or pending_activities|length > 0 or completed_activities|length > 0 %}
+    <div class="assignments-content-area" id="gridContentArea">
+        <div class="assignments-grid-container">
+            <div class="assignments-grid" id="assignmentsGrid">
+                <!-- Active Assignments (not submitted) -->
+                {% for activity in active_activities %}
+                <div class="assignment-card" data-status="active">
+                    <div class="assignment-header">
+                        <h3 class="assignment-title">{{ activity.title }}</h3>
+                        <span class="assignment-type-badge badge-{{ activity.activity_type.lower() }}">
+                            {{ activity.activity_type }}
+                        </span>
+                    </div>
+                    
+                    <div class="assignment-meta">
+                        <div class="assignment-meta-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            <span>Due: {{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No Limit' }}</span>
+                        </div>
+                        <div class="assignment-meta-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>Status: Active</span>
+                        </div>
+                    </div>
+
+                    {% if activity.activity_type == 'QUIZ' %}
+                    <a href="{{ url_for('start_quiz', activity_id=activity.id) }}" class="btn-start-task">
+                        <span>Start Quiz</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </a>
+                    {% else %}
+                    <a href="{% if activity.activity_type == 'WRITING' %}{{ url_for('submit_writing', activity_id=activity.id) }}{% elif activity.activity_type == 'SPEAKING' %}{{ url_for('speaking', activity_id=activity.id) }}{% else %}{{ url_for('submit_writing', activity_id=activity.id) }}{% endif %}" class="btn-start-task">
+                        <span>Start Task</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                
+                <!-- Pending Assignments (waiting for instructor review) -->
+                {% for activity in pending_activities %}
+                {% set is_submitted = activity.id in submitted_ids %}
+                {% set user_sub = user_subs|selectattr('activity_id', 'equalto', activity.id)|first %}
+                <div class="assignment-card" data-status="pending" style="display: none;">
+                    <div class="assignment-header">
+                        <h3 class="assignment-title">{{ activity.title }}</h3>
+                        <span class="assignment-type-badge badge-{{ activity.activity_type.lower() }}">
+                            {{ activity.activity_type }}
+                        </span>
+                    </div>
+                    
+                    <div class="assignment-meta">
+                        <div class="assignment-meta-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            <span>Due: {{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No Limit' }}</span>
+                        </div>
+                        <div class="assignment-meta-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span>Status: Pending Review</span>
+                        </div>
+                    </div>
+
+                    {% if is_submitted and user_sub %}
+                    <a href="{{ url_for('view_feedback', submission_id=user_sub.id) }}" class="btn-start-task" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
+                        <span>View Submission</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                
+                <!-- Completed Assignments (instructor approved) -->
+                {% for activity in completed_activities %}
+                {% set is_submitted = activity.id in submitted_ids %}
+                {% set user_sub = user_subs|selectattr('activity_id', 'equalto', activity.id)|first %}
+                <div class="assignment-card" data-status="completed" style="display: none;">
+                    <div class="assignment-header">
+                        <h3 class="assignment-title">{{ activity.title }}</h3>
+                        <span class="assignment-type-badge badge-{{ activity.activity_type.lower() }}">
+                            {{ activity.activity_type }}
+                        </span>
+                    </div>
+                    
+                    <div class="assignment-meta">
+                        <div class="assignment-meta-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            <span>Due: {{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No Limit' }}</span>
+                        </div>
+                        <div class="assignment-meta-item">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            <span>Status: Completed</span>
+                        </div>
+                    </div>
+
+                    {% if is_submitted and user_sub %}
+                    <a href="{{ url_for('view_feedback', submission_id=user_sub.id) }}" class="btn-start-task" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%);">
+                        <span>View Submission</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Empty States for different filters - Fixed position, centered on page -->
+    <div id="emptyStateContainer" style="display: none;">
+        {% if active_activities|length == 0 %}
+        <div class="empty-state" data-filter-status="active" style="display: none;">
+            <div class="empty-state-illustration">
+                <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+                    <path d="M100 60 L100 100 L140 120" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="100" cy="100" r="8" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="empty-state-title">No active assignments right now.</div>
+            <div class="empty-state-text">There are currently no active assignments available. Check your completed assignments or pending reviews.</div>
+        </div>
+        {% endif %}
+        
+        {% if pending_activities|length == 0 %}
+        <div class="empty-state" data-filter-status="pending" style="display: none;">
+            <div class="empty-state-illustration">
+                <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+                    <path d="M100 60 L100 100 L140 120" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="100" cy="100" r="8" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="empty-state-title">No assignments pending review.</div>
+            <div class="empty-state-text">All your submissions have been reviewed by instructors.</div>
+        </div>
+        {% endif %}
+        
+        {% if completed_activities|length == 0 %}
+        <div class="empty-state" data-filter-status="completed" style="display: none;">
+            <div class="empty-state-illustration">
+                <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+                    <path d="M100 60 L100 100 L140 120" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="100" cy="100" r="8" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="empty-state-title">No completed assignments yet.</div>
+            <div class="empty-state-text">Complete assignments to see them here.</div>
+        </div>
+        {% endif %}
+        
+        {% if active_activities|length == 0 and pending_activities|length == 0 and completed_activities|length == 0 %}
+        <div class="empty-state" data-filter-status="all">
+            <div class="empty-state-illustration">
+                <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+                    <path d="M100 60 L100 100 L140 120" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="100" cy="100" r="8" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="empty-state-title">No assignments yet</div>
+            <div class="empty-state-text">There are currently no assignments available. {% if user.role == 'Instructor' %}Create a new assignment to get started.{% else %}Check back later for new assignments.{% endif %}</div>
+        </div>
         {% endif %}
     </div>
-    <div class="status-chips">
-        <div class="status-chip active" onclick="filterTasks('active')">Active ({{ active_count }})</div>
-        <div class="status-chip" onclick="filterTasks('pending')">Pending ({{ pending_count }})</div>
-        <div class="status-chip" onclick="filterTasks('completed')">Completed ({{ completed_count }})</div>
-    </div>
-</div>
-
-<!-- Task Cards Grid -->
-    <div class="assignments-grid" id="assignmentsGrid">
-        <!-- Active Assignments (not submitted) -->
-        {% for activity in active_activities %}
-        <div class="assignment-card" data-status="active">
-        <div class="assignment-header">
-            <div class="assignment-icon">
-                {% if activity.activity_type == 'WRITING' %}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-                {% elif activity.activity_type == 'SPEAKING' %}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                    <line x1="12" y1="19" x2="12" y2="23"></line>
-                    <line x1="8" y1="23" x2="16" y2="23"></line>
-                </svg>
-                {% else %}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                    <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
-                {% endif %}
-            </div>
-            <div class="assignment-title-wrapper">
-                <h3 class="assignment-title">{{ activity.title }}</h3>
-                <span class="level-badge">{{ activity.activity_type }}</span>
-            </div>
-        </div>
-        
-        <div class="assignment-meta">
-            <div class="assignment-due-date">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <span>Due: {{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No Limit' }}</span>
-            </div>
-            <div class="assignment-progress">
-                <div class="assignment-progress-fill" style="width: 0%;"></div>
-            </div>
-        </div>
-
-        <div class="assignment-actions">
-            {% if activity.activity_type == 'QUIZ' %}
-            <!-- Quiz assignment: go to quiz flow -->
-            <a href="{{ url_for('start_quiz', activity_id=activity.id) }}" class="btn-start-task">
-                <span>Start Quiz</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-            </a>
-            {% else %}
-            <!-- Writing / Speaking assignments -->
-            <a href="{% if activity.activity_type == 'WRITING' %}{{ url_for('writing', activity_id=activity.id) }}{% elif activity.activity_type == 'SPEAKING' %}{{ url_for('speaking', activity_id=activity.id) }}{% else %}/submit/writing?activity_id={{ activity.id }}{% endif %}" class="btn-start-task">
-                <span>Start Task</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                </svg>
-            </a>
-            {% endif %}
-        </div>
-    </div>
-        {% endfor %}
-        
-        <!-- Pending Assignments (waiting for instructor review) -->
-        {% for activity in pending_activities %}
-        {% set is_submitted = activity.id in submitted_ids %}
-        {% set user_sub = user_subs|selectattr('activity_id', 'equalto', activity.id)|first %}
-        <div class="assignment-card" data-status="pending" style="display: none;">
-        <div class="assignment-header">
-            <div class="assignment-icon">
-                {% if activity.activity_type == 'WRITING' %}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-                {% elif activity.activity_type == 'SPEAKING' %}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                    <line x1="12" y1="19" x2="12" y2="23"></line>
-                    <line x1="8" y1="23" x2="16" y2="23"></line>
-                </svg>
-                {% else %}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                    <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
-                {% endif %}
-            </div>
-            <div class="assignment-title-wrapper">
-                <h3 class="assignment-title">{{ activity.title }}</h3>
-                <span class="level-badge">{{ activity.activity_type }}</span>
-            </div>
-        </div>
-        
-        <div class="assignment-meta">
-            <div class="assignment-due-date">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <span>Due: {{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No Limit' }}</span>
-            </div>
-            <div class="assignment-progress">
-                <div class="assignment-progress-fill" style="width: 50%;"></div>
-            </div>
-        </div>
-
-        <div class="assignment-actions">
-            {% if is_submitted and user_sub %}
-            <a href="{{ url_for('view_feedback', submission_id=user_sub.id) }}" class="btn-start-task" style="background: #f59e0b;">
-                <span>View Submission</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-            </a>
-            {% endif %}
-        </div>
-    </div>
-        {% endfor %}
-        
-        <!-- Completed Assignments (instructor approved) -->
-        {% for activity in completed_activities %}
-        {% set is_submitted = activity.id in submitted_ids %}
-        {% set user_sub = user_subs|selectattr('activity_id', 'equalto', activity.id)|first %}
-        <div class="assignment-card" data-status="completed" style="display: none;">
-        <div class="assignment-header">
-            <div class="assignment-icon">
-                {% if activity.activity_type == 'WRITING' %}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-                {% elif activity.activity_type == 'SPEAKING' %}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                    <line x1="12" y1="19" x2="12" y2="23"></line>
-                    <line x1="8" y1="23" x2="16" y2="23"></line>
-                </svg>
-                {% else %}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                    <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>
-                {% endif %}
-            </div>
-            <div class="assignment-title-wrapper">
-                <h3 class="assignment-title">{{ activity.title }}</h3>
-                <span class="level-badge">{{ activity.activity_type }}</span>
-            </div>
-        </div>
-        
-        <div class="assignment-meta">
-            <div class="assignment-due-date">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <span>Due: {{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No Limit' }}</span>
-            </div>
-            <div class="assignment-progress">
-                <div class="assignment-progress-fill" style="width: 100%;"></div>
-            </div>
-        </div>
-
-        <div class="assignment-actions">
-            {% if is_submitted and user_sub %}
-            <a href="{{ url_for('view_feedback', submission_id=user_sub.id) }}" class="btn-start-task" style="background: #64748b;">
-                <span>View Submission</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-            </a>
-            {% endif %}
-        </div>
-    </div>
-        {% endfor %}
-    </div>
-    
-    <!-- Empty States for different filters -->
-    {% if active_activities|length == 0 %}
-    <div class="empty-state" data-filter-status="active" style="display: none;">
-        <div class="empty-state-illustration">
-            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="2" opacity="0.3"/>
-                <path d="M100 60 L100 100 L140 120" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="100" cy="100" r="8" fill="currentColor"/>
-                <path d="M60 100 Q80 80 100 100 T140 100" stroke="currentColor" stroke-width="2" fill="none" opacity="0.5"/>
-                <path d="M100 140 Q120 120 140 140" stroke="currentColor" stroke-width="2" fill="none" opacity="0.5"/>
-            </svg>
-        </div>
-        <div class="empty-state-title">No active assignments right now.</div>
-        <div class="empty-state-text">There are currently no active assignments available. Check your completed assignments or pending reviews.</div>
-        {% if completed_activities|length > 0 %}
-        <button class="btn-view-history" onclick="filterTasks('completed')" style="border: none; background: transparent; cursor: pointer; margin-top: 16px;">
-            <span>View Completed Assignments</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-        </button>
-        {% endif %}
-    </div>
-    {% endif %}
-    
-    {% if pending_activities|length == 0 %}
-    <div class="empty-state" data-filter-status="pending" style="display: none;">
-        <div class="empty-state-illustration">
-            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="2" opacity="0.3"/>
-                <path d="M100 60 L100 100 L140 120" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="100" cy="100" r="8" fill="currentColor"/>
-                <path d="M60 100 Q80 80 100 100 T140 100" stroke="currentColor" stroke-width="2" fill="none" opacity="0.5"/>
-                <path d="M100 140 Q120 120 140 140" stroke="currentColor" stroke-width="2" fill="none" opacity="0.5"/>
-            </svg>
-        </div>
-        <div class="empty-state-title">No assignments pending review.</div>
-        <div class="empty-state-text">All your submissions have been reviewed by instructors.</div>
-    </div>
-    {% endif %}
-    
-    {% if completed_activities|length == 0 %}
-    <div class="empty-state" data-filter-status="completed" style="display: none;">
-        <div class="empty-state-illustration">
-            <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="2" opacity="0.3"/>
-                <path d="M100 60 L100 100 L140 120" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="100" cy="100" r="8" fill="currentColor"/>
-                <path d="M60 100 Q80 80 100 100 T140 100" stroke="currentColor" stroke-width="2" fill="none" opacity="0.5"/>
-                <path d="M100 140 Q120 120 140 140" stroke="currentColor" stroke-width="2" fill="none" opacity="0.5"/>
-            </svg>
-        </div>
-        <div class="empty-state-title">No completed assignments yet.</div>
-        <div class="empty-state-text">Complete assignments to see them here.</div>
-    </div>
-    {% endif %}
-</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Filter Tasks by Status
+    // Filter Tasks by Status (Same logic as before but with filter-pill class)
     function filterTasks(status) {
-        const chips = document.querySelectorAll('.status-chip');
+        const pills = document.querySelectorAll('.filter-pill');
         const cards = document.querySelectorAll('.assignment-card');
         const grid = document.getElementById('assignmentsGrid');
-        const emptyState = document.querySelector('.empty-state');
+        const emptyStates = document.querySelectorAll('.empty-state');
         
-        // Update active chip
-        chips.forEach(chip => {
-            chip.classList.remove('active');
-            const chipText = chip.textContent.toLowerCase();
-            if ((status === 'active' && chipText.includes('active')) ||
-                (status === 'pending' && chipText.includes('pending')) ||
-                (status === 'completed' && chipText.includes('completed'))) {
-                chip.classList.add('active');
+        // Update active pill
+        pills.forEach(pill => {
+            pill.classList.remove('active');
+            const pillText = pill.textContent.toLowerCase();
+            if ((status === 'active' && pillText.includes('active')) ||
+                (status === 'pending' && pillText.includes('pending')) ||
+                (status === 'completed' && pillText.includes('completed'))) {
+                pill.classList.add('active');
             }
         });
         
@@ -686,9 +797,7 @@
         let visibleCount = 0;
         cards.forEach(card => {
             const cardStatus = card.getAttribute('data-status');
-            // Show cards matching the selected status
             if (cardStatus === status) {
-                // Force display for all matching cards
                 card.style.display = 'flex';
                 setTimeout(() => {
                     card.style.opacity = '1';
@@ -705,20 +814,55 @@
         });
         
         // Show/hide empty state based on filter status
-        const emptyStates = document.querySelectorAll('.empty-state');
-        emptyStates.forEach(emptyState => {
-            const emptyStateStatus = emptyState.getAttribute('data-filter-status');
-            if (visibleCount === 0 && emptyStateStatus === status) {
-                emptyState.style.display = 'flex';
-                if (grid) grid.style.display = 'none';
-            } else {
-                emptyState.style.display = 'none';
-            }
-        });
+        const gridContentArea = document.getElementById('gridContentArea');
+        const emptyStateContainer = document.getElementById('emptyStateContainer');
+        const assignmentsContainer = document.querySelector('.assignments-container');
         
-        // Show grid if there are visible cards
-        if (visibleCount > 0 && grid) {
-            grid.style.display = 'grid';
+        if (visibleCount === 0) {
+            // Hide grid content area, show empty state
+            if (gridContentArea) {
+                gridContentArea.style.display = 'none';
+            }
+            
+            // Show appropriate empty state
+            emptyStates.forEach(emptyState => {
+                const emptyStateStatus = emptyState.getAttribute('data-filter-status');
+                if (emptyStateStatus === status) {
+                    emptyState.style.display = 'flex';
+                } else {
+                    emptyState.style.display = 'none';
+                }
+            });
+            
+            // Show empty state container - fixed position, centered
+            if (emptyStateContainer) {
+                emptyStateContainer.style.display = 'flex';
+            }
+            
+            // Disable scrolling on assignments container
+            if (assignmentsContainer) {
+                assignmentsContainer.style.overflow = 'hidden';
+            }
+        } else {
+            // Show grid content area, hide empty state
+            if (gridContentArea) {
+                gridContentArea.style.display = 'flex';
+            }
+            
+            // Hide all empty states
+            emptyStates.forEach(emptyState => {
+                emptyState.style.display = 'none';
+            });
+            
+            // Hide empty state container
+            if (emptyStateContainer) {
+                emptyStateContainer.style.display = 'none';
+            }
+            
+            // Enable scrolling on assignments container for grid content
+            if (assignmentsContainer) {
+                assignmentsContainer.style.overflow = '';
+            }
         }
     }
 
@@ -728,9 +872,32 @@
         filterTasks('active');
         
         const cards = document.querySelectorAll('.assignment-card');
+        const gridContentArea = document.getElementById('gridContentArea');
+        const emptyStateContainer = document.getElementById('emptyStateContainer');
+        
+        // Check if we should show grid or empty state
+        const activeCards = document.querySelectorAll('.assignment-card[data-status="active"]');
+        
+        if (activeCards.length > 0) {
+            // Show grid, hide empty state
+            if (gridContentArea) {
+                gridContentArea.style.display = 'flex';
+            }
+            if (emptyStateContainer) {
+                emptyStateContainer.style.display = 'none';
+            }
+        } else {
+            // Show empty state, hide grid
+            if (gridContentArea) {
+                gridContentArea.style.display = 'none';
+            }
+            if (emptyStateContainer) {
+                emptyStateContainer.style.display = 'flex';
+            }
+        }
+        
         cards.forEach((card, index) => {
             const cardStatus = card.getAttribute('data-status');
-            // Only animate visible cards (active ones)
             if (cardStatus === 'active') {
                 card.style.opacity = '0';
                 card.style.transform = 'translateY(20px)';
@@ -740,7 +907,6 @@
                     card.style.transform = 'translateY(0)';
                 }, index * 50);
             } else {
-                // Other cards stay hidden initially but have transition ready
                 card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
             }
         });

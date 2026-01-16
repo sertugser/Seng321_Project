@@ -5,11 +5,28 @@
 {% block extra_css %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-    /* Main Container - Prevent Horizontal Scroll */
+    /* Body and HTML - No scrolling */
+    body {
+        overflow: hidden !important;
+        height: 100vh;
+    }
+    
+    html {
+        overflow: hidden !important;
+        height: 100vh;
+    }
+    
+    /* Main Container - No scroll, fit to viewport */
     .dashboard-container {
         width: 100%;
         max-width: 100%;
         overflow-x: hidden;
+        overflow-y: hidden;
+        height: calc(100vh - 48px); /* Full viewport height minus content-wrapper padding */
+        max-height: calc(100vh - 48px);
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
     }
 
     /* Content Wrapper - Align with Sidebar MAIN */
@@ -23,9 +40,9 @@
         max-width: 100%;
         background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         border-radius: 10px;
-        padding: 16px 20px;
+        padding: 12px 20px;
         margin-top: 0;  /* No top margin, aligned with content-wrapper top */
-        margin-bottom: 20px;
+        margin-bottom: 16px;
         color: var(--white);
         box-sizing: border-box;
         display: flex;
@@ -33,6 +50,7 @@
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 12px;
+        flex-shrink: 0;
     }
 
     .welcome-content {
@@ -82,9 +100,10 @@
         justify-content: space-between;
         width: 100%;
         max-width: 100%;
-        margin-bottom: 24px;
+        margin-bottom: 16px;
         flex-wrap: wrap;
         gap: 16px;
+        flex-shrink: 0;
     }
 
     .dashboard-header-section h2 {
@@ -102,47 +121,6 @@
         flex: 0 0 auto;
         justify-content: flex-end;
         max-width: none;
-    }
-
-    .search-bar {
-        display: flex;
-        align-items: center;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        padding: 10px 16px;
-        gap: 10px;
-        width: 280px;
-        min-width: 280px;
-        height: 42px;
-        flex-shrink: 0;
-        transition: all 0.2s ease;
-        box-sizing: border-box;
-    }
-
-    .search-bar:focus-within {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    }
-
-    .search-bar svg {
-        width: 18px;
-        height: 18px;
-        stroke: var(--text-secondary);
-        flex-shrink: 0;
-    }
-
-    .search-bar input {
-        border: none;
-        outline: none;
-        flex: 1;
-        font-size: 0.9rem;
-        color: var(--text-main);
-        background: transparent;
-    }
-
-    .search-bar input::placeholder {
-        color: var(--text-secondary);
     }
 
     .btn-create-assignment {
@@ -184,12 +162,40 @@
     }
 
     /* Metric Cards - Compact Modern SaaS Style */
+    /* Scrollable content area inside dashboard */
+    .dashboard-scrollable {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 8px;
+        min-height: 0;
+    }
+    
+    /* Hide scrollbar but keep functionality */
+    .dashboard-scrollable::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .dashboard-scrollable::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .dashboard-scrollable::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 3px;
+    }
+    
+    .dashboard-scrollable::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
     .analytics-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
-        margin-bottom: 24px;
+        gap: 12px;
+        margin-bottom: 16px;
         max-width: 100%;
+        flex-shrink: 0;
     }
 
     .stat-card {
@@ -388,29 +394,46 @@
     .charts-container {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 16px;
-        margin-top: 40px; /* gap-10 - belirgin boşluk üstteki kartlardan sonra */
-        margin-bottom: 24px;
+        gap: 12px;
+        margin-top: 16px;
+        margin-bottom: 16px;
         max-width: 100%;
+        flex-shrink: 0;
     }
 
     .chart-card {
         background: var(--card-bg);
         border: 1px solid var(--border-color);
         border-radius: 10px;
-        padding: 32px; /* p-8 - increased padding */
+        padding: 20px; /* Increased padding */
         max-width: 100%;
         overflow: hidden;
         box-shadow: var(--shadow-sm);
+        max-height: none; /* Allow content to expand */
+        min-height: 380px; /* Match Grade Distribution */
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .chart-card h4 {
+        margin: 0 0 20px 0; /* Match Grade Distribution spacing */
+        font-size: 1rem;
+        font-weight: 700;
+        flex-shrink: 0;
     }
 
-    /* Grade Distribution - Horizontal Layout with More Padding */
+    /* Grade Distribution - Horizontal Layout with Compact Padding */
     .chart-card:has(#distChart) {
-        padding: 40px 48px; /* p-10 with extra horizontal padding - more visual breathing room */
+        padding: 20px; /* Increased padding */
+        max-height: none; /* Allow content to expand */
+        min-height: 380px;
+        display: flex;
+        flex-direction: column;
     }
 
     .chart-card:has(#distChart) h4 {
-        margin-bottom: 24px; /* More space between title and content */
+        margin-bottom: 20px; /* Increased space between title and content */
+        flex-shrink: 0;
     }
 
     .grade-distribution-container {
@@ -418,9 +441,11 @@
         flex-direction: row;
         align-items: center;
         justify-content: center;
-        gap: 48px; /* gap-12 equivalent - 48px gap */
+        gap: 32px; /* Increased gap for better spacing */
         width: 100%;
         height: 100%;
+        flex: 1;
+        min-height: 0;
     }
 
     .grade-chart-wrapper {
@@ -433,30 +458,46 @@
     .grade-legend {
         display: flex;
         flex-direction: column;
-        gap: 16px; /* space-y-4 - 16px between items */
+        gap: 14px; /* Increased gap for better readability */
         flex: 0 0 auto;
+        justify-content: center;
     }
 
     .grade-legend-item {
         display: flex;
         align-items: center;
         gap: 12px;
-        font-size: 0.9375rem; /* Slightly larger font for readability */
+        font-size: 0.875rem;
         font-weight: 500;
         color: var(--text-main);
-        padding: 8px 0; /* Extra vertical padding for visual breathing room */
+        padding: 6px 0;
+        min-height: 24px;
     }
 
     .grade-legend-label {
         display: flex;
         align-items: center;
         gap: 8px;
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .grade-legend-label > span:first-child {
+        white-space: nowrap;
+        font-weight: 500;
     }
 
     .grade-legend-percentage {
-        margin-left: 4px;
+        margin-left: 6px;
         font-weight: 600;
-        color: var(--text-secondary);
+        color: var(--text-main);
+        font-size: 0.875rem;
+    }
+    
+    /* Hide percentage when 0 or no data */
+    .grade-legend-percentage:empty::before,
+    .grade-legend-percentage:contains("0%") {
+        content: none;
     }
 
     .grade-legend-dot {
@@ -495,20 +536,27 @@
         color: #cbd5e1 !important; /* Light gray label in dark mode */
     }
 
-    /* Success Rate Summary Base Styles */
-    .success-rate-summary {
+    /* Success Rate Summary Base Styles - Only for Grade Distribution */
+    .chart-card:has(#distChart) .success-rate-summary {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        margin-top: 24px;
-        gap: 8px;
+        margin-top: 20px;
+        margin-bottom: 0;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    
+    .success-rate-summary {
+        display: none; /* Hide if not inside distChart card */
     }
 
-    .success-rate-summary-value {
+    .chart-card:has(#distChart) .success-rate-summary-value {
         font-size: 2rem;
         font-weight: 700;
         color: var(--text-main);
+        line-height: 1;
     }
 
     .success-rate-summary-label {
@@ -518,15 +566,20 @@
     }
 
     /* Grade Stats Container - Total Submission and Average */
-    .grade-stats-container {
+    .chart-card:has(#distChart) .grade-stats-container {
         display: flex;
         flex-direction: row;
         justify-content: space-around;
         align-items: center;
-        gap: 24px;
-        margin-top: 24px;
-        padding-top: 24px;
+        gap: 32px;
+        margin-top: 16px;
+        padding-top: 16px;
         border-top: 1px solid var(--border-color);
+        flex-shrink: 0;
+    }
+    
+    .grade-stats-container {
+        display: none; /* Hide if not inside distChart card */
     }
 
     .grade-stat-item {
@@ -537,6 +590,13 @@
         flex: 1;
     }
 
+    .chart-card:has(#distChart) .grade-stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-main);
+        line-height: 1;
+    }
+    
     .grade-stat-value {
         font-size: 1.5rem;
         font-weight: 700;
@@ -728,17 +788,30 @@
     }
 
     .chart-box {
-        height: 220px;
+        height: 220px; /* Fixed height to match Grade Distribution */
         position: relative;
         padding-bottom: 0; /* No extra padding needed with horizontal layout */
         display: flex;
         align-items: center;
         justify-content: center;
+        max-height: 220px;
+        flex: 1;
+        min-height: 220px;
     }
 
     /* Grade Distribution specific chart-box */
     .chart-card:has(#distChart) .chart-box {
-        height: 240px; /* Slightly taller for better balance */
+        height: 220px; /* Fixed height for chart area only */
+        max-height: 220px;
+        min-height: 220px;
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+    
+    /* Grade Distribution card - allow content to flow */
+    .chart-card:has(#distChart) {
+        max-height: none; /* Remove max-height restriction */
+        min-height: 380px;
     }
 
     /* Professional Empty State for Student Performance Comparison */
@@ -749,7 +822,7 @@
         justify-content: center;
         height: 100%;
         width: 100%;
-        padding: 30px 20px;
+        padding: 16px 12px;
         position: relative;
         overflow: hidden;
         min-height: 0;
@@ -774,10 +847,10 @@
 
     /* Empty State Title - More Prominent */
     .empty-state-title {
-        font-size: 1.125rem;
+        font-size: 1rem;
         font-weight: 800;
         color: var(--text-main);
-        margin-bottom: 28px;
+        margin-bottom: 16px;
         text-align: center;
         position: relative;
         z-index: 1;
@@ -790,7 +863,7 @@
         flex-direction: row;
         justify-content: space-around;
         align-items: flex-start;
-        gap: 16px;
+        gap: 10px;
         width: 100%;
         max-width: 100%;
         position: relative;
@@ -802,24 +875,24 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 10px;
+        gap: 6px;
         flex: 1;
-        min-width: 120px;
-        max-width: 180px;
+        min-width: 100px;
+        max-width: 150px;
         padding: 0;
     }
 
     /* Step Number Circle - Large and Prominent */
     .roadmap-step-number {
-        width: 48px;
-        height: 48px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         background: rgba(99, 102, 241, 0.15);
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        font-size: 1.25rem;
+        font-size: 1rem;
         font-weight: 800;
         color: #6366f1;
         border: 2px solid rgba(99, 102, 241, 0.2);
@@ -835,7 +908,7 @@
     }
 
     .roadmap-step-title {
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
         font-weight: 700;
         color: var(--text-main);
         margin: 0;
@@ -843,9 +916,9 @@
     }
 
     .roadmap-step-description {
-        font-size: 0.6875rem;
+        font-size: 0.625rem;
         color: var(--text-secondary);
-        line-height: 1.4;
+        line-height: 1.3;
         margin: 0;
     }
 
@@ -1007,11 +1080,6 @@
             width: 100%;
         }
 
-        .search-bar {
-            width: 100%;
-            max-width: 100%;
-        }
-
         .welcome-banner {
             padding: 16px 20px;
             flex-direction: column;
@@ -1040,8 +1108,8 @@
 
 {% block content %}
 <div class="dashboard-container">
-<!-- Welcome Banner - Compact with Date & Motivation -->
-<div class="welcome-banner">
+    <!-- Welcome Banner - Compact with Date & Motivation -->
+    <div class="welcome-banner">
     <div class="welcome-content">
     <h1 class="welcome-title">Welcome back, {% if user.is_authenticated %}{{ user.username }}{% else %}Instructor{% endif %}! 👋</h1>
     <p class="welcome-subtitle">Monitor class performance and manage assignments effectively.</p>
@@ -1050,19 +1118,14 @@
         <div class="welcome-date" id="currentDate"></div>
         <div class="welcome-motivation" id="motivationText"></div>
     </div>
-</div>
+    </div>
 
-<!-- Dashboard Header Section -->
-<div class="dashboard-header-section">
+    <!-- Scrollable content area -->
+    <div class="dashboard-scrollable">
+    <!-- Dashboard Header Section -->
+    <div class="dashboard-header-section">
     <h2>Class Management</h2>
     <div class="header-actions">
-        <div class="search-bar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.35-4.35"></path>
-            </svg>
-            <input type="text" id="studentSearch" placeholder="Search student or type...">
-        </div>
         <a href="/instructor/assignments/create" class="btn-create-assignment">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -1246,21 +1309,21 @@
                         <div class="grade-legend-dot high"></div>
                         <div class="grade-legend-label">
                             <span>High (75+)</span>
-                            <span class="grade-legend-percentage" id="highPercentage">- 0%</span>
+                            <span class="grade-legend-percentage" id="highPercentage">0%</span>
                         </div>
                     </div>
                     <div class="grade-legend-item">
                         <div class="grade-legend-dot mid"></div>
                         <div class="grade-legend-label">
                             <span>Mid (50-74)</span>
-                            <span class="grade-legend-percentage" id="midPercentage">- 0%</span>
+                            <span class="grade-legend-percentage" id="midPercentage">0%</span>
                         </div>
                     </div>
                     <div class="grade-legend-item">
                         <div class="grade-legend-dot low"></div>
                         <div class="grade-legend-label">
                             <span>Low (&lt;50)</span>
-                            <span class="grade-legend-percentage" id="lowPercentage">- 0%</span>
+                            <span class="grade-legend-percentage" id="lowPercentage">0%</span>
                         </div>
                     </div>
                 </div>
@@ -1284,7 +1347,8 @@
         </div>
                     </div>
 </div>
-
+    </div>
+    <!-- End scrollable content area -->
 </div>
 {% endblock %}
 
@@ -1592,9 +1656,10 @@
         const midPct = totalGraded > 0 ? Math.round((midCount / totalGraded) * 100) : 0;
         const lowPct = totalGraded > 0 ? Math.round((lowCount / totalGraded) * 100) : 0;
         
-        if (highPercentageEl) highPercentageEl.textContent = `- %${highPct}`;
-        if (midPercentageEl) midPercentageEl.textContent = `- %${midPct}`;
-        if (lowPercentageEl) lowPercentageEl.textContent = `- %${lowPct}`;
+        // Update legend percentages - format: "0%"
+        if (highPercentageEl) highPercentageEl.textContent = `${highPct}%`;
+        if (midPercentageEl) midPercentageEl.textContent = `${midPct}%`;
+        if (lowPercentageEl) lowPercentageEl.textContent = `${lowPct}%`;
         
         // Define colors for each category
         const gradeColors = {

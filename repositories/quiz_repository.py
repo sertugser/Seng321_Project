@@ -5,11 +5,14 @@ class QuizRepository:
     @staticmethod
     def fetch_questions_from_db(limit=5, category=None):
         """
-        Fetch questions from database
+        Fetch questions from database with case-insensitive category matching
         """
+        from sqlalchemy import func
         query = Question.query
         if category:
-            query = query.filter_by(category=category)
+            # Case-insensitive category matching
+            category_lower = category.lower() if category else None
+            query = query.filter(func.lower(Question.category) == category_lower)
         return query.limit(limit).all()
     
     @staticmethod

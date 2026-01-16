@@ -1,146 +1,692 @@
 {% extends "base.html" %}
 
-{% block title %}{{ 'Quiz Review' if is_review else 'Quiz Result - AAFS AI' }}{% endblock %}
+{% block title %}{{ 'Quiz Review' if is_review else 'Quiz Completed! - AAFS AI' }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Content Wrapper - Match Dashboard */
+    .content-wrapper {
+        height: 100vh;
+        overflow-x: hidden;
+        overflow-y: hidden;
+        display: flex;
+        flex-direction: column;
+        padding: 48px 32px 24px 32px;
+    }
+
+    /* Main Result Container - Fixed Height */
+    .result-main-container {
+        flex: 1;
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0; /* Allow flex shrinking */
+        overflow: hidden;
+    }
+
+    /* Single Large White Card - Fixed Layout */
+    .result-card-container {
+        background: var(--card-bg);
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-lg);
+        padding: 32px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    /* Header Section */
+    .result-header-section {
+        text-align: center;
+        margin-bottom: 24px;
+        flex-shrink: 0;
+    }
+
+    .result-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 8px 0;
+        letter-spacing: -0.02em;
+    }
+
+    .result-subtitle {
+        font-size: 1rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    /* Score Card Section */
+    .score-card {
+        background: var(--bg-primary);
+        border-radius: 10px;
+        padding: 24px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 40px;
+        flex-wrap: wrap;
+        flex-shrink: 0;
+        border: 1px solid var(--border-color);
+    }
+
+    .score-circle-container {
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    .score-circle {
+        position: relative;
+        width: 160px;
+        height: 160px;
+    }
+
+    .score-circle-svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+
+    .score-circle-bg {
+        fill: none;
+        stroke: #e2e8f0;
+        stroke-width: 12;
+    }
+
+    .score-circle-progress {
+        fill: none;
+        stroke-width: 12;
+        stroke-linecap: round;
+        stroke-dasharray: 565.48;
+        transition: stroke-dashoffset 1s ease;
+    }
+
+    /* Color based on score */
+    .score-circle-progress[data-score] {
+        stroke: #3b82f6; /* Default blue */
+    }
+
+    .score-circle-progress[data-score^="7"],
+    .score-circle-progress[data-score^="8"],
+    .score-circle-progress[data-score^="9"],
+    .score-circle-progress[data-score="100"] {
+        stroke: #10b981; /* Green for 70+ */
+    }
+
+    .score-circle-progress[data-score^="0"],
+    .score-circle-progress[data-score^="1"],
+    .score-circle-progress[data-score^="2"],
+    .score-circle-progress[data-score^="3"],
+    .score-circle-progress[data-score^="4"],
+    .score-circle-progress[data-score^="5"] {
+        stroke: #ef4444; /* Red for <60 */
+    }
+
+    .score-circle-progress[data-score^="6"] {
+        stroke: #f59e0b; /* Orange for 60-69 */
+    }
+
+    .score-circle-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+
+    .score-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+        line-height: 1;
+    }
+
+    .score-label {
+        font-size: 1.125rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    /* Score Stats */
+    .score-stats {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 32px;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-main);
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-divider {
+        width: 2px;
+        height: 45px;
+        background: var(--border-color);
+    }
+
+    /* Score Header Text */
+    .score-header-text {
+        width: 100%;
+        text-align: center;
+        margin-top: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .score-header-text .score-text {
+        color: var(--text-secondary);
+        font-weight: 400;
+    }
+
+    /* Questions Summary Section - Scrollable */
+    .questions-summary-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+
+    .section-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 16px;
+        letter-spacing: -0.01em;
+        flex-shrink: 0;
+    }
+
+    .questions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        flex: 1;
+        min-height: 0;
+        padding-right: 8px;
+    }
+
+    /* Custom Scrollbar */
+    .questions-list::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .questions-list::-webkit-scrollbar-track {
+        background: var(--bg-primary);
+        border-radius: 4px;
+    }
+
+    .questions-list::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 4px;
+    }
+
+    .questions-list::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
+    }
+
+    /* Question Card - Dashboard Style */
+    .question-card {
+        background: var(--bg-primary);
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+    }
+
+    .question-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+        border-color: var(--accent);
+    }
+
+    .question-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .question-number {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .question-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-correct {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-incorrect {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-icon {
+        font-size: 0.875rem;
+        line-height: 1;
+        font-weight: 700;
+    }
+
+    .question-card-body {
+        padding: 16px;
+    }
+
+    .question-text {
+        font-size: 0.9375rem;
+        color: var(--text-main);
+        font-weight: 500;
+        margin: 0 0 12px 0;
+        line-height: 1.6;
+    }
+
+    .answer-comparison {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .answer-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        background: var(--card-bg);
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+    }
+
+    .answer-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+        min-width: 100px;
+    }
+
+    .answer-value {
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 6px;
+    }
+
+    .answer-correct {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .answer-wrong {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+.explanation {
+    margin-top: 10px;
+    padding: 12px 14px;
+    background: #fef3c7;
+    border-left: 3px solid #f59e0b;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    color: #92400e;
+    line-height: 1.5;
+}
+
+.explanation-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.explanation-header strong {
+    color: #78350f;
+    font-weight: 600;
+}
+
+.explanation-content {
+    color: #92400e;
+    line-height: 1.6;
+}
+
+.ai-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 4px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #6366f1;
+    white-space: nowrap;
+}
+
+.ai-badge svg {
+    width: 12px;
+    height: 12px;
+    stroke: #6366f1;
+    flex-shrink: 0;
+}
+
+    /* Action Buttons - Fixed at Bottom */
+    .result-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-shrink: 0;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn-action {
+        padding: 10px 20px;
+        font-size: 0.9375rem;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-action span {
+        font-size: 1rem;
+        line-height: 1;
+    }
+
+    .btn-primary-action {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: var(--white);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-secondary-action {
+        background: var(--card-bg);
+        color: var(--text-main);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-secondary-action:hover {
+        background: var(--hover-bg);
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .content-wrapper {
+            padding: 32px 20px 20px 20px;
+        }
+
+        .result-title {
+            font-size: 1.75rem;
+        }
+
+        .result-card-container {
+            padding: 24px 20px;
+        }
+
+        .score-card {
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .score-circle {
+            width: 140px;
+            height: 140px;
+        }
+
+        .score-value {
+            font-size: 2rem;
+        }
+
+        .score-stats {
+            width: 100%;
+            justify-content: space-around;
+            gap: 20px;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+        }
+
+        .stat-divider {
+            height: 35px;
+        }
+
+        .question-card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .answer-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .answer-label {
+            min-width: auto;
+        }
+
+        .explanation-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .ai-badge {
+            margin-top: 4px;
+        }
+
+        .result-actions {
+            flex-direction: column;
+        }
+
+        .btn-action {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="content-container">
-    <div class="quiz-result-card glass-card">
-        <div class="result-header">
-            <h2>{{ 'Quiz Review' if is_review else 'Quiz Completed!' }}</h2>
+<div class="result-main-container">
+    <!-- Single Large White Card -->
+    <div class="result-card-container">
+        <!-- Header -->
+        <div class="result-header-section">
+            <h1 class="result-title">{{ 'Quiz Review' if is_review else 'Quiz Completed!' }}</h1>
+            <p class="result-subtitle">Review your performance and see detailed feedback</p>
         </div>
-        
-        <div class="score-display">
-            <div class="score-circle">
-                <span class="score-value">{{ score }}</span>
-                <span class="score-label">Score</span>
+
+        <!-- Score Card -->
+        <div class="score-card">
+            <div class="score-circle-container">
+                <div class="score-circle">
+                    <svg class="score-circle-svg" viewBox="0 0 200 200">
+                        <circle class="score-circle-bg" cx="100" cy="100" r="90"></circle>
+                        <circle class="score-circle-progress" cx="100" cy="100" r="90" 
+                                data-score="{{ score }}"></circle>
+                    </svg>
+                    <div class="score-circle-content">
+                        <span class="score-value">{{ score }}</span>
+                        <span class="score-label">%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="score-stats">
+                <div class="stat-item">
+                    <div class="stat-value">{{ correct }}</div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ total }}</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                    <div class="stat-value">{{ total - correct }}</div>
+                    <div class="stat-label">Incorrect</div>
+                </div>
+            </div>
+            <div class="score-header-text">
+                <span class="score-text">{{ correct }} out of {{ total }} questions correct</span> • <span>{{ score }}%</span>
             </div>
         </div>
-        
-        <div class="result-details">
-            <p><strong>Correct Answers:</strong> {{ correct }} out of {{ total }}</p>
-            <p><strong>Percentage:</strong> {{ score }}%</p>
-        </div>
-        
+
+        <!-- Question Summary - Scrollable Section -->
         {% if details %}
-        <div class="result-details">
-            <h3>Question Summary</h3>
-            <ul style="text-align: left; margin-top: 10px;">
+        <div class="questions-summary-section">
+            <h2 class="section-title">Question Summary</h2>
+            <div class="questions-list">
                 {% for item in details %}
-                <li style="margin-bottom: 8px;">
-                    <strong>Q{{ loop.index }}:</strong> {{ item.question_text }}<br>
-                    Your answer: {{ item.user_answer or '—' }} |
-                    Correct: {{ item.correct_answer }} |
-                    {% if item.is_correct %}
-                        <span style="color: green; font-weight: 600;">Correct</span>
-                    {% else %}
-                        <span style="color: red; font-weight: 600;">Wrong</span>
-                    {% endif %}
-                </li>
+                <div class="question-card">
+                    <div class="question-card-header">
+                        <span class="question-number">Question {{ loop.index }}</span>
+                        <span class="question-status {% if item.is_correct %}status-correct{% else %}status-incorrect{% endif %}">
+                            {% if item.is_correct %}
+                                <span class="status-icon">✓</span> Correct
+                            {% else %}
+                                <span class="status-icon">✗</span> Incorrect
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="question-card-body">
+                        <p class="question-text">{{ item.question_text }}</p>
+                        <div class="answer-comparison">
+                            <div class="answer-item">
+                                <span class="answer-label">Your Answer:</span>
+                                <span class="answer-value {% if not item.is_correct %}answer-wrong{% else %}answer-correct{% endif %}">
+                                    {{ item.user_answer or 'Not answered' }}
+                                </span>
+                            </div>
+                            <div class="answer-item">
+                                <span class="answer-label">Correct Answer:</span>
+                                <span class="answer-value answer-correct">{{ item.correct_answer }}</span>
+                            </div>
+                        </div>
+                        {% if not item.is_correct %}
+                        <div class="explanation">
+                            <div class="explanation-header">
+                                <strong>Why?</strong>
+                                {% if item.explanation %}
+                                <span class="ai-badge">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                        <path d="M2 17l10 5 10-5"></path>
+                                        <path d="M2 12l10 5 10-5"></path>
+                                    </svg>
+                                    AI-Generated Insight
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="explanation-content">
+                                {% if item.explanation %}
+                                    {{ item.explanation }}
+                                {% else %}
+                                    Generating AI analysis... Please refresh the page in a moment.
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
                 {% endfor %}
-            </ul>
+            </div>
         </div>
         {% endif %}
-        
+
+        <!-- Action Buttons - Fixed at Bottom -->
         <div class="result-actions">
-            <a href="{{ url_for('quizzes') }}" class="btn-primary">Back to Quizzes</a>
-            <a href="{{ url_for('dashboard') }}" class="btn-secondary">Go to Dashboard</a>
+            <a href="{{ url_for('quizzes') }}" class="btn-action btn-primary-action">
+                <span>←</span> Review All Quizzes
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="btn-action btn-secondary-action">
+                Back to Dashboard <span>→</span>
+            </a>
         </div>
     </div>
 </div>
 
-<style>
-.quiz-result-card {
-    max-width: 600px;
-    margin: 40px auto;
-    padding: 40px;
-    text-align: center;
-}
-
-.result-header h2 {
-    font-size: 2rem;
-    margin-bottom: 30px;
-    color: var(--text-main);
-}
-
-.score-display {
-    margin: 30px 0;
-}
-
-.score-circle {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
-    color: white;
-    margin: 0 auto;
-}
-
-.score-value {
-    font-size: 3rem;
-    font-weight: bold;
-}
-
-.score-label {
-    font-size: 1rem;
-    opacity: 0.9;
-}
-
-.result-details {
-    margin: 30px 0;
-    padding: 20px;
-    background: var(--bg-secondary);
-    border-radius: 8px;
-}
-
-.result-details p {
-    margin: 10px 0;
-    font-size: 1.1rem;
-    color: var(--text-main);
-}
-
-.result-actions {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    margin-top: 30px;
-}
-
-.btn-primary, .btn-secondary {
-    padding: 12px 30px;
-    font-size: 1rem;
-    border-radius: 6px;
-    text-decoration: none;
-    transition: all 0.2s;
-    display: inline-block;
-}
-
-.btn-primary {
-    background: var(--primary-color);
-    color: white;
-}
-
-.btn-primary:hover {
-    background: var(--primary-hover);
-}
-
-.btn-secondary {
-    background: var(--bg-secondary);
-    color: var(--text-main);
-    border: 2px solid var(--border-color);
-}
-
-.btn-secondary:hover {
-    background: var(--hover-bg);
-}
-</style>
+<script>
+// Animate score circle on load
+document.addEventListener('DOMContentLoaded', function() {
+    const scoreCircle = document.querySelector('.score-circle-progress');
+    if (scoreCircle) {
+        const score = parseFloat(scoreCircle.getAttribute('data-score') || document.querySelector('.score-value').textContent);
+        const circumference = 2 * Math.PI * 90;
+        const offset = circumference - (score / 100) * circumference;
+        
+        // Set initial state
+        scoreCircle.style.strokeDasharray = circumference;
+        scoreCircle.style.strokeDashoffset = circumference;
+        
+        // Animate to correct position
+        setTimeout(() => {
+            scoreCircle.style.transition = 'stroke-dashoffset 1s ease';
+            scoreCircle.style.strokeDashoffset = offset;
+        }, 100);
+    }
+});
+</script>
 {% endblock %}
-
-
-
-
-
-
