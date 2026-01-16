@@ -426,6 +426,23 @@
         gap: 8px;
     }
 
+    .results-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .score-badge {
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-main);
+        background: rgba(99, 102, 241, 0.12);
+        border: 1px solid var(--border-color);
+        white-space: nowrap;
+    }
+
     .btn-secondary {
         padding: 8px 16px;
         border-radius: 8px;
@@ -492,6 +509,54 @@
 
     .results-content.active {
         display: block;
+    }
+
+    .score-summary {
+        margin-top: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .score-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: rgba(99, 102, 241, 0.1);
+        color: var(--text-main);
+        font-size: 0.875rem;
+        font-weight: 600;
+        border: 1px solid var(--border-color);
+        width: fit-content;
+    }
+
+    .score-status {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+    }
+
+    .feedback-block {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        font-size: 0.875rem;
+        color: var(--text-main);
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    .error-banner {
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        background: rgba(239, 68, 68, 0.08);
+        color: #b91c1c;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 0.875rem;
+        margin-bottom: 16px;
     }
 
     .extracted-text {
@@ -734,7 +799,18 @@
     <div class="results-section">
         <div class="results-card">
             <div class="results-header">
-                <h3 class="results-title">Analysis Results</h3>
+                <div class="results-header-left">
+                    <h3 class="results-title">Analysis Results</h3>
+                    {% if extracted_text %}
+                    <span class="score-badge">
+                        {% if grade and grade.score is not none %}
+                            Score: {{ "%.1f"|format(grade.score) }}%
+                        {% else %}
+                            Score: Pending
+                        {% endif %}
+                    </span>
+                    {% endif %}
+                </div>
                 <div class="results-actions">
                     <button class="btn-secondary" onclick="toggleJsonView()" id="jsonToggleBtn" style="display: none;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -754,6 +830,9 @@
             </div>
 
             <!-- Empty State -->
+            {% if error_message %}
+            <div class="error-banner">{{ error_message }}</div>
+            {% endif %}
             <div class="results-empty" id="resultsEmpty">
                 <div class="results-empty-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -769,6 +848,19 @@
             <!-- Results Content -->
             <div class="results-content" id="resultsContent">
                 <div class="extracted-text" id="extractedText">{% if extracted_text %}{{ extracted_text }}{% endif %}</div>
+                {% if grade %}
+                <div class="score-summary">
+                    <div class="score-pill">
+                        Score: {% if grade.score is not none %}{{ "%.1f"|format(grade.score) }}%{% else %}N/A{% endif %}
+                    </div>
+                    <div class="score-status">
+                        Status: {{ 'Approved' if grade.instructor_approved else 'Pending' }}
+                    </div>
+                    <div class="feedback-block">
+                        {{ grade.general_feedback if grade.general_feedback else 'No feedback available yet.' }}
+                    </div>
+                </div>
+                {% endif %}
                 <div class="json-viewer" id="jsonViewer">
                     <pre id="jsonContent"></pre>
                 </div>
@@ -788,6 +880,7 @@
     // State Management
     let currentFile = null;
     let extractedText = {% if extracted_text %}{{ extracted_text | tojson }}{% else %}null{% endif %};
+    let uploadedFilename = {% if uploaded_filename %}'{{ uploaded_filename }}'{% else %}null{% endif %};
     let showJson = false;
 
     // Initialize on page load
@@ -813,6 +906,20 @@
         
         showFileInfo(fileName, fileSize);
         showImagePreview('{{ url_for("static", filename=image_path) }}');
+        if (container) container.classList.add('has-content');
+        {% endif %}
+
+        {% if uploaded_filename and not image_path %}
+        // Show file info for non-image uploads (PDF)
+        const fileName = '{{ uploaded_filename }}';
+        const fileSize = 'Uploaded';
+
+        const uploadZone = document.getElementById('uploadZone');
+        const compactUploadZone = document.getElementById('compactUploadZone');
+        if (uploadZone) uploadZone.style.display = 'none';
+        if (compactUploadZone) compactUploadZone.classList.add('active');
+
+        showFileInfo(fileName, fileSize);
         if (container) container.classList.add('has-content');
         {% endif %}
     });
@@ -981,7 +1088,7 @@
         if (showJson) {
             // Create JSON object from extracted text
             const jsonData = {
-                filename: currentFile ? currentFile.name : '{{ image_path.split("/")[-1] if image_path else "unknown" }}',
+                filename: currentFile ? currentFile.name : (uploadedFilename || '{{ image_path.split("/")[-1] if image_path else "unknown" }}'),
                 content: extractedText,
                 extracted_at: new Date().toISOString(),
                 type: 'ocr_extraction'
