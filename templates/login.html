@@ -691,34 +691,76 @@
 
         <!-- Robot Mascot Image - STATIC -->
         <div class="mascot-image">
-            <svg class="robot-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                <!-- Robot Head -->
-                <rect x="50" y="30" width="100" height="80" rx="10" fill="#6366f1" stroke="#8b5cf6" stroke-width="2"/>
-                <!-- Eyes -->
-                <circle cx="75" cy="60" r="8" fill="#ffffff"/>
-                <circle cx="125" cy="60" r="8" fill="#ffffff"/>
-                <circle cx="75" cy="60" r="4" fill="#0f172a"/>
-                <circle cx="125" cy="60" r="4" fill="#0f172a"/>
-                <!-- Antenna -->
-                <rect x="95" y="20" width="10" height="15" rx="2" fill="#8b5cf6"/>
-                <circle cx="100" cy="20" r="4" fill="#fbbf24"/>
-                <!-- Mouth -->
-                <rect x="80" y="80" width="40" height="8" rx="4" fill="#ffffff"/>
-                <!-- Body -->
-                <rect x="60" y="110" width="80" height="70" rx="10" fill="#6366f1" stroke="#8b5cf6" stroke-width="2"/>
-                <!-- Chest Panel -->
-                <rect x="75" y="125" width="50" height="30" rx="5" fill="#8b5cf6" opacity="0.3"/>
-                <circle cx="90" cy="140" r="3" fill="#ffffff"/>
-                <circle cx="110" cy="140" r="3" fill="#ffffff"/>
-                <!-- Arms -->
-                <rect x="30" y="120" width="25" height="15" rx="5" fill="#6366f1"/>
-                <rect x="145" y="120" width="25" height="15" rx="5" fill="#6366f1"/>
-                <!-- Hands -->
-                <circle cx="42" cy="135" r="6" fill="#8b5cf6"/>
-                <circle cx="158" cy="135" r="6" fill="#8b5cf6"/>
-                <!-- Legs -->
-                <rect x="70" y="180" width="20" height="20" rx="5" fill="#6366f1"/>
-                <rect x="110" y="180" width="20" height="20" rx="5" fill="#6366f1"/>
+            <svg class="robot-svg" viewBox="0 0 240 280" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <!-- Gradient for modern look -->
+                    <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#f8fafc;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+                    </linearGradient>
+                    <linearGradient id="screenGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#1e293b;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+                    </linearGradient>
+                    <filter id="shadow">
+                        <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.15"/>
+                    </filter>
+                </defs>
+                
+                <!-- Ear Left -->
+                <ellipse cx="60" cy="80" rx="18" ry="22" fill="url(#bodyGradient)" filter="url(#shadow)"/>
+                <ellipse cx="60" cy="82" rx="12" ry="16" fill="#cbd5e1"/>
+                
+                <!-- Ear Right -->
+                <ellipse cx="180" cy="80" rx="18" ry="22" fill="url(#bodyGradient)" filter="url(#shadow)"/>
+                <ellipse cx="180" cy="82" rx="12" ry="16" fill="#cbd5e1"/>
+                
+                <!-- Head/VR Helmet -->
+                <ellipse cx="120" cy="75" rx="65" ry="50" fill="url(#bodyGradient)" filter="url(#shadow)"/>
+                
+                <!-- Top antenna light -->
+                <rect x="115" y="20" width="10" height="12" rx="3" fill="#cbd5e1"/>
+                <circle cx="120" cy="18" r="5" fill="#fbbf24"/>
+                
+                <!-- VR Screen/Visor -->
+                <rect x="70" y="55" width="100" height="45" rx="22" fill="url(#screenGradient)"/>
+                <rect x="72" y="57" width="96" height="41" rx="20" fill="#0f172a" opacity="0.5"/>
+                
+                <!-- Eyes (Cyan glow) - Larger and more prominent -->
+                <!-- Left Eye Background -->
+                <ellipse cx="95" cy="75" rx="16" ry="13" fill="#06b6d4" opacity="0.3"/>
+                <ellipse cx="95" cy="75" rx="14" ry="11" fill="#0ea5e9" opacity="0.5"/>
+                <ellipse cx="95" cy="75" rx="11" ry="9" fill="#22d3ee"/>
+                <!-- Left Eye Pupil (will track mouse) -->
+                <circle id="leftPupil" cx="95" cy="75" r="4" fill="#0f172a"/>
+                <circle cx="93" cy="73" r="1.5" fill="#7dd3fc" opacity="0.8"/>
+                
+                <!-- Right Eye Background -->
+                <ellipse cx="145" cy="75" rx="16" ry="13" fill="#06b6d4" opacity="0.3"/>
+                <ellipse cx="145" cy="75" rx="14" ry="11" fill="#0ea5e9" opacity="0.5"/>
+                <ellipse cx="145" cy="75" rx="11" ry="9" fill="#22d3ee"/>
+                <!-- Right Eye Pupil (will track mouse) -->
+                <circle id="rightPupil" cx="145" cy="75" r="4" fill="#0f172a"/>
+                <circle cx="143" cy="73" r="1.5" fill="#7dd3fc" opacity="0.8"/>
+                
+                <!-- Animated mouth (Cyan) -->
+                <path id="robotMouth" d="M 105 88 Q 120 95 135 88" stroke="#22d3ee" stroke-width="4" fill="none" stroke-linecap="round"/>
+                
+                <!-- Neck connector -->
+                <rect x="105" y="115" width="30" height="15" rx="8" fill="#cbd5e1"/>
+                
+                <!-- Body (Round/Oval) -->
+                <ellipse cx="120" cy="175" rx="55" ry="65" fill="url(#bodyGradient)" filter="url(#shadow)"/>
+                
+                <!-- Body panel/details -->
+                <ellipse cx="120" cy="165" rx="35" ry="25" fill="#e2e8f0"/>
+                <line x1="105" y1="185" x2="135" y2="185" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round"/>
+                
+                <!-- Arms Left - Starting from body edge, 45 degree angle -->
+                <ellipse cx="60" cy="180" rx="11" ry="28" fill="url(#bodyGradient)" filter="url(#shadow)" transform="rotate(45 60 180)"/>
+                
+                <!-- Arms Right - Starting from body edge, 45 degree angle -->
+                <ellipse cx="180" cy="180" rx="11" ry="28" fill="url(#bodyGradient)" filter="url(#shadow)" transform="rotate(-45 180 180)"/>
             </svg>
         </div>
 
@@ -994,6 +1036,7 @@
         let typingSpeed = 50;
         let deletingSpeed = 30;
         let pauseTime = 2000;
+        let isTyping = false; // Track if actively typing
 
         function typeWriter() {
             const typewriterText = document.getElementById('typewriter-text');
@@ -1010,22 +1053,26 @@
                 typewriterText.textContent = currentMessage.substring(0, currentCharIndex - 1);
                 currentCharIndex--;
                 typingSpeed = deletingSpeed;
+                isTyping = false; // Stop mouth animation while deleting
             } else {
                 // Typing characters
                 typewriterText.textContent = currentMessage.substring(0, currentCharIndex + 1);
                 currentCharIndex++;
                 typingSpeed = 50;
+                isTyping = true; // Animate mouth while typing
             }
 
             if (!isDeleting && currentCharIndex === currentMessage.length) {
                 // Finished typing, pause then start deleting
                 typingSpeed = pauseTime;
                 isDeleting = true;
+                isTyping = false; // Stop mouth animation when sentence is complete
             } else if (isDeleting && currentCharIndex === 0) {
                 // Finished deleting, move to next message
                 isDeleting = false;
                 currentMessageIndex = (currentMessageIndex + 1) % messages.length;
                 typingSpeed = 500; // Pause before starting next message
+                isTyping = false;
             }
 
             setTimeout(typeWriter, typingSpeed);
@@ -1034,7 +1081,123 @@
         // Start typewriter effect when DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             typeWriter();
+            initEyeTracking();
+            initMouthAnimation();
         });
+
+        // Eye Tracking - Robot eyes follow mouse cursor
+        function initEyeTracking() {
+            const leftPupil = document.getElementById('leftPupil');
+            const rightPupil = document.getElementById('rightPupil');
+            
+            if (!leftPupil || !rightPupil) return;
+
+            document.addEventListener('mousemove', function(event) {
+                // Get mouse position
+                const mouseX = event.clientX;
+                const mouseY = event.clientY;
+
+                // Get robot position
+                const robotSvg = document.querySelector('.robot-svg');
+                if (!robotSvg) return;
+                
+                const svgRect = robotSvg.getBoundingClientRect();
+                
+                // Calculate center positions of eyes in viewport
+                const leftEyeCenterX = svgRect.left + (svgRect.width * 95 / 240);
+                const leftEyeCenterY = svgRect.top + (svgRect.height * 75 / 280);
+                const rightEyeCenterX = svgRect.left + (svgRect.width * 145 / 240);
+                const rightEyeCenterY = svgRect.top + (svgRect.height * 75 / 280);
+
+                // Calculate angles for left eye
+                const leftAngle = Math.atan2(mouseY - leftEyeCenterY, mouseX - leftEyeCenterX);
+                const leftDistance = Math.min(6, Math.sqrt(Math.pow(mouseX - leftEyeCenterX, 2) + Math.pow(mouseY - leftEyeCenterY, 2)) / 30);
+                
+                // Calculate angles for right eye
+                const rightAngle = Math.atan2(mouseY - rightEyeCenterY, mouseX - rightEyeCenterX);
+                const rightDistance = Math.min(6, Math.sqrt(Math.pow(mouseX - rightEyeCenterX, 2) + Math.pow(mouseY - rightEyeCenterY, 2)) / 30);
+
+                // Move pupils
+                const leftPupilX = 95 + Math.cos(leftAngle) * leftDistance;
+                const leftPupilY = 75 + Math.sin(leftAngle) * leftDistance;
+                const rightPupilX = 145 + Math.cos(rightAngle) * rightDistance;
+                const rightPupilY = 75 + Math.sin(rightAngle) * rightDistance;
+
+                leftPupil.setAttribute('cx', leftPupilX);
+                leftPupil.setAttribute('cy', leftPupilY);
+                rightPupil.setAttribute('cx', rightPupilX);
+                rightPupil.setAttribute('cy', rightPupilY);
+                
+                // Move highlight spots with pupils
+                const leftHighlight = leftPupil.nextElementSibling;
+                const rightHighlight = rightPupil.nextElementSibling;
+                if (leftHighlight) {
+                    leftHighlight.setAttribute('cx', leftPupilX - 2);
+                    leftHighlight.setAttribute('cy', leftPupilY - 2);
+                }
+                if (rightHighlight) {
+                    rightHighlight.setAttribute('cx', rightPupilX - 2);
+                    rightHighlight.setAttribute('cy', rightPupilY - 2);
+                }
+            });
+        }
+
+        // Mouth Animation - Robot talks while typing
+        function initMouthAnimation() {
+            const mouth = document.getElementById('robotMouth');
+            if (!mouth) return;
+
+            let isTalking = false;
+            let animationFrame;
+            
+            // Mouth shapes for talking animation
+            const mouthShapes = [
+                'M 105 88 Q 120 93 135 88',  // Smile (slightly down)
+                'M 105 90 Q 120 89 135 90',  // Almost closed
+                'M 106 88 Q 120 94 134 88',  // Open (down)
+                'M 105 89 Q 120 91 135 89',  // Medium
+                'M 105 89 Q 120 92 135 89',  // Slightly open
+            ];
+            
+            let currentShape = 0;
+            let shapeChangeCounter = 0;
+            
+            function animateMouth() {
+                if (!isTalking || !isTyping) {
+                    // Stop animation if not typing
+                    if (!isTyping && isTalking) {
+                        isTalking = false;
+                        mouth.setAttribute('d', mouthShapes[0]); // Reset to smile
+                    }
+                    return;
+                }
+                
+                shapeChangeCounter++;
+                
+                // Change mouth shape every 12 frames (slower, more subtle talking)
+                if (shapeChangeCounter >= 12) {
+                    currentShape = (currentShape + 1) % mouthShapes.length;
+                    mouth.setAttribute('d', mouthShapes[currentShape]);
+                    shapeChangeCounter = 0;
+                }
+                
+                animationFrame = requestAnimationFrame(animateMouth);
+            }
+            
+            // Monitor isTyping variable to control mouth animation
+            setInterval(function() {
+                if (isTyping && !isTalking) {
+                    isTalking = true;
+                    animateMouth();
+                } else if (!isTyping && isTalking) {
+                    isTalking = false;
+                    if (animationFrame) {
+                        cancelAnimationFrame(animationFrame);
+                    }
+                    mouth.setAttribute('d', mouthShapes[0]); // Reset to smile
+                }
+            }, 100);
+        }
 
         // Tab Switching
         function switchTab(tab) {
