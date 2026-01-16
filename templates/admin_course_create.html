@@ -4,146 +4,727 @@
 
 {% block extra_css %}
 <style>
-    .form-container {
-        max-width: 600px;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        padding: 32px;
-        margin: 0 auto;
+    /* Background with theme-aware colors - Fixed, no scroll */
+    html, body {
+        height: 100%;
+        overflow: hidden !important;
+        margin: 0;
+        padding: 0;
     }
 
+    body {
+        height: 100vh;
+        width: 100vw;
+        box-sizing: border-box;
+        background: var(--bg-primary);
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow: hidden !important;
+    }
+
+    /* Override main-area from base.html */
+    .main-area {
+        overflow: hidden !important;
+        height: 100vh !important;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin-left: var(--sidebar-width) !important;
+    }
+
+    body.sidebar-collapsed .main-area {
+        margin-left: var(--sidebar-collapsed-width) !important;
+    }
+
+    .content-wrapper {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Subtle pattern overlay - theme-aware */
+    body::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+            radial-gradient(circle at 2px 2px, rgba(99, 102, 241, 0.08) 1px, transparent 0);
+        background-size: 40px 40px;
+        opacity: 0.3;
+        pointer-events: none;
+    }
+
+    [data-theme="dark"] body::before {
+        opacity: 0.15;
+    }
+
+    /* Wider Card - fixed width for better proportions, centered, no overflow */
+    .form-container {
+        width: 100%;
+        max-width: 800px;
+        min-width: 600px;
+        max-height: calc(100vh - 48px);
+        overflow: hidden;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 48px;
+        margin: 0;
+        box-shadow: var(--shadow-lg);
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    @media (min-width: 1024px) {
+        .form-container {
+            max-width: 900px;
+            min-width: 700px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .content-wrapper {
+            padding: 16px;
+        }
+
+        .form-container {
+            min-width: unset;
+            max-width: 100%;
+            padding: 40px 32px;
+            max-height: calc(100vh - 32px);
+        }
+    }
+
+    /* Form should take available space */
+    .form-container form {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    /* Form content area - scrollable if needed */
+    .form-content {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: 4px;
+    }
+
+    /* Hide scrollbar but keep functionality */
+    .form-content::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .form-content::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .form-content::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 3px;
+    }
+
+    .form-content::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
+    }
+
+    /* Header Section */
+    .form-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 12px;
+    }
+
+    .form-header-icon {
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        border-radius: 16px;
+        color: white;
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+        flex-shrink: 0;
+    }
+
+    .form-header-icon svg {
+        width: 28px;
+        height: 28px;
+        stroke-width: 2;
+    }
+
+    .form-header-text {
+        flex: 1;
+    }
+
+    .form-container h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 4px 0;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 768px) {
+        .form-container h1 {
+            font-size: 1.75rem;
+            white-space: normal;
+        }
+    }
+
+    .form-subtitle {
+        font-size: 0.9375rem;
+        color: var(--text-secondary);
+        margin: 0;
+        font-weight: 400;
+    }
+
+    /* Form Groups */
     .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 24px;
+        position: relative;
     }
 
     label {
         display: block;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         font-weight: 600;
         color: var(--text-main);
         font-size: 0.875rem;
+        letter-spacing: 0.01em;
+    }
+
+    /* Input Wrapper with Icon */
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        color: var(--text-secondary);
+        pointer-events: none;
+        z-index: 1;
+        transition: color 0.2s ease;
+    }
+
+    .input-icon svg {
+        width: 20px;
+        height: 20px;
+        stroke-width: 2;
     }
 
     input, select, textarea {
         width: 100%;
-        padding: 10px 12px;
-        border-radius: 8px;
-        border: 1px solid var(--border-color);
+        padding: 14px 18px 14px 50px;
+        border-radius: 12px;
+        border: 1.5px solid var(--border-color);
         background: var(--card-bg);
         color: var(--text-main);
-        font-size: 0.875rem;
+        font-size: 0.9375rem;
+        font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
         box-sizing: border-box;
-        font-family: inherit;
+        transition: all 0.3s ease;
     }
 
     textarea {
         min-height: 100px;
         resize: vertical;
+        padding-top: 14px;
     }
 
+    input:hover, select:hover, textarea:hover {
+        border-color: rgba(99, 102, 241, 0.4);
+        background: var(--card-bg);
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #6366f1;
+        background: var(--card-bg);
+        box-shadow: 
+            0 0 0 4px rgba(99, 102, 241, 0.1),
+            0 4px 12px rgba(99, 102, 241, 0.15);
+        transform: translateY(-1px);
+    }
+
+    [data-theme="dark"] input:focus,
+    [data-theme="dark"] select:focus,
+    [data-theme="dark"] textarea:focus {
+        box-shadow: 
+            0 0 0 4px rgba(99, 102, 241, 0.2),
+            0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    input:focus + .input-icon,
+    select:focus ~ .input-icon,
+    textarea:focus ~ .input-icon {
+        color: #6366f1;
+    }
+
+    select {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236366f1' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 18px center;
+        padding-right: 45px;
+    }
+
+    /* Students Section */
+    .students-section {
+        border: 1.5px solid var(--border-color);
+        border-radius: 12px;
+        background: var(--card-bg);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .students-section:hover {
+        border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    .students-search {
+        padding: 12px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--card-bg);
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .students-search input {
+        width: 100%;
+        padding: 10px 12px 10px 40px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 0.875rem;
+        background: var(--card-bg);
+        color: var(--text-main);
+    }
+
+    .students-search .search-icon {
+        position: absolute;
+        left: 24px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        color: var(--text-secondary);
+        pointer-events: none;
+    }
+
+    .students-search input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        transform: none;
+    }
+
+    .students-list {
+        max-height: 250px;
+        overflow-y: auto;
+        padding: 8px;
+    }
+
+    .students-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .students-list::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .students-list::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 3px;
+    }
+
+    .student-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border-radius: 8px;
+        transition: background 0.2s ease;
+        cursor: pointer;
+    }
+
+    .student-item:hover {
+        background: var(--hover-bg);
+    }
+
+    .student-item.selected {
+        background: rgba(99, 102, 241, 0.1);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .student-item input[type="checkbox"] {
+        width: auto;
+        padding: 0;
+        margin: 0;
+        width: 18px;
+        height: 18px;
+        accent-color: #6366f1;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .student-item label {
+        margin: 0;
+        cursor: pointer;
+        flex: 1;
+        font-weight: 400;
+    }
+
+    .student-item.hidden {
+        display: none;
+    }
+
+    .empty-state {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        padding: 20px;
+        text-align: center;
+    }
+
+    /* Checkbox Group */
     .checkbox-group {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 12px;
+        padding: 14px 18px;
+        border-radius: 12px;
+        border: 1.5px solid var(--border-color);
+        background: var(--card-bg);
+        transition: all 0.3s ease;
+    }
+
+    .checkbox-group:hover {
+        border-color: rgba(99, 102, 241, 0.4);
     }
 
     .checkbox-group input[type="checkbox"] {
         width: auto;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+        accent-color: #6366f1;
     }
 
+    .checkbox-group label {
+        margin: 0;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .help-text {
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
+        margin-top: 8px;
+        line-height: 1.5;
+    }
+
+    /* Form Actions - Bottom Right */
     .form-actions {
         display: flex;
         gap: 12px;
-        margin-top: 24px;
+        margin-top: auto;
+        padding-top: 24px;
+        padding-bottom: 0;
+        border-top: 1px solid var(--border-color);
+        justify-content: flex-end;
+        align-items: center;
+        flex-shrink: 0;
     }
 
-    .btn-secondary {
-        background: var(--border-color);
-        color: var(--text-main);
-        padding: 10px 20px;
+    /* Gradient Primary Button */
+    .btn-primary {
+        padding: 14px 32px;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 12px;
         font-weight: 600;
-        font-size: 0.875rem;
+        font-size: 0.9375rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-primary::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .btn-primary:hover::before {
+        left: 100%;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-primary:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+
+    /* Ghost Secondary Button */
+    .btn-secondary {
+        padding: 14px 32px;
+        background: transparent;
+        color: var(--text-main);
+        border: 1.5px solid var(--border-color);
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.9375rem;
         cursor: pointer;
         text-decoration: none;
         display: inline-block;
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
     }
 
     .btn-secondary:hover {
         background: var(--hover-bg);
+        border-color: rgba(99, 102, 241, 0.3);
+        transform: translateY(-1px);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+        .content-wrapper {
+            padding: 16px;
+        }
+
+        .form-container {
+            padding: 32px 24px;
+            border-radius: 16px;
+            max-height: calc(100vh - 32px);
+        }
+
+        .form-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .form-header-icon {
+            width: 48px;
+            height: 48px;
+        }
+
+        .form-header-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .form-container h1 {
+            font-size: 1.75rem;
+        }
+
+        .form-actions {
+            flex-direction: column-reverse;
+            gap: 10px;
+        }
+
+        .btn-primary, .btn-secondary {
+            width: 100%;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="form-container">
-    <h1 style="margin: 0 0 24px 0;">Create New Course</h1>
+    <div class="form-header">
+        <div class="form-header-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+            </svg>
+        </div>
+        <div class="form-header-text">
+            <h1>Create New Course</h1>
+            <p class="form-subtitle">Create a new course and configure enrollment options.</p>
+        </div>
+    </div>
     
     <form method="POST">
-        <div class="form-group">
-            <label for="name">Course Name</label>
-            <input type="text" id="name" name="name" required>
-        </div>
-
-        <div class="form-group">
-            <label for="code">Course Code</label>
-            <input type="text" id="code" name="code" required placeholder="e.g., ENG101">
-        </div>
-
-        <div class="form-group">
-            <label for="description">Description</label>
-            <textarea id="description" name="description"></textarea>
-        </div>
-
-        <div class="form-group">
-            <label for="instructor_id">Instructor (Optional)</label>
-            <select id="instructor_id" name="instructor_id">
-                <option value="">None</option>
-                {% for instructor in instructors %}
-                <option value="{{ instructor.id }}">{{ instructor.username }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Assign Students (Optional)</label>
-            <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; background: var(--card-bg);">
-                {% if students %}
-                    {% for student in students %}
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border-color);">
-                        <input type="checkbox" id="student_{{ student.id }}" name="student_ids" value="{{ student.id }}" style="width: auto;">
-                        <label for="student_{{ student.id }}" style="margin: 0; cursor: pointer; flex: 1;">
-                            <strong>{{ student.username }}</strong> - {{ student.email }}
-                        </label>
+        <div class="form-content">
+            <div class="form-group">
+                <label for="name">Course Name</label>
+                <div class="input-wrapper">
+                    <div class="input-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                        </svg>
                     </div>
-                    {% endfor %}
+                    <input type="text" id="name" name="name" placeholder="Enter course name" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="code">Course Code</label>
+                <div class="input-wrapper">
+                    <div class="input-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                        </svg>
+                    </div>
+                    <input type="text" id="code" name="code" placeholder="e.g., ENG101" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <div class="input-wrapper">
+                    <div class="input-icon" style="top: 18px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9-3.75h.008v.008H12V8.25Z" />
+                        </svg>
+                    </div>
+                    <textarea id="description" name="description" placeholder="Enter course description"></textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="instructor_id">Instructor (Optional)</label>
+                <div class="input-wrapper">
+                    <div class="input-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.375-1.768l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                        </svg>
+                    </div>
+                    <select id="instructor_id" name="instructor_id">
+                        <option value="">None</option>
+                        {% for instructor in instructors %}
+                        <option value="{{ instructor.id }}">{{ instructor.username }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Assign Students (Optional)</label>
+                {% if students %}
+                <div class="students-section">
+                    <div class="students-search">
+                        <div class="search-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                            </svg>
+                        </div>
+                        <input type="text" id="studentSearch" placeholder="Search students..." autocomplete="off">
+                    </div>
+                    <div class="students-list" id="studentsList">
+                        {% for student in students %}
+                        <div class="student-item" data-student-name="{{ student.username|lower }}" data-student-email="{{ student.email|lower }}">
+                            <input type="checkbox" id="student_{{ student.id }}" name="student_ids" value="{{ student.id }}">
+                            <label for="student_{{ student.id }}">
+                                <strong>{{ student.username }}</strong> - {{ student.email }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="help-text">Select students to automatically enroll them in this course</div>
                 {% else %}
-                    <div style="color: var(--text-secondary); font-size: 0.875rem; padding: 8px 0;">
+                <div class="students-section">
+                    <div class="empty-state">
                         No students available. Please create students first.
                     </div>
+                </div>
                 {% endif %}
             </div>
-            {% if students %}
-            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
-                Select students to automatically enroll them in this course
-            </div>
-            {% endif %}
-        </div>
 
-        <div class="form-group">
-            <div class="checkbox-group">
-                <input type="checkbox" id="is_active" name="is_active" checked>
-                <label for="is_active" style="margin: 0;">Active</label>
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="is_active" name="is_active" checked>
+                    <label for="is_active">Active</label>
+                </div>
             </div>
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn-primary">Create Course</button>
             <a href="/admin/courses" class="btn-secondary">Cancel</a>
+            <button type="submit" class="btn-primary">Create Course</button>
         </div>
     </form>
 </div>
+
+<script>
+(function() {
+    const searchInput = document.getElementById('studentSearch');
+    const studentsList = document.getElementById('studentsList');
+    
+    if (searchInput && studentsList) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            const studentItems = studentsList.querySelectorAll('.student-item');
+            
+            studentItems.forEach(item => {
+                const name = item.dataset.studentName || '';
+                const email = item.dataset.studentEmail || '';
+                
+                if (searchTerm === '' || name.includes(searchTerm) || email.includes(searchTerm)) {
+                    item.classList.remove('hidden');
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+        });
+    }
+
+    // Highlight selected students
+    const checkboxes = document.querySelectorAll('.student-item input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const item = this.closest('.student-item');
+            if (this.checked) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    });
+})();
+</script>
 {% endblock %}

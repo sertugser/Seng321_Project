@@ -4,163 +4,764 @@
 
 {% block extra_css %}
 <style>
+    /* Background with theme-aware colors */
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        min-height: 100vh;
+        background: var(--bg-primary);
+    }
+
+    .main-area {
+        margin-left: var(--sidebar-width) !important;
+        min-height: 100vh;
+        padding: 24px;
+    }
+
+    body.sidebar-collapsed .main-area {
+        margin-left: var(--sidebar-collapsed-width) !important;
+    }
+
+    .content-wrapper {
+        width: 100%;
+        max-width: 1400px;
+    }
+
+    /* Page Header */
     .page-header {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
-        margin-bottom: 24px;
+        margin-bottom: 32px;
+        gap: 16px;
+    }
+
+    .page-header-text {
+        flex: 1;
     }
 
     .page-header h1 {
-        margin: 0;
-        font-size: 1.75rem;
+        margin: 0 0 4px 0;
+        font-size: 2rem;
         font-weight: 700;
+        color: var(--text-main);
+        letter-spacing: -0.02em;
     }
 
-    .table-container {
+    .page-subtitle {
+        margin: 0;
+        font-size: 0.9375rem;
+        color: var(--text-secondary);
+        font-weight: 400;
+    }
+
+    /* Integration Card */
+    .integration-card {
         background: var(--card-bg);
         border: 1px solid var(--border-color);
-        border-radius: 12px;
-        overflow: hidden;
+        border-radius: 16px;
+        padding: 32px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow-lg);
     }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    th, td {
-        padding: 12px 16px;
-        text-align: left;
+    .integration-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+        padding-bottom: 24px;
         border-bottom: 1px solid var(--border-color);
     }
 
-    th {
-        background: var(--sidebar-bg);
-        font-weight: 600;
-        font-size: 0.875rem;
-        color: var(--text-secondary);
-        text-transform: uppercase;
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .badge-success { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
-    .badge-warning { background: rgba(234, 179, 8, 0.1); color: #eab308; }
-
-    .action-buttons {
+    .integration-icon {
+        width: 56px;
+        height: 56px;
         display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        border-radius: 16px;
+        color: white;
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+        flex-shrink: 0;
+    }
+
+    .integration-icon svg {
+        width: 28px;
+        height: 28px;
+        stroke-width: 2;
+    }
+
+    .integration-title {
+        flex: 1;
+    }
+
+    .integration-title h2 {
+        margin: 0 0 4px 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .integration-title p {
+        margin: 0;
+        font-size: 0.9375rem;
+        color: var(--text-secondary);
+    }
+
+    /* Status Section */
+    .status-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .status-item {
+        padding: 16px;
+        background: var(--hover-bg);
+        border: 1.5px solid var(--border-color);
+        border-radius: 12px;
+    }
+
+    .status-label {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
         gap: 8px;
     }
 
-    .btn-sm {
-        padding: 6px 16px;
-        border-radius: 6px;
-        font-size: 0.8125rem;
-        font-weight: 500;
-        text-decoration: none;
-        border: none;
-        cursor: pointer;
-        min-width: 70px;
-        height: 32px;
-        line-height: 20px;
-        text-align: center;
+    .status-badge {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        box-sizing: border-box;
-        white-space: nowrap;
-    }
-
-    .btn-edit {
-        background: var(--accent);
-        color: white;
-    }
-
-    .btn-toggle {
-        background: #eab308;
-        color: white;
-    }
-
-    .api-key-masked {
-        font-family: monospace;
-        color: var(--text-secondary);
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 8px;
         font-size: 0.8125rem;
+        font-weight: 600;
     }
 
-    tr:hover {
+    .status-badge.success {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+    }
+
+    .status-badge.warning {
+        background: rgba(234, 179, 8, 0.1);
+        color: #eab308;
+    }
+
+    .status-badge.danger {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+    }
+
+    /* Configuration Section */
+    .config-section {
+        margin-bottom: 24px;
+    }
+
+    .config-section h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin: 0 0 12px 0;
+    }
+
+    .config-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+    }
+
+    .config-item {
+        padding: 12px;
         background: var(--hover-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
     }
 
-    .btn-sm:hover {
-        opacity: 0.9;
-        transform: translateY(-1px);
+    .config-item-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-bottom: 4px;
+    }
+
+    .config-item-value {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--text-main);
+        font-family: monospace;
+    }
+
+    /* Actions Section */
+    .actions-section {
+        display: flex;
+        gap: 12px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-color);
+        justify-content: flex-end;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-secondary {
+        background: transparent;
+        color: var(--text-main);
+        border: 1.5px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+        background: var(--hover-bg);
+        border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-test {
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+        border: 1.5px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-test:hover {
+        background: rgba(99, 102, 241, 0.2);
+        border-color: rgba(99, 102, 241, 0.5);
+    }
+
+    .btn-test.loading {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    /* Test Result */
+    .test-result {
+        margin-top: 16px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        display: none;
+    }
+
+    .test-result.show {
+        display: block;
+    }
+
+    .test-result.success {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #22c55e;
+    }
+
+    .test-result.error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 52px;
+        height: 28px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--border-color);
+        transition: 0.3s;
+        border-radius: 28px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+        background-color: #6366f1;
+    }
+
+    .toggle-switch input:checked + .toggle-slider:before {
+        transform: translateX(24px);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 64px 32px;
+        color: var(--text-secondary);
+    }
+
+    .empty-state svg {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .main-area {
+            padding: 16px;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .integration-card {
+            padding: 24px;
+        }
+
+        .status-section {
+            grid-template-columns: 1fr;
+        }
+
+        .actions-section {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>AI Integrations</h1>
-    <a href="/admin/ai-integrations/create" class="btn-primary">+ Add Integration</a>
-</div>
-
-<div class="table-container">
-    <table>
-        <thead>
-            <tr>
-                <th>Integration Name</th>
-                <th>API Key</th>
-                <th>API Endpoint</th>
-                <th>Status</th>
-                <th>Updated</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for integration in integrations %}
-            <tr>
-                <td><strong>{{ integration.integration_name }}</strong></td>
-                <td class="api-key-masked">
-                    {% if integration.api_key %}
-                    {{ integration.api_key[:10] }}...{{ integration.api_key[-4:] if integration.api_key|length > 14 else '' }}
-                    {% else %}
-                    Not configured
-                    {% endif %}
-                </td>
-                <td>{{ integration.api_endpoint or '-' }}</td>
-                <td>
-                    {% if integration.is_active %}
-                    <span class="badge badge-success">Active</span>
-                    {% else %}
-                    <span class="badge badge-warning">Inactive</span>
-                    {% endif %}
-                </td>
-                <td>{{ integration.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td>
-                    <div class="action-buttons">
-                        <a href="/admin/ai-integrations/{{ integration.id }}/edit" class="btn-sm btn-edit">Edit</a>
-                        <form method="POST" action="/admin/ai-integrations/{{ integration.id }}/toggle" style="display: inline;">
-                            <button type="submit" class="btn-sm btn-toggle">
-                                {% if integration.is_active %}Deactivate{% else %}Activate{% endif %}
-                            </button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% if not integrations %}
-    <div style="padding: 32px; text-align: center; color: var(--text-secondary);">
-        No AI integrations configured yet. <a href="/admin/ai-integrations/create" style="color: var(--accent);">Add one now</a>.
+<div class="content-wrapper">
+    <div class="page-header">
+        <div class="page-header-text">
+            <h1>AI Integrations</h1>
+            <p class="page-subtitle">Manage AI provider integrations and configurations.</p>
+        </div>
+        <a href="/admin/ai-integrations/create" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 18px; height: 18px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Add Integration
+        </a>
     </div>
+
+    <!-- Gemini Integration Card (loaded dynamically) -->
+    <div id="geminiCard" style="display: none;"></div>
+
+    <!-- Database Integrations (excluding gemini if it exists) -->
+    {% if integrations %}
+        {% for integration in integrations %}
+            {% if integration.integration_name|lower != 'gemini' %}
+            <div class="integration-card" data-integration-id="{{ integration.id }}">
+                <div class="integration-header">
+                    <div class="integration-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+                        </svg>
+                    </div>
+                    <div class="integration-title">
+                        <h2>{{ integration.integration_name|upper }}</h2>
+                        <p>AI Integration Management</p>
+                    </div>
+                </div>
+
+                <div class="status-section">
+                    <div class="status-item">
+                        <div class="status-label">Integration Status</div>
+                        <div class="status-value">
+                            {% if integration.is_active %}
+                            <span class="status-badge success">Active</span>
+                            {% else %}
+                            <span class="status-badge warning">Inactive</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="status-item">
+                        <div class="status-label">Last Updated</div>
+                        <div class="status-value">{{ integration.updated_at.strftime('%Y-%m-%d %H:%M') if integration.updated_at else 'Never' }}</div>
+                    </div>
+                </div>
+
+                {% if integration.configuration %}
+                {% set config = integration.configuration|from_json %}
+                {% if config and (config.get('model') or config.get('temperature') is not none or config.get('maxOutputTokens')) %}
+                <div class="config-section">
+                    <h3>Runtime Configuration</h3>
+                    <div class="config-grid">
+                        {% if config.get('model') %}
+                        <div class="config-item">
+                            <div class="config-item-label">Model</div>
+                            <div class="config-item-value">{{ config.model }}</div>
+                        </div>
+                        {% endif %}
+                        {% if config.get('temperature') is not none %}
+                        <div class="config-item">
+                            <div class="config-item-label">Temperature</div>
+                            <div class="config-item-value">{{ config.temperature }}</div>
+                        </div>
+                        {% endif %}
+                        {% if config.get('maxOutputTokens') %}
+                        <div class="config-item">
+                            <div class="config-item-label">Max Output Tokens</div>
+                            <div class="config-item-value">{{ config.maxOutputTokens }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
+
+                <div class="actions-section">
+                    <label class="toggle-switch" style="margin-left: auto;">
+                        <input type="checkbox" {% if integration.is_active %}checked{% endif %} onchange="toggleIntegration({{ integration.id }}, this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span style="margin-left: 8px; font-size: 0.875rem; color: var(--text-secondary);">
+                        {% if integration.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                    <a href="/admin/ai-integrations/{{ integration.id }}/edit" class="btn btn-secondary">Edit Configuration</a>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
     {% endif %}
 </div>
+
+<script>
+// Load Gemini status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadGeminiStatus();
+});
+
+// Also reload status after toggle to ensure UI is in sync
+function refreshGeminiStatus() {
+    loadGeminiStatus();
+}
+
+function loadGeminiStatus() {
+    fetch('/api/admin/ai/status')
+        .then(response => response.json())
+        .then(data => {
+            renderGeminiCard(data);
+        })
+        .catch(error => {
+            console.error('Error loading Gemini status:', error);
+            // Show Gemini card with error state
+            renderGeminiCard({
+                provider: 'gemini',
+                configured: false,
+                active: false,
+                model: null
+            });
+        });
+}
+
+function renderGeminiCard(status) {
+    const cardContainer = document.getElementById('geminiCard');
+    
+    // Configured: API key exists in env
+    const configuredBadge = status.configured 
+        ? `<span class="status-badge success">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 14px; height: 14px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+            Configured
+        </span>`
+        : `<span class="status-badge danger">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 14px; height: 14px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            Missing
+        </span>`;
+    
+    // Enabled: DB toggle (admin preference)
+    const enabledBadge = status.enabled
+        ? '<span class="status-badge success">Enabled</span>'
+        : '<span class="status-badge warning">Disabled</span>';
+    
+    // Connected: Actually working (if configured, it's connected since backend uses env var)
+    const connectedBadge = status.connected
+        ? `<span class="status-badge success">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 14px; height: 14px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+            </svg>
+            Connected
+        </span>`
+        : '<span class="status-badge danger">Not Connected</span>';
+    
+    const modelConfig = status.model 
+        ? `<div class="config-section">
+            <h3>Runtime Configuration</h3>
+            <div class="config-grid">
+                <div class="config-item">
+                    <div class="config-item-label">Model</div>
+                    <div class="config-item-value">${status.model}</div>
+                </div>
+            </div>
+        </div>`
+        : '';
+    
+    const editButton = status.configured
+        ? '<a href="/admin/ai-integrations/create" class="btn btn-secondary">Edit Configuration</a>'
+        : '<a href="/admin/ai-integrations/create" class="btn btn-secondary">Configure Integration</a>';
+    
+    cardContainer.innerHTML = `
+        <div class="integration-card" data-integration-name="gemini">
+            <div class="integration-header">
+                <div class="integration-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+                    </svg>
+                </div>
+                <div class="integration-title">
+                    <h2>GEMINI</h2>
+                    <p>AI Integration Management</p>
+                </div>
+            </div>
+
+            <div class="status-section">
+                <div class="status-item">
+                    <div class="status-label">API Key Status</div>
+                    <div class="status-value">
+                        ${configuredBadge}
+                    </div>
+                </div>
+
+                <div class="status-item">
+                    <div class="status-label">Connection Status</div>
+                    <div class="status-value">
+                        ${connectedBadge}
+                    </div>
+                </div>
+
+                <div class="status-item">
+                    <div class="status-label">Admin Toggle</div>
+                    <div class="status-value" style="display: flex; align-items: center; gap: 12px;">
+                        <label class="toggle-switch">
+                            <input type="checkbox" ${status.enabled ? 'checked' : ''} onchange="toggleGeminiEnabled(this.checked)" id="geminiToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span style="font-size: 0.875rem; color: var(--text-secondary);">
+                            ${status.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                    </div>
+                </div>
+
+                ${status.model ? `
+                <div class="status-item">
+                    <div class="status-label">Current Model</div>
+                    <div class="status-value" style="font-family: monospace;">${status.model}</div>
+                </div>
+                ` : ''}
+            </div>
+
+            ${modelConfig}
+
+            <div class="actions-section">
+                <button type="button" class="btn btn-test" onclick="testConnectionGemini()" id="testBtn_gemini">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 16px; height: 16px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                    </svg>
+                    Test Connection
+                </button>
+                <div class="test-result" id="testResult_gemini"></div>
+                ${editButton}
+            </div>
+        </div>
+    `;
+    
+    cardContainer.style.display = 'block';
+}
+
+function toggleGeminiEnabled(enabled) {
+    const toggle = document.getElementById('geminiToggle');
+    const originalState = !enabled; // Store original state for revert
+    
+    fetch('/api/admin/ai/toggle', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ enabled: enabled })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload status to refresh all badges and ensure UI is in sync
+            loadGeminiStatus();
+        } else {
+            alert('Failed to toggle AI: ' + (data.message || 'Unknown error'));
+            // Revert checkbox
+            toggle.checked = originalState;
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+        // Revert checkbox
+        toggle.checked = originalState;
+    });
+}
+
+function testConnectionGemini() {
+    const btn = document.getElementById('testBtn_gemini');
+    const result = document.getElementById('testResult_gemini');
+    
+    btn.classList.add('loading');
+    btn.disabled = true;
+    result.classList.remove('show', 'success', 'error');
+    result.textContent = 'Testing connection...';
+    
+    fetch('/api/admin/ai/test', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ integration_id: null })
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        result.classList.add('show');
+        
+        if (data.success) {
+            result.classList.add('success');
+            result.textContent = '✓ Connected successfully! ' + (data.message || '');
+        } else {
+            result.classList.add('error');
+            result.textContent = '✗ Connection failed: ' + (data.message || 'Unknown error');
+        }
+    })
+    .catch(error => {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        result.classList.add('show', 'error');
+        result.textContent = '✗ Error: ' + error.message;
+    });
+}
+
+function testConnection(integrationId) {
+    const btn = document.getElementById('testBtn_' + integrationId);
+    const result = document.getElementById('testResult_' + integrationId);
+    
+    btn.classList.add('loading');
+    btn.disabled = true;
+    result.classList.remove('show', 'success', 'error');
+    result.textContent = 'Testing connection...';
+    
+    fetch('/api/admin/ai/test', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ integration_id: integrationId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        result.classList.add('show');
+        
+        if (data.success) {
+            result.classList.add('success');
+            result.textContent = '✓ Connected successfully! ' + (data.message || '');
+        } else {
+            result.classList.add('error');
+            result.textContent = '✗ Connection failed: ' + (data.message || 'Unknown error');
+        }
+    })
+    .catch(error => {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        result.classList.add('show', 'error');
+        result.textContent = '✗ Error: ' + error.message;
+    });
+}
+
+function toggleIntegration(integrationId, isActive) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/admin/ai-integrations/' + integrationId + '/toggle';
+    
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('Failed to toggle integration status');
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    });
+}
+</script>
 {% endblock %}

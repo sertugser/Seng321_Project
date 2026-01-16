@@ -18,11 +18,66 @@ else:
 
 class AIService:
     @staticmethod
+    def _is_ai_enabled():
+        """Check if AI is enabled by admin toggle"""
+        try:
+            from models.entities import AIIntegration
+            from models.database import db
+            
+            # Check if Gemini integration exists and is enabled
+            integration = AIIntegration.query.filter_by(
+                integration_name='gemini'
+            ).first()
+            
+            if integration:
+                return integration.is_active
+            else:
+                # If no DB record exists, default to enabled (backward compatibility)
+                return True
+        except Exception as e:
+            print(f"Error checking AI enabled status: {e}")
+            # Default to enabled on error
+            return True
+    
+    @staticmethod
+    def _get_integration_config():
+        """Get active Gemini integration config from database"""
+        try:
+            from models.entities import AIIntegration
+            from models.database import db
+            
+            # Try to find Gemini integration (regardless of active status for config)
+            integration = AIIntegration.query.filter_by(
+                integration_name='gemini'
+            ).first()
+            
+            if integration and integration.configuration:
+                try:
+                    config = json.loads(integration.configuration)
+                    print(f"Using saved config from integration: {config}")
+                    return config
+                except:
+                    pass
+        except Exception as e:
+            print(f"Error loading integration config: {e}")
+        
+        return {}
+    
+    @staticmethod
     def evaluate_writing(text_content):
         """
         Analyzes student writing using the Gemini AI model.
         Returns a JSON object containing score, errors, and feedback.
         """
+        # Check if AI is enabled by admin
+        if not AIService._is_ai_enabled():
+            return {
+                "score": 0,
+                "grammar_errors": ["AI is disabled by admin."],
+                "vocabulary_suggestions": [],
+                "general_feedback": "AI features are currently disabled by administrator. Please contact support if you need assistance."
+            }
+        
         if not API_KEY:
             print("ERROR: Cannot evaluate writing - GEMINI_API_KEY is not set!")
             return {
@@ -41,8 +96,16 @@ class AIService:
                 "general_feedback": "Please provide some text to analyze."
             }
         
+        # Get saved config from database
+        saved_config = AIService._get_integration_config()
+        config_model = saved_config.get('model')
+        config_temperature = saved_config.get('temperature')
+        config_max_tokens = saved_config.get('maxOutputTokens')
+        
         # List available models and use the first one that supports generateContent
         model = None
+        model_name = None
+        
         try:
             print("Fetching available models from API...")
             available_models = genai.list_models()
@@ -51,30 +114,49 @@ class AIService:
             supported_models = []
             for m in available_models:
                 if hasattr(m, 'supported_generation_methods') and 'generateContent' in m.supported_generation_methods:
-                    model_name = m.name.replace('models/', '')
-                    supported_models.append(model_name)
-                    print(f"Found supported model: {model_name}")
+                    model_name_candidate = m.name.replace('models/', '')
+                    supported_models.append(model_name_candidate)
+                    print(f"Found supported model: {model_name_candidate}")
             
             if not supported_models:
                 print("No models with generateContent support found. Trying common model names...")
                 # Fallback to common names
                 supported_models = ['gemini-pro', 'gemini-1.5-pro', 'gemini-1.5-flash']
             
-            # Try to use preferred models first
-            preferred = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
-            model_name = None
+            # Use saved model if specified, otherwise try preferred models
+            if config_model:
+                # Check if saved model is available
+                if config_model in supported_models:
+                    model_name = config_model
+                    print(f"Using saved model from config: {model_name}")
+                else:
+                    print(f"Saved model '{config_model}' not available, trying fallback...")
             
-            for pref in preferred:
-                if pref in supported_models:
-                    model_name = pref
-                    break
-            
-            if not model_name and supported_models:
-                model_name = supported_models[0]
+            if not model_name:
+                # Try to use preferred models first
+                preferred = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
+                for pref in preferred:
+                    if pref in supported_models:
+                        model_name = pref
+                        break
+                
+                if not model_name and supported_models:
+                    model_name = supported_models[0]
             
             if model_name:
+                # Build generation config if we have saved settings
+                generation_config = {}
+                if config_temperature is not None:
+                    generation_config['temperature'] = float(config_temperature)
+                if config_max_tokens:
+                    generation_config['max_output_tokens'] = int(config_max_tokens)
+                
                 print(f"Attempting to use model: {model_name}")
-                model = genai.GenerativeModel(model_name)
+                if generation_config:
+                    print(f"With config: {generation_config}")
+                    model = genai.GenerativeModel(model_name, generation_config=generation_config)
+                else:
+                    model = genai.GenerativeModel(model_name)
                 print(f"Successfully initialized model: {model_name}")
             else:
                 raise Exception("No available models found")
@@ -83,14 +165,23 @@ class AIService:
             print(f"Error fetching models: {e}")
             print("Trying direct model initialization with common names...")
             # Fallback: try common model names directly
-            fallback_names = ['gemini-pro', 'gemini-1.5-pro', 'gemini-1.5-flash']
-            for model_name in fallback_names:
+            fallback_names = [config_model] if config_model else ['gemini-pro', 'gemini-1.5-pro', 'gemini-1.5-flash']
+            for fallback_name in fallback_names:
                 try:
-                    model = genai.GenerativeModel(model_name)
-                    print(f"Successfully initialized model: {model_name}")
+                    generation_config = {}
+                    if config_temperature is not None:
+                        generation_config['temperature'] = float(config_temperature)
+                    if config_max_tokens:
+                        generation_config['max_output_tokens'] = int(config_max_tokens)
+                    
+                    if generation_config:
+                        model = genai.GenerativeModel(fallback_name, generation_config=generation_config)
+                    else:
+                        model = genai.GenerativeModel(fallback_name)
+                    print(f"Successfully initialized model: {fallback_name}")
                     break
                 except Exception as e2:
-                    print(f"Failed {model_name}: {str(e2)}")
+                    print(f"Failed {fallback_name}: {str(e2)}")
                     continue
         
         if not model:
@@ -163,6 +254,15 @@ class AIService:
         Returns a JSON object containing pronunciation_score, fluency_score, and feedback.
         This is a mock implementation for student project purposes.
         """
+        # Check if AI is enabled by admin
+        if not AIService._is_ai_enabled():
+            return {
+                "pronunciation_score": 0,
+                "fluency_score": 0,
+                "feedback": "AI is disabled by admin. Please contact support if you need assistance.",
+                "tips": ["AI features are currently disabled by administrator."]
+            }
+        
         import random
         import os
         
@@ -239,6 +339,10 @@ class AIService:
         Returns:
             str: AI-generated explanation in English, or fallback message if API fails
         """
+        # Check if AI is enabled by admin
+        if not AIService._is_ai_enabled():
+            return "AI is disabled by admin. Please contact support if you need assistance."
+        
         if not API_KEY:
             print("ERROR: Cannot generate quiz explanation - GEMINI_API_KEY is not set!")
             return "Generating AI analysis... Please check API configuration."
@@ -246,42 +350,70 @@ class AIService:
         if not question or not correct_answer:
             return "Generating AI analysis..."
         
+        # Get saved config from database
+        saved_config = AIService._get_integration_config()
+        config_model = saved_config.get('model')
+        config_temperature = saved_config.get('temperature')
+        config_max_tokens = saved_config.get('maxOutputTokens')
+        
         # Initialize model (reuse the same logic as evaluate_writing)
         model = None
+        model_name = None
         try:
             available_models = genai.list_models()
             supported_models = []
             for m in available_models:
                 if hasattr(m, 'supported_generation_methods') and 'generateContent' in m.supported_generation_methods:
-                    model_name = m.name.replace('models/', '')
-                    supported_models.append(model_name)
+                    model_name_candidate = m.name.replace('models/', '')
+                    supported_models.append(model_name_candidate)
             
             if not supported_models:
                 supported_models = ['gemini-pro', 'gemini-1.5-pro', 'gemini-1.5-flash']
             
-            preferred = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
-            model_name = None
-            
-            for pref in preferred:
-                if pref in supported_models:
-                    model_name = pref
-                    break
-            
-            if not model_name and supported_models:
-                model_name = supported_models[0]
+            # Use saved model if specified
+            if config_model and config_model in supported_models:
+                model_name = config_model
+            else:
+                preferred = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
+                for pref in preferred:
+                    if pref in supported_models:
+                        model_name = pref
+                        break
+                
+                if not model_name and supported_models:
+                    model_name = supported_models[0]
             
             if model_name:
-                model = genai.GenerativeModel(model_name)
+                # Build generation config if we have saved settings
+                generation_config = {}
+                if config_temperature is not None:
+                    generation_config['temperature'] = float(config_temperature)
+                if config_max_tokens:
+                    generation_config['max_output_tokens'] = int(config_max_tokens)
+                
+                if generation_config:
+                    model = genai.GenerativeModel(model_name, generation_config=generation_config)
+                else:
+                    model = genai.GenerativeModel(model_name)
             else:
                 raise Exception("No available models found")
                 
         except Exception as e:
             print(f"Error initializing model for quiz explanation: {e}")
             # Fallback: try common model names directly
-            fallback_names = ['gemini-pro', 'gemini-1.5-pro', 'gemini-1.5-flash']
-            for model_name in fallback_names:
+            fallback_names = [config_model] if config_model else ['gemini-pro', 'gemini-1.5-pro', 'gemini-1.5-flash']
+            for fallback_name in fallback_names:
                 try:
-                    model = genai.GenerativeModel(model_name)
+                    generation_config = {}
+                    if config_temperature is not None:
+                        generation_config['temperature'] = float(config_temperature)
+                    if config_max_tokens:
+                        generation_config['max_output_tokens'] = int(config_max_tokens)
+                    
+                    if generation_config:
+                        model = genai.GenerativeModel(fallback_name, generation_config=generation_config)
+                    else:
+                        model = genai.GenerativeModel(fallback_name)
                     break
                 except Exception:
                     continue

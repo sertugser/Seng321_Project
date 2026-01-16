@@ -11,6 +11,14 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), default='Student') 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Profile fields
+    bio = db.Column(db.Text, nullable=True)
+    university = db.Column(db.String(200), nullable=True)
+    grade = db.Column(db.String(50), nullable=True)
+    teacher = db.Column(db.String(200), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
+    education_status = db.Column(db.String(50), nullable=True)
+    profile_image = db.Column(db.String(200), nullable=True)
     submissions = db.relationship('Submission', backref='student', lazy=True)
 
     def __repr__(self):

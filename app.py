@@ -76,6 +76,17 @@ def create_app():
     @app.context_processor
     def inject_user():
         return dict(user=current_user)
+    
+    # Add JSON filter for templates
+    @app.template_filter('from_json')
+    def from_json_filter(value):
+        import json
+        if not value:
+            return {}
+        try:
+            return json.loads(value)
+        except:
+            return {}
 
     # Configure Upload Folder
     UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static/uploads')
@@ -951,6 +962,11 @@ def create_app():
                 flash(error_msg or "Failed to create submission.", "danger")
                 return redirect(url_for('speaking'))
             
+            # Check if AI is enabled
+            if not AIService._is_ai_enabled():
+                flash("AI features are currently disabled by administrator.", "danger")
+                return redirect(url_for('speaking'))
+            
             # Analyze with AI
             print(f"Starting AI analysis for speaking submission {new_sub.id}")
             ai_res = AIService.evaluate_speaking(file_path)
@@ -1211,31 +1227,39 @@ def create_app():
         
         # Generate AI explanations for incorrect answers (with timeout for performance)
         if incorrect_questions:
-            def generate_explanation(item):
-                try:
-                    explanation = AIService.generate_quiz_explanation(
-                        item['question_text'],
-                        item['user_answer'],
-                        item['correct_answer']
-                    )
-                    item['detail_item']['explanation'] = explanation
-                except Exception as e:
-                    print(f"Error generating explanation: {e}")
-                    item['detail_item']['explanation'] = "Generating AI analysis... Please try again later."
+            # Check if AI is enabled
+            ai_enabled = AIService._is_ai_enabled()
             
-            # Use ThreadPoolExecutor for parallel processing (meets NFR1: 10-second response time)
-            with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-                futures = {executor.submit(generate_explanation, item): item for item in incorrect_questions}
-                # Wait for all with timeout (max 8 seconds to leave buffer for other operations)
-                done, not_done = concurrent.futures.wait(futures.keys(), timeout=8.0)
+            if not ai_enabled:
+                # AI is disabled - set placeholder message for all incorrect questions
+                for item in incorrect_questions:
+                    item['detail_item']['explanation'] = "AI is disabled by admin."
+            else:
+                def generate_explanation(item):
+                    try:
+                        explanation = AIService.generate_quiz_explanation(
+                            item['question_text'],
+                            item['user_answer'],
+                            item['correct_answer']
+                        )
+                        item['detail_item']['explanation'] = explanation
+                    except Exception as e:
+                        print(f"Error generating explanation: {e}")
+                        item['detail_item']['explanation'] = "Generating AI analysis... Please try again later."
                 
-                # For any that didn't complete, set a placeholder
-                for future in not_done:
-                    future.cancel()
-                    # Find the corresponding item and set placeholder
-                    item = futures[future]
-                    if item['detail_item']['explanation'] is None:
-                        item['detail_item']['explanation'] = "Generating AI analysis... Please refresh the page in a moment."
+                # Use ThreadPoolExecutor for parallel processing (meets NFR1: 10-second response time)
+                with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+                    futures = {executor.submit(generate_explanation, item): item for item in incorrect_questions}
+                    # Wait for all with timeout (max 8 seconds to leave buffer for other operations)
+                    done, not_done = concurrent.futures.wait(futures.keys(), timeout=8.0)
+                    
+                    # For any that didn't complete, set a placeholder
+                    for future in not_done:
+                        future.cancel()
+                        # Find the corresponding item and set placeholder
+                        item = futures[future]
+                        if item['detail_item']['explanation'] is None:
+                            item['detail_item']['explanation'] = "Generating AI analysis... Please refresh the page in a moment."
         
         # Save quiz result and detailed answers using QuizService
         quiz_category = session.get('quiz_category')  # Get category from session
@@ -1866,37 +1890,216 @@ def create_app():
     @app.route('/profile')
     @login_required
     def profile():
-        return render_template('profile.html')
+        from models.entities import Course, Enrollment, LearningActivity, Submission, Grade, Quiz
+        from sqlalchemy import func
+        
+        user = current_user
+        stats = {}
+        
+        # Student-specific stats
+        if user.role == 'Student':
+            submissions = Submission.query.filter_by(student_id=user.id).all()
+            quizzes = Quiz.query.filter_by(user_id=user.id).all()
+            
+            # Calculate streak
+            current_streak = 0
+            if submissions:
+                from datetime import timedelta
+                submission_dates = set(s.created_at.date() for s in submissions)
+                today = datetime.utcnow().date()
+                date = today
+                while date in submission_dates:
+                    current_streak += 1
+                    date -= timedelta(days=1)
+            
+            # Calculate average score
+            graded_subs = [s for s in submissions if s.grade]
+            avg_score = 0.0
+            if graded_subs:
+                scores = []
+                for sub in graded_subs:
+                    if sub.submission_type == 'SPEAKING' and sub.grade.pronunciation_score and sub.grade.fluency_score:
+                        scores.append((sub.grade.pronunciation_score + sub.grade.fluency_score) / 2)
+                    elif sub.grade.score:
+                        scores.append(sub.grade.score)
+                avg_score = round(sum(scores) / len(scores), 1) if scores else 0.0
+            
+            stats = {
+                'total_tasks': len(submissions),
+                'avg_score': avg_score,
+                'streak': current_streak,
+                'completed_quizzes': len(quizzes),
+                'total_submissions': len(submissions)
+            }
+        
+        # Instructor-specific stats
+        elif user.role == 'Instructor':
+            courses = Course.query.filter_by(instructor_id=user.id).all()
+            activities = LearningActivity.query.filter_by(instructor_id=user.id).all()
+            
+            # Count students taught (unique students across all courses)
+            all_students = set()
+            for course in courses:
+                enrollments = Enrollment.query.filter_by(course_id=course.id, status='active').all()
+                all_students.update(e.student_id for e in enrollments)
+            
+            # Count total submissions to instructor's activities
+            total_submissions = Submission.query.filter(
+                Submission.activity_id.in_([a.id for a in activities])
+            ).count()
+            
+            # Count pending reviews
+            pending_reviews = Submission.query.filter(
+                Submission.activity_id.in_([a.id for a in activities]),
+                ~Submission.id.in_(db.session.query(Grade.submission_id))
+            ).count()
+            
+            # Average student score
+            graded_submissions = Submission.query.filter(
+                Submission.activity_id.in_([a.id for a in activities])
+            ).join(Grade).all()
+            
+            avg_student_score = 0.0
+            if graded_submissions:
+                scores = []
+                for sub in graded_submissions:
+                    if sub.submission_type == 'SPEAKING' and sub.grade.pronunciation_score and sub.grade.fluency_score:
+                        scores.append((sub.grade.pronunciation_score + sub.grade.fluency_score) / 2)
+                    elif sub.grade.score:
+                        scores.append(sub.grade.score)
+                avg_student_score = round(sum(scores) / len(scores), 1) if scores else 0.0
+            
+            stats = {
+                'courses_taught': len(courses),
+                'students_taught': len(all_students),
+                'assignments_created': len(activities),
+                'total_submissions': total_submissions,
+                'pending_reviews': pending_reviews,
+                'avg_student_score': avg_student_score
+            }
+        
+        # Admin-specific stats
+        elif user.role == 'Admin':
+            from services.admin_service import AdminService
+            platform_stats = AdminService.get_user_statistics()
+            
+            stats = {
+                'total_users': platform_stats['total_users'],
+                'total_students': platform_stats['total_students'],
+                'total_instructors': platform_stats['total_instructors'],
+                'total_courses': platform_stats['total_courses'],
+                'active_enrollments': platform_stats['active_enrollments']
+            }
+        
+        return render_template('profile.html', stats=stats)
     
-    @app.route('/settings', methods=['GET', 'POST'])
+    @app.route('/update_bio', methods=['POST'])
+    @login_required
+    def update_bio():
+        new_bio = request.form.get('new_bio', '').strip()
+        try:
+            # Check if User model has bio attribute, if not we'll add it dynamically
+            if hasattr(current_user, 'bio'):
+                current_user.bio = new_bio
+            else:
+                # Try to set it anyway - SQLAlchemy will handle if column doesn't exist
+                setattr(current_user, 'bio', new_bio)
+            db.session.commit()
+            flash('Bio updated successfully!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating bio: {str(e)}', 'danger')
+        return redirect(url_for('profile'))
+    
+    @app.route('/update_personal_info', methods=['POST'])
+    @login_required
+    def update_personal_info():
+        university = request.form.get('university', '').strip()
+        grade = request.form.get('grade', '').strip()
+        teacher = request.form.get('teacher', '').strip()
+        phone = request.form.get('phone', '').strip()
+        education_status = request.form.get('education_status', '').strip()
+        
+        try:
+            user = current_user
+            # Update fields if they exist in the model
+            if hasattr(user, 'university'):
+                user.university = university if university else None
+            if hasattr(user, 'grade'):
+                user.grade = grade if grade else None
+            if hasattr(user, 'teacher'):
+                user.teacher = teacher if teacher else None
+            if hasattr(user, 'phone'):
+                user.phone = phone if phone else None
+            if hasattr(user, 'education_status'):
+                user.education_status = education_status if education_status else None
+            
+            db.session.commit()
+            flash('Personal information updated successfully!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating personal information: {str(e)}', 'danger')
+        return redirect(url_for('profile'))
+    
+    @app.route('/upload_profile_picture', methods=['POST'])
+    @login_required
+    def upload_profile_picture():
+        from werkzeug.utils import secure_filename
+        import uuid
+        
+        if 'profile_image' not in request.files:
+            return jsonify({'success': False, 'message': 'No file provided'}), 400
+        
+        file = request.files['profile_image']
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No file selected'}), 400
+        
+        # Check if file is an image
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+        if '.' in file.filename and file.filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+            return jsonify({'success': False, 'message': 'Invalid file type. Only images are allowed.'}), 400
+        
+        try:
+            # Generate unique filename
+            file_ext = file.filename.rsplit('.', 1)[1].lower()
+            filename = f"{current_user.id}_{uuid.uuid4().hex[:8]}.{file_ext}"
+            
+            # Save to profile_pics folder
+            profile_pics_folder = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static/profile_pics')
+            os.makedirs(profile_pics_folder, exist_ok=True)
+            filepath = os.path.join(profile_pics_folder, filename)
+            file.save(filepath)
+            
+            # Update user profile_image
+            old_filename = current_user.profile_image if hasattr(current_user, 'profile_image') else None
+            
+            # Try to set profile_image attribute
+            if hasattr(current_user, 'profile_image'):
+                current_user.profile_image = filename
+            else:
+                setattr(current_user, 'profile_image', filename)
+            
+            db.session.commit()
+            
+            # Delete old profile picture if exists
+            if old_filename:
+                old_filepath = os.path.join(profile_pics_folder, old_filename)
+                if os.path.exists(old_filepath):
+                    try:
+                        os.remove(old_filepath)
+                    except:
+                        pass
+            
+            return jsonify({'success': True, 'message': 'Profile picture uploaded successfully!'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': f'Error uploading picture: {str(e)}'}), 500
+    
+    @app.route('/settings')
     @login_required
     def settings():
-        if request.method == 'POST':
-            username = request.form.get('username')
-            email = request.form.get('email')
-            password = request.form.get('password')
-            
-            if username:
-                current_user.username = username
-            if email:
-                existing = User.query.filter_by(email=email).first()
-                if existing and existing.id != current_user.id:
-                    flash("Email already exists!", "danger")
-                    return redirect(url_for('settings'))
-                current_user.email = email
-            if password:
-                current_user.password = generate_password_hash(password, method='pbkdf2:sha256')
-            
-            try:
-                db.session.commit()
-                flash("Settings updated successfully!", "success")
-            except:
-                db.session.rollback()
-                flash("Error updating settings.", "danger")
-            
-            return redirect(url_for('settings'))
-        
-        return render_template('settings.html')
+        # Settings page removed - redirect to profile
+        return redirect(url_for('profile'))
     @app.route('/export/pdf')
     @login_required
     def export_pdf():
@@ -2781,6 +2984,11 @@ def create_app():
                 flash(error_msg or "Failed to create submission.", "danger")
                 return render_template('submit_writing.html', submitted_text=text_content)
 
+            # Check if AI is enabled
+            if not AIService._is_ai_enabled():
+                flash("AI features are currently disabled by administrator.", "danger")
+                return render_template('submit_writing.html', submitted_text=text_content)
+            
             # Analyze with AI
             print(f"Starting AI analysis for submission {new_sub.id}")
             ai_res = AIService.evaluate_writing(text_content)
@@ -2857,12 +3065,16 @@ def create_app():
                                              image_path=None,
                                              extracted_text=None)
                     
-                    ai_res = AIService.evaluate_writing(extracted_text)
-                    if ai_res:
-                        # Process evaluation using GradingService
-                        success = GradingService.process_evaluation(new_sub.id, ai_res)
-                        if success:
-                            NotificationService.notify_grade_ready(current_user.id, new_sub.id)
+                    # Check if AI is enabled
+                    if AIService._is_ai_enabled():
+                        ai_res = AIService.evaluate_writing(extracted_text)
+                        if ai_res:
+                            # Process evaluation using GradingService
+                            success = GradingService.process_evaluation(new_sub.id, ai_res)
+                            if success:
+                                NotificationService.notify_grade_ready(current_user.id, new_sub.id)
+                    else:
+                        flash("AI features are currently disabled by administrator.", "danger")
                     
                     # Set image path for display (relative to static folder)
                     image_path = f"uploads/{filename}"
@@ -3003,6 +3215,31 @@ def create_app():
             db.session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
 
+    @app.route('/delete_quiz/<int:quiz_id>', methods=['POST'])
+    @login_required
+    def delete_quiz(quiz_id):
+        from flask import jsonify
+        quiz = Quiz.query.get_or_404(quiz_id)
+        # Ensure user can only delete their own quizzes
+        if quiz.user_id != current_user.id:
+            return jsonify({'success': False, 'error': 'Permission denied'}), 403
+        
+        try:
+            # Delete associated quiz details if exists
+            from models.entities import QuizDetail
+            quiz_details = QuizDetail.query.filter_by(quiz_id=quiz.id).all()
+            for detail in quiz_details:
+                db.session.delete(detail)
+            
+            # Delete quiz
+            db.session.delete(quiz)
+            db.session.commit()
+            
+            return jsonify({'success': True})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
     @app.route('/privacy')
     def privacy():
         return render_template('privacy.html')
@@ -3107,14 +3344,26 @@ def create_app():
                 return render_template('admin_user_edit.html', user=user)
             
             try:
+                # Verify user_id is valid and different from current_user to prevent accidental self-update
+                if user_id == current_user.id:
+                    flash('You cannot edit your own account from this page. Use Settings page instead.', 'warning')
+                    return redirect(url_for('admin_users'))
+                
                 # Always update role if provided (even if same value)
+                # Ensure we're updating the correct user by explicitly passing user_id
                 updated_user = AdminRepository.update_user(user_id, username, email, password if password else None, role)
                 if updated_user:
-                    flash(f'User updated successfully! Role changed to {role}.', 'success')
+                    # Verify the updated user is the one we intended to update
+                    if updated_user.id != user_id:
+                        db.session.rollback()
+                        flash('Error: Wrong user was updated. Please try again.', 'danger')
+                        return redirect(url_for('admin_users'))
+                    flash(f'User {updated_user.username} updated successfully! Role changed to {role}.', 'success')
                 else:
                     flash('User not found', 'danger')
                 return redirect(url_for('admin_users'))
             except Exception as e:
+                db.session.rollback()
                 flash(f'Error updating user: {str(e)}', 'danger')
                 import traceback
                 traceback.print_exc()
@@ -3129,9 +3378,13 @@ def create_app():
             return redirect(url_for('admin_users'))
         
         try:
-            AdminRepository.delete_user(user_id)
-            flash('User deleted successfully!', 'success')
+            result = AdminRepository.delete_user(user_id)
+            if result:
+                flash('User deleted successfully!', 'success')
+            else:
+                flash('User not found or could not be deleted.', 'danger')
         except Exception as e:
+            db.session.rollback()
             flash(f'Error deleting user: {str(e)}', 'danger')
         
         return redirect(url_for('admin_users'))
@@ -3210,16 +3463,24 @@ def create_app():
         available_students = [s for s in students if s.id not in enrolled_student_ids]
         
         if request.method == 'POST':
-            name = request.form.get('name')
-            code = request.form.get('code')
-            description = request.form.get('description')
+            name = request.form.get('name', '').strip()
+            code = request.form.get('code', '').strip()
+            description = request.form.get('description', '').strip()
             instructor_id = request.form.get('instructor_id', type=int) or None
             is_active = request.form.get('is_active') == 'on'
             # Get selected student IDs (for adding new enrollments)
             student_ids = request.form.getlist('student_ids')
             
-            errors = AdminService.validate_course_data(name, code, description)
-            # Check if code conflicts with other courses
+            # Manual validation for edit (exclude current course from duplicate checks)
+            errors = []
+            
+            if not name or len(name) == 0:
+                errors.append("Course name is required")
+            
+            if not code or len(code) == 0:
+                errors.append("Course code is required")
+            
+            # Check if code conflicts with OTHER courses (exclude current course)
             existing_course = Course.query.filter_by(code=code).first()
             if existing_course and existing_course.id != course_id:
                 errors.append("Course code already exists")
@@ -3231,8 +3492,27 @@ def create_app():
                                      available_students=available_students, enrolled_student_ids=enrolled_student_ids)
             
             try:
-                # Update the course
-                AdminRepository.update_course(course_id, name, code, description, instructor_id, is_active)
+                # Update the course - ensure all fields are passed explicitly
+                # Note: description can be empty string, which is valid
+                updated_course = AdminRepository.update_course(
+                    course_id, 
+                    name=name, 
+                    code=code, 
+                    description=description,  # Can be empty string
+                    instructor_id=instructor_id, 
+                    is_active=is_active
+                )
+                
+                if not updated_course:
+                    db.session.rollback()
+                    flash('Course not found', 'danger')
+                    return redirect(url_for('admin_courses'))
+                
+                # Verify the updated course is the one we intended to update
+                if updated_course.id != course_id:
+                    db.session.rollback()
+                    flash('Error: Wrong course was updated. Please try again.', 'danger')
+                    return redirect(url_for('admin_courses'))
                 
                 # Enroll selected students (new enrollments only)
                 enrolled_count = 0
@@ -3250,11 +3530,12 @@ def create_app():
                             continue
                 
                 if enrolled_count > 0:
-                    flash(f'Course updated successfully! {enrolled_count} new student(s) enrolled.', 'success')
+                    flash(f'Course "{updated_course.name}" updated successfully! {enrolled_count} new student(s) enrolled.', 'success')
                 else:
-                    flash('Course updated successfully!', 'success')
+                    flash(f'Course "{updated_course.name}" updated successfully!', 'success')
                 return redirect(url_for('admin_courses'))
             except Exception as e:
+                db.session.rollback()
                 flash(f'Error updating course: {str(e)}', 'danger')
                 import traceback
                 traceback.print_exc()
@@ -3302,23 +3583,64 @@ def create_app():
         students = AdminRepository.get_users_by_role('Student')
         
         if request.method == 'POST':
-            student_id = request.form.get('student_id', type=int)
+            # Get multiple student IDs from form
+            student_ids = request.form.getlist('student_ids')
             course_id = request.form.get('course_id', type=int)
             status = request.form.get('status', 'active')
             
-            if not student_id or not course_id:
-                flash('Student and course are required', 'danger')
+            if not student_ids or not course_id:
+                flash('At least one student and a course are required', 'danger')
                 return render_template('admin_enrollment_create.html', courses=courses, students=students)
             
+            # Convert string IDs to integers
             try:
-                result = AdminRepository.create_enrollment(student_id, course_id, status)
-                if result:
+                student_ids = [int(sid) for sid in student_ids if sid]
+            except (ValueError, TypeError):
+                flash('Invalid student selection', 'danger')
+                return render_template('admin_enrollment_create.html', courses=courses, students=students)
+            
+            if not student_ids:
+                flash('Please select at least one student', 'danger')
+                return render_template('admin_enrollment_create.html', courses=courses, students=students)
+            
+            # Create enrollments for each student
+            success_count = 0
+            failed_students = []
+            
+            for student_id in student_ids:
+                try:
+                    result = AdminRepository.create_enrollment(student_id, course_id, status)
+                    if result:
+                        success_count += 1
+                    else:
+                        # Get student username for error message
+                        student = User.query.get(student_id)
+                        student_name = student.username if student else f"Student ID {student_id}"
+                        failed_students.append(student_name)
+                except Exception as e:
+                    student = User.query.get(student_id)
+                    student_name = student.username if student else f"Student ID {student_id}"
+                    failed_students.append(f"{student_name} (Error: {str(e)})")
+            
+            # Show appropriate message based on results
+            if success_count > 0 and len(failed_students) == 0:
+                if success_count == 1:
                     flash('Enrollment created successfully!', 'success')
-                    return redirect(url_for('admin_enrollments'))
                 else:
+                    flash(f'{success_count} enrollments created successfully!', 'success')
+                return redirect(url_for('admin_enrollments'))
+            elif success_count > 0 and len(failed_students) > 0:
+                # Partial success
+                error_msg = f'{success_count} enrollment(s) created. Failed for: {", ".join(failed_students)}'
+                flash(error_msg, 'warning')
+                return render_template('admin_enrollment_create.html', courses=courses, students=students)
+            else:
+                # All failed
+                if len(failed_students) == 1 and 'already enrolled' in str(failed_students[0]).lower():
                     flash('Student is already enrolled in this course', 'danger')
-            except Exception as e:
-                flash(f'Error creating enrollment: {str(e)}', 'danger')
+                else:
+                    flash(f'Failed to create enrollments: {", ".join(failed_students)}', 'danger')
+                return render_template('admin_enrollment_create.html', courses=courses, students=students)
         
         return render_template('admin_enrollment_create.html', courses=courses, students=students)
     
@@ -3356,34 +3678,24 @@ def create_app():
     @app.route('/admin/settings')
     @role_required('Admin')
     def admin_settings():
-        settings = AdminRepository.get_all_settings()
-        return render_template('admin_settings.html', settings=settings)
+        # Redirect to dashboard - Settings page has been removed
+        return redirect(url_for('admin_dashboard'))
     
     @app.route('/admin/settings/update', methods=['POST'])
     @role_required('Admin')
     def admin_update_setting():
-        setting_key = request.form.get('setting_key')
-        setting_value = request.form.get('setting_value')
-        setting_type = request.form.get('setting_type', 'string')
-        description = request.form.get('description')
-        
-        if not setting_key:
-            flash('Setting key is required', 'danger')
-            return redirect(url_for('admin_settings'))
-        
-        try:
-            AdminRepository.create_or_update_setting(setting_key, setting_value, setting_type, description, current_user.id)
-            flash('Setting updated successfully!', 'success')
-        except Exception as e:
-            flash(f'Error updating setting: {str(e)}', 'danger')
-        
-        return redirect(url_for('admin_settings'))
+        # Redirect to dashboard - Settings page has been removed
+        return redirect(url_for('admin_dashboard'))
     
     @app.route('/admin/ai-integrations')
     @role_required('Admin')
     def admin_ai_integrations():
         integrations = AdminRepository.get_all_ai_integrations()
-        return render_template('admin_ai_integrations.html', integrations=integrations)
+        # Check if GEMINI_API_KEY is configured in environment
+        gemini_api_key_configured = bool(os.getenv('GEMINI_API_KEY'))
+        return render_template('admin_ai_integrations.html', 
+                             integrations=integrations,
+                             gemini_api_key_configured=gemini_api_key_configured)
     
     @app.route('/admin/ai-integrations/create', methods=['GET', 'POST'])
     @role_required('Admin')
@@ -3454,6 +3766,140 @@ def create_app():
                 flash(f'Error toggling AI integration: {str(e)}', 'danger')
         
         return redirect(url_for('admin_ai_integrations'))
+    
+    @app.route('/api/admin/ai/toggle', methods=['POST'])
+    @role_required('Admin')
+    def admin_toggle_ai_enabled():
+        """Toggle AI enabled/disabled state"""
+        try:
+            data = request.get_json() or {}
+            enabled = data.get('enabled', True)
+            
+            # Get or create Gemini integration
+            integration = AdminRepository.get_ai_integration_by_name('gemini')
+            
+            if integration:
+                # Update existing integration
+                integration.is_active = enabled
+                integration.updated_by = current_user.id
+                db.session.commit()
+            else:
+                # Create new integration record with enabled state
+                AdminRepository.create_or_update_ai_integration(
+                    'gemini', None, enabled, None, None, current_user.id
+                )
+            
+            return jsonify({
+                'success': True,
+                'enabled': enabled,
+                'message': f'AI features {"enabled" if enabled else "disabled"} successfully'
+            })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'message': f'Error toggling AI: {str(e)}'
+            }), 500
+    
+    @app.route('/api/admin/ai/status', methods=['GET'])
+    @role_required('Admin')
+    def admin_ai_status():
+        """Get Gemini AI integration status from environment and database"""
+        try:
+            from dotenv import load_dotenv
+            import json
+            
+            load_dotenv()
+            api_key = os.getenv('GEMINI_API_KEY')
+            configured = bool(api_key)
+            
+            # Get database integration if exists
+            db_integration = AdminRepository.get_ai_integration_by_name('gemini')
+            
+            enabled = False  # DB toggle flag (admin control)
+            current_model = None
+            
+            if db_integration:
+                enabled = db_integration.is_active
+                if db_integration.configuration:
+                    try:
+                        config = json.loads(db_integration.configuration)
+                        current_model = config.get('model')
+                    except:
+                        pass
+            
+            # Connected status: If configured (env var exists), Gemini is effectively connected and working
+            # The backend uses the env var directly, so if it exists, the system is connected
+            connected = configured
+            
+            return jsonify({
+                'provider': 'gemini',
+                'configured': configured,  # API key exists in env
+                'enabled': enabled,      # DB toggle (admin preference)
+                'connected': connected,  # Actually working (if configured, it's connected)
+                'model': current_model
+            })
+                
+        except Exception as e:
+            return jsonify({
+                'provider': 'gemini',
+                'configured': False,
+                'enabled': False,
+                'connected': False,
+                'model': None,
+                'error': str(e)
+            }), 500
+    
+    @app.route('/api/admin/ai/test', methods=['POST'])
+    @role_required('Admin')
+    def admin_test_ai_connection():
+        """Test Gemini AI connection"""
+        try:
+            import google.generativeai as genai
+            from dotenv import load_dotenv
+            
+            load_dotenv()
+            api_key = os.getenv('GEMINI_API_KEY')
+            
+            if not api_key:
+                return jsonify({
+                    'success': False,
+                    'message': 'GEMINI_API_KEY not found in environment variables'
+                }), 400
+            
+            # Configure and test connection
+            genai.configure(api_key=api_key)
+            
+            # Try to list models (lightweight test)
+            try:
+                models = genai.list_models()
+                # Check if we can access at least one model
+                model_found = False
+                for model in models:
+                    if hasattr(model, 'supported_generation_methods') and 'generateContent' in model.supported_generation_methods:
+                        model_found = True
+                        break
+                
+                if model_found:
+                    return jsonify({
+                        'success': True,
+                        'message': 'Connection successful. Gemini API is accessible.'
+                    })
+                else:
+                    return jsonify({
+                        'success': False,
+                        'message': 'No supported models found'
+                    })
+            except Exception as e:
+                return jsonify({
+                    'success': False,
+                    'message': f'Failed to connect: {str(e)}'
+                }), 500
+                
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'message': f'Error testing connection: {str(e)}'
+            }), 500
     
     # --- LMS Integration Routes (UC15, FR20) ---
     @app.route('/admin/lms-integrations')

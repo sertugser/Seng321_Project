@@ -1006,13 +1006,6 @@
                     <span>PLATFORM SETTINGS</span>
                 </div>
                 <div class="nav-category-content">
-                    <a href="/admin/settings" class="nav-link {% if request.endpoint == 'admin_settings' %}active{% endif %}" title="Settings">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
-                        </svg>
-                        <span>Settings</span>
-                    </a>
                     <a href="/admin/ai-integrations" class="nav-link {% if request.endpoint in ['admin_ai_integrations', 'admin_create_ai_integration', 'admin_edit_ai_integration'] %}active{% endif %}" title="AI Integrations">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
@@ -1183,13 +1176,6 @@
                                 <circle cx="12" cy="7" r="4"></circle>
                             </svg>
                             <span>View Profile</span>
-                        </a>
-                        <a href="/settings" class="profile-dropdown-item">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="3"></circle>
-                                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
-                            </svg>
-                            <span>Settings</span>
                         </a>
                         <a href="/logout" class="profile-dropdown-item logout">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">

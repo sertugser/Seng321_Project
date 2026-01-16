@@ -3,176 +3,731 @@
 
 {% block extra_css %}
 <style>
-    /* Ana Grid Yapısı */
-    .profile-container { 
-        max-width: 1000px; 
-        margin: 0 auto; 
-        padding: 20px; 
-        display: grid; 
-        grid-template-columns: 1fr 2fr; /* Sol 1 birim, Sağ 2 birim */
-        gap: 20px; 
-        /* align-items: stretch; -> Bu varsayılandır, sütunların eşit yükseklikte olmasını sağlar */
-    }
-    
-    /* --- SOL SÜTUN (SIDEBAR) --- */
-    .profile-sidebar { 
-        display: flex; 
-        flex-direction: column; 
-        /* Sütunun tüm yüksekliği kaplamasını sağlar */
+    /* Background with theme-aware colors */
+    html, body {
         height: 100%;
+        margin: 0;
+        padding: 0;
     }
 
-    /* Profil Kartını Uzatmak İçin Yeni Kural */
-    .profile-sidebar .glass-card {
-        /* Kartın sütun içindeki tüm boşluğu doldurmasını sağlar */
-        flex-grow: 1; 
+    body {
+        min-height: 100vh;
+        background: var(--bg-primary);
+    }
+
+    body.instructor-profile-fixed {
+        overflow: hidden;
+        height: 100vh;
+    }
+
+    .main-area {
+        margin-left: var(--sidebar-width) !important;
+        min-height: 100vh;
+        padding: 24px;
+    }
+
+    .main-area.instructor-profile {
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    body.sidebar-collapsed .main-area {
+        margin-left: var(--sidebar-collapsed-width) !important;
+    }
+
+    .content-wrapper {
+        width: 100%;
+        max-width: 1200px;
+    }
+
+    .content-wrapper.instructor-profile {
         display: flex;
         flex-direction: column;
-        /* İçeriğin dikey olarak ortalanması istenirse (isteğe bağlı) */
-        /* justify-content: center; */
+        height: 100%;
+        max-height: calc(100vh - 48px);
+        overflow: hidden;
     }
 
-    /* Avatar Upload Styling */
+    .profile-grid.instructor-profile {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin-bottom: 0;
+    }
+
+    .content-wrapper.instructor-profile .personal-info-card {
+        margin-top: 20px;
+    }
+
+    /* Page Header */
+    .page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        gap: 16px;
+    }
+
+    .page-header .btn-secondary {
+        align-self: center;
+    }
+
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .page-header .btn-secondary {
+            align-self: flex-start;
+            margin-top: 12px;
+        }
+    }
+
+    .page-header-text {
+        flex: 1;
+    }
+
+    .page-header h1 {
+        margin: 0 0 4px 0;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-main);
+        letter-spacing: -0.02em;
+    }
+
+    .page-subtitle {
+        margin: 0;
+        font-size: 0.9375rem;
+        color: var(--text-secondary);
+        font-weight: 400;
+    }
+
+    /* Primary Button */
+    .btn-primary {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        white-space: nowrap;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    }
+
+    /* Secondary Button */
+    .btn-secondary {
+        padding: 10px 20px;
+        background: transparent;
+        color: var(--text-main);
+        border: 1.5px solid var(--border-color);
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-secondary:hover {
+        background: var(--hover-bg);
+        border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    /* Profile Grid Layout */
+    .profile-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+        align-items: stretch;
+    }
+
+    .profile-grid.admin-profile {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Right Column Container - Equal Height */
+    .profile-right-column {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    /* Make cards fill available height */
+    .profile-grid .modern-card {
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+    }
+
+    .profile-card {
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+    }
+
+    /* Modern Card */
+    .modern-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: var(--shadow-lg);
+    }
+
+    /* Profile Card */
+    .profile-card {
+        text-align: center;
+        justify-content: flex-start;
+    }
+
     .avatar-container {
         position: relative;
-        width: 120px;
-        height: 120px;
-        margin: 0 auto 15px;
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 12px;
         cursor: pointer;
     }
 
     .avatar-circle {
-        width: 100%; height: 100%;
-        background: var(--accent);
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
         color: white;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 3rem;
-        font-weight: 800;
+        font-size: 1.5rem;
+        font-weight: 700;
         overflow: hidden;
-        border: 4px solid var(--bg-primary);
-        transition: filter 0.3s;
+        border: 2px solid var(--card-bg);
+        box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
+        transition: all 0.3s ease;
     }
 
-    .avatar-img { width: 100%; height: 100%; object-fit: cover; }
-    .avatar-container:hover .avatar-circle { filter: brightness(0.7); }
+    .avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .avatar-container:hover .avatar-circle {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
     .upload-overlay {
         position: absolute;
-        top: 50%; left: 50%;
+        top: 50%;
+        left: 50%;
         transform: translate(-50%, -50%);
-        color: white; font-size: 1.5rem; opacity: 0;
+        color: white;
+        font-size: 1.25rem;
+        opacity: 0;
         transition: opacity 0.3s;
+        pointer-events: none;
     }
-    .avatar-container:hover .upload-overlay { opacity: 1; }
 
-    /* Personal Information Section */
-    .personal-info-card { grid-column: span 2; margin-top: 10px; }
-    .info-table { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-    .info-row {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 12px 0; border-bottom: 1px solid var(--border-color);
+    .avatar-container:hover .upload-overlay {
+        opacity: 1;
     }
-    .info-row:last-child { border-bottom: none; }
-    .row-label { display: flex; align-items: center; gap: 12px; font-weight: 600; color: var(--text-secondary); }
-    .row-value { font-weight: 700; color: var(--text-main); }
+
+    .profile-card .profile-name {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 6px 0;
+    }
     
-    .status-badge-ui {
-        padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
-        background: #dcfce7; color: #166534; border: 1px solid #bbf7d0;
+    /* Ensure sidebar profile name is not affected */
+    .profile-section .profile-name {
+        font-size: 0.8125rem !important;
+        font-weight: 400 !important;
     }
 
-    /* Achievement Hall Specific Styling */
-    .achievement-section-title {
-        font-size: 0.85rem;
-        font-weight: 800;
-        color: var(--text-secondary);
-        margin: 25px 0 15px;
-        display: flex;
+    .profile-role-badge {
+        display: inline-flex;
         align-items: center;
-        gap: 10px;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+        margin-bottom: 12px;
+    }
+
+    .profile-divider {
+        margin: 12px 0;
+        border: 0;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .bio-section {
+        text-align: left;
+    }
+
+    .bio-label {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.5px;
     }
 
-    .achievements-grid { 
-        display: grid; 
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
-        gap: 15px; 
+    .bio-text {
+        font-size: 0.8125rem;
+        color: var(--text-main);
+        line-height: 1.4;
+        margin: 0 0 6px 0;
+        max-height: 3em;
+        overflow: hidden;
     }
 
-    .achievement-card { 
-        background: var(--hover-bg); 
-        padding: 15px; 
-        border-radius: 12px; 
-        border: 1px solid var(--border-color);
+    .bio-text.empty {
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+    }
+
+    .bio-edit-link {
+        background: none;
+        border: none;
+        color: #6366f1;
+        cursor: pointer;
+        font-size: 0.8125rem;
+        padding: 0;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .bio-edit-link:hover {
+        color: #4f46e5;
+        text-decoration: underline;
+    }
+
+    .bio-edit-area {
+        display: none;
+        margin-top: 12px;
+    }
+
+    .bio-edit-area.show {
+        display: block;
+    }
+
+    .bio-edit-area textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--card-bg);
+        color: var(--text-main);
+        font-size: 0.875rem;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 60px;
+        margin-bottom: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .bio-edit-area textarea:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .stats-section {
+        width: 100%;
+    }
+
+    .stat-card {
+        background: var(--hover-bg);
+        border: 1.5px solid var(--border-color);
+        border-radius: 10px;
+        padding: 14px 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-height: 75px;
         display: flex;
         flex-direction: column;
-        gap: 8px;
-        position: relative;
-        transition: transform 0.2s;
+        justify-content: center;
+        align-items: center;
     }
 
-    .achievement-card:hover { transform: translateY(-5px); }
+    .stat-card:hover {
+        background: var(--card-bg);
+        border-color: rgba(99, 102, 241, 0.3);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(99, 102, 241, 0.15);
+    }
 
-    .status-badge {
-        font-size: 0.65rem;
-        font-weight: 800;
-        padding: 2px 8px;
-        border-radius: 4px;
+    .stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 2px 0;
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        color: var(--text-secondary);
         text-transform: uppercase;
-        width: fit-content;
-    }
-    .status-earned { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-    .status-locked { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
-
-    .achievement-card.locked { filter: grayscale(1); opacity: 0.7; border-style: dashed; }
-    
-    .achievement-header { display: flex; align-items: center; gap: 10px; }
-    .achievement-icon { font-size: 2rem; }
-    .achievement-info h6 { margin: 0; font-size: 0.95rem; font-weight: 800; color: var(--text-main); }
-    
-    .how-to-earn { 
-        font-size: 0.7rem; 
-        color: var(--accent); 
-        background: rgba(99, 102, 241, 0.05); 
-        padding: 8px; 
-        border-radius: 6px; 
-        border: 1px solid rgba(99, 102, 241, 0.1);
-        margin-top: 5px;
+        letter-spacing: 0.5px;
     }
 
-    /* General UI */
+    /* Achievements Section */
+    .achievements-section {
+        margin-top: 0;
+    }
+
+    .section-title {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 12px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .section-title svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .achievement-section-title {
+        font-size: 0.6875rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin: 0 0 10px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .achievement-section-title svg {
+        width: 10px;
+        height: 10px;
+    }
+
+    .achievements-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 0;
+    }
+
+    .achievement-card {
+        background: var(--hover-bg);
+        border: 1.5px solid var(--border-color);
+        border-radius: 8px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        transition: all 0.3s ease;
+        min-height: auto;
+    }
+
+    .achievement-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+        border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .achievement-card.locked {
+        filter: grayscale(1);
+        opacity: 0.7;
+        border-style: dashed;
+    }
+
+    .achievement-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .achievement-icon {
+        font-size: 1.125rem;
+        line-height: 1;
+    }
+
+    .achievement-info h6 {
+        margin: 0;
+        font-size: 0.8125rem;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .achievement-description {
+        font-size: 0.6875rem;
+        color: var(--text-secondary);
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    /* Badge Styles */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.6875rem;
+        font-weight: 600;
+    }
+
+    .badge-earned {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+    }
+
+    .badge-locked {
+        background: rgba(156, 163, 175, 0.1);
+        color: #9ca3af;
+    }
+
+    /* Personal Information Card */
+    .personal-info-card {
+        margin-top: 0;
+        grid-column: 1 / -1;
+    }
+
+    /* Right Column Cards - Equal Height */
+    .student-right-card,
+    .instructor-right-card,
+    .admin-right-card {
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+    }
+
+    /* Ensure achievements section fills remaining space */
+    .achievements-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .info-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    .info-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .info-table {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .row-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 0.8125rem;
+    }
+
+    .row-label span {
+        font-size: 1rem;
+    }
+
+    .row-value {
+        font-weight: 600;
+        color: var(--text-main);
+        font-size: 0.8125rem;
+    }
+
+    .status-badge-ui {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+    }
+
+    /* Modal Styles */
     .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
-        display: none; justify-content: center; align-items: center; z-index: 1000;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
     }
-    .modal-card { background: var(--bg-primary); border: 1px solid var(--accent); border-radius: 16px; padding: 30px; max-width: 450px; width: 90%; }
-    .modal-overlay.active { display: flex; }
-    .edit-input { width: 100%; background: var(--bg-primary); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; margin-top: 5px; }
-    
-    /* Right Column (Main Content) */
-    .profile-main { display: flex; flex-direction: column; gap: 20px; }
 
-    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
-    .stat-box { background: var(--hover-bg); padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border-color); cursor: pointer; transition: 0.3s; }
+    .modal-overlay.active {
+        display: flex;
+    }
 
-    /* Mobil Uyumluluk */
-    @media (max-width: 768px) { 
-        .profile-container { grid-template-columns: 1fr; } 
-        .personal-info-card { grid-column: span 1; } 
-        .profile-sidebar { height: auto; } /* Mobilde yüksekliği serbest bırak */
+    .modal-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 480px;
+        width: 90%;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .modal-card h3 {
+        margin: 0 0 20px 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .edit-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--card-bg);
+        color: var(--text-main);
+        font-size: 0.875rem;
+        margin-top: 6px;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+    }
+
+    .edit-input:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .edit-input label {
+        display: block;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 6px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .profile-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .main-area {
+            padding: 16px;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .achievements-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .modern-card {
+            padding: 16px;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="profile-container">
-    
-    <div class="profile-sidebar">
-        <div class="glass-card" style="text-align: center;">
+{% if user.role == 'Instructor' %}
+<script>
+    document.body.classList.add('instructor-profile-fixed');
+</script>
+{% endif %}
+<div class="content-wrapper{% if user.role == 'Instructor' %} instructor-profile{% endif %}">
+    <div class="page-header">
+        <div class="page-header-text">
+            <h1>View Profile</h1>
+            <p class="page-subtitle">
+                {% if user.role == 'Student' %}
+                    Manage your profile information and view your learning achievements.
+                {% elif user.role == 'Instructor' %}
+                    Manage your profile information and view your teaching statistics.
+                {% elif user.role == 'Admin' %}
+                    Manage your account information and profile settings.
+                {% endif %}
+            </p>
+        </div>
+        <button onclick="toggleBioEdit()" class="btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 16px; height: 16px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+            </svg>
+            Edit Profile
+        </button>
+    </div>
+
+    <div class="profile-grid{% if user.role == 'Admin' %} admin-profile{% elif user.role == 'Instructor' %} instructor-profile{% endif %}">
+        <!-- Left Column: Profile Card -->
+        <div class="modern-card profile-card">
             <div class="avatar-container" onclick="openModal('photoModal')">
                 <div class="avatar-circle">
                     {% if user.profile_image %}
@@ -184,151 +739,440 @@
                 <div class="upload-overlay">📷</div>
             </div>
 
-            <h3>{{ user.username }}</h3>
-            <span style="background: var(--active-bg); color: var(--accent); padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">{{ user.role|upper }}</span>
-            
-            <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-color);">
-            
-            <div style="text-align: left;">
-                <p style="font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 8px;">BIO</p>
+            <h3 class="profile-name">{{ user.username }}</h3>
+            <div class="profile-role-badge">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 12px; height: 12px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                </svg>
+                {{ user.role|upper }}
+            </div>
+
+            <hr class="profile-divider">
+
+            <div class="bio-section">
+                <div class="bio-label">Bio</div>
                 <div id="bio-display-area">
-                    <p style="font-size: 0.85rem;">{{ user.bio if user.bio else 'No bio added yet.' }}</p>
-                    <button onclick="toggleBioEdit()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:0.75rem; padding:0; font-weight:700;">[Edit Profile]</button>
+                    <p class="bio-text {% if not user.bio %}empty{% endif %}">{{ user.bio if user.bio else 'No bio added yet.' }}</p>
                 </div>
-                <div id="bio-edit-area" style="display: none;">
+                <div id="bio-edit-area" class="bio-edit-area">
                     <form action="/update_bio" method="POST">
                         <textarea name="new_bio" class="edit-input" style="min-height: 60px;">{{ user.bio }}</textarea>
-                        <button type="submit" class="btn-primary" style="font-size: 0.7rem; padding: 5px 12px; margin-top: 5px;">Save</button>
+                        <button type="submit" class="btn-primary" style="width: 100%;">Save Bio</button>
                     </form>
                 </div>
             </div>
         </div>
+
+        <!-- Right Column: Stats + Role-Specific Content -->
+        <div class="profile-right-column">
+            {% if user.role == 'Student' %}
+            <!-- Student Right Column: Combined Stats + Achievements Card -->
+            <div class="modern-card student-right-card">
+                <!-- Stats Section -->
+                <div class="stats-section" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
+                    <div class="stats-grid">
+                        <div class="stat-card" onclick="showInfo('tasks')">
+                            <div class="stat-value">{{ stats.total_tasks or 0 }}</div>
+                            <div class="stat-label">Tasks</div>
+                        </div>
+                        <div class="stat-card" onclick="showInfo('score')">
+                            <div class="stat-value">{{ stats.avg_score or 0 }}%</div>
+                            <div class="stat-label">Avg Score</div>
+                        </div>
+                        <div class="stat-card" onclick="showInfo('streak')">
+                            <div class="stat-value">{{ stats.streak or 0 }}</div>
+                            <div class="stat-label">Streak</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Achievements Section -->
+                <div class="achievements-section">
+                <h4 class="section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                    </svg>
+                    Achievement Hall
+                </h4>
+
+                {% set has_achievements = (stats.streak and stats.streak >= 7) or (stats.total_tasks and stats.total_tasks >= 10) %}
+                {% if has_achievements %}
+                <div class="achievement-section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    Earned Badges
+                </div>
+                <div class="achievements-grid">
+                    {% if stats.streak and stats.streak >= 7 %}
+                    <div class="achievement-card">
+                        <span class="badge badge-earned">Earned</span>
+                        <div class="achievement-header">
+                            <span class="achievement-icon">🔥</span>
+                            <div class="achievement-info">
+                                <h6>7 Day Streak</h6>
+                            </div>
+                        </div>
+                        <p class="achievement-description">You practiced for a full week!</p>
+                    </div>
+                    {% endif %}
+                    {% if stats.total_tasks and stats.total_tasks >= 10 %}
+                    <div class="achievement-card">
+                        <span class="badge badge-earned">Earned</span>
+                        <div class="achievement-header">
+                            <span class="achievement-icon">✍️</span>
+                            <div class="achievement-info">
+                                <h6>Essay Master</h6>
+                            </div>
+                        </div>
+                        <p class="achievement-description">Successfully completed 10 writing tasks.</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 16px; color: var(--text-secondary); font-size: 0.8125rem; line-height: 1.5;">
+                    <p style="margin: 0;">No achievements earned yet. Complete tasks and maintain your streak to unlock badges!</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% elif user.role == 'Instructor' %}
+            <!-- Instructor Right Column: Combined Stats + Teaching Stats Card -->
+            <div class="modern-card instructor-right-card">
+                <!-- Stats Section -->
+                <div class="stats-section" style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
+                    <div class="stats-grid">
+                        <div class="stat-card" onclick="showInfo('courses')">
+                            <div class="stat-value">{{ stats.courses_taught or 0 }}</div>
+                            <div class="stat-label">Courses</div>
+                        </div>
+                        <div class="stat-card" onclick="showInfo('students')">
+                            <div class="stat-value">{{ stats.students_taught or 0 }}</div>
+                            <div class="stat-label">Students</div>
+                        </div>
+                        <div class="stat-card" onclick="showInfo('assignments')">
+                            <div class="stat-value">{{ stats.assignments_created or 0 }}</div>
+                            <div class="stat-label">Assignments</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teaching Statistics Section -->
+                <div class="achievements-section">
+                <h4 class="section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+                    </svg>
+                    Teaching Statistics
+                </h4>
+
+                <div class="achievements-grid">
+                    <div class="achievement-card">
+                        <div class="achievement-header">
+                            <span class="achievement-icon">📊</span>
+                            <div class="achievement-info">
+                                <h6>Total Submissions</h6>
+                            </div>
+                        </div>
+                        <p class="achievement-description">{{ stats.total_submissions or 0 }} submissions received</p>
+                    </div>
+
+                    <div class="achievement-card">
+                        <div class="achievement-header">
+                            <span class="achievement-icon">⏳</span>
+                            <div class="achievement-info">
+                                <h6>Pending Reviews</h6>
+                            </div>
+                        </div>
+                        <p class="achievement-description">{{ stats.pending_reviews or 0 }} submissions awaiting review</p>
+                    </div>
+
+                    <div class="achievement-card">
+                        <div class="achievement-header">
+                            <span class="achievement-icon">📈</span>
+                            <div class="achievement-info">
+                                <h6>Average Score</h6>
+                            </div>
+                        </div>
+                        <p class="achievement-description">{{ stats.avg_student_score or 0 }}% average student score</p>
+                    </div>
+
+                    <div class="achievement-card">
+                        <div class="achievement-header">
+                            <span class="achievement-icon">✅</span>
+                            <div class="achievement-info">
+                                <h6>Review Completion</h6>
+                            </div>
+                        </div>
+                        <p class="achievement-description">
+                            {% if stats.total_submissions > 0 %}
+                                {{ (((stats.total_submissions - stats.pending_reviews) / stats.total_submissions) * 100)|round|int }}% completed
+                            {% else %}
+                                0% completed
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {% elif user.role == 'Admin' %}
+            <!-- Admin Right Column: Combined Stats + Platform Statistics Card -->
+            <div class="modern-card admin-right-card">
+                <!-- Stats Section -->
+                <div class="stats-section" style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
+                    <div class="stats-grid">
+                        <div class="stat-card" onclick="showInfo('users')">
+                            <div class="stat-value">{{ stats.total_users or 0 }}</div>
+                            <div class="stat-label">Users</div>
+                        </div>
+                        <div class="stat-card" onclick="showInfo('courses')">
+                            <div class="stat-value">{{ stats.total_courses or 0 }}</div>
+                            <div class="stat-label">Courses</div>
+                        </div>
+                        <div class="stat-card" onclick="showInfo('enrollments')">
+                            <div class="stat-value">{{ stats.active_enrollments or 0 }}</div>
+                            <div class="stat-label">Enrollments</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Platform Statistics Section -->
+                <div class="achievements-section">
+                    <h4 class="section-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+                        </svg>
+                        Platform Statistics
+                    </h4>
+
+                    <div class="achievements-grid">
+                        <div class="achievement-card">
+                            <div class="achievement-header">
+                                <span class="achievement-icon">👥</span>
+                                <div class="achievement-info">
+                                    <h6>Total Users</h6>
+                                </div>
+                            </div>
+                            <p class="achievement-description">{{ stats.total_users or 0 }} registered users</p>
+                        </div>
+
+                        <div class="achievement-card">
+                            <div class="achievement-header">
+                                <span class="achievement-icon">🎓</span>
+                                <div class="achievement-info">
+                                    <h6>Students</h6>
+                                </div>
+                            </div>
+                            <p class="achievement-description">{{ stats.total_students or 0 }} active students</p>
+                        </div>
+
+                        <div class="achievement-card">
+                            <div class="achievement-header">
+                                <span class="achievement-icon">👨‍🏫</span>
+                                <div class="achievement-info">
+                                    <h6>Instructors</h6>
+                                </div>
+                            </div>
+                            <p class="achievement-description">{{ stats.total_instructors or 0 }} active instructors</p>
+                        </div>
+
+                        <div class="achievement-card">
+                            <div class="achievement-header">
+                                <span class="achievement-icon">📚</span>
+                                <div class="achievement-info">
+                                    <h6>Active Courses</h6>
+                                </div>
+                            </div>
+                            <p class="achievement-description">{{ stats.total_courses or 0 }} courses available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
     </div>
 
-    <div class="profile-main">
-        <div class="stats-row">
-            <div class="stat-box" onclick="showInfo('tasks')">
-                <span class="stat-value">24</span>
-                <span class="stat-label">Tasks</span>
-            </div>
-            <div class="stat-box" onclick="showInfo('score')">
-                <span class="stat-value">85%</span>
-                <span class="stat-label">Avg Score</span>
-            </div>
-            <div class="stat-box" onclick="showInfo('streak')">
-                <span class="stat-value">12</span>
-                <span class="stat-label">Streak</span>
-            </div>
+    <!-- Personal Information Card (Full Width) -->
+    <div class="modern-card personal-info-card">
+        <div class="info-header">
+            <h3>Personal Information</h3>
+            <button onclick="openModal('infoEditModal')" class="btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width: 16px; height: 16px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                </svg>
+                Edit Info
+            </button>
         </div>
 
-        <div class="glass-card" style="flex-grow: 1;"> <h4 style="margin-bottom: 5px;">🏆 Achievement Hall</h4>
-            
-            <div class="achievement-section-title">✅ Earned Badges</div>
-            <div class="achievements-grid">
-                <div class="achievement-card">
-                    <span class="status-badge status-earned">Earned</span>
-                    <div class="achievement-header">
-                        <span class="achievement-icon">🔥</span>
-                        <div class="achievement-info"><h6>7 Day Streak</h6></div>
-                    </div>
-                    <p style="font-size: 0.75rem; margin: 0; opacity: 0.8;">You practiced for a full week!</p>
-                </div>
-
-                <div class="achievement-card">
-                    <span class="status-badge status-earned">Earned</span>
-                    <div class="achievement-header">
-                        <span class="achievement-icon">✍️</span>
-                        <div class="achievement-info"><h6>Essay Master</h6></div>
-                    </div>
-                    <p style="font-size: 0.75rem; margin: 0; opacity: 0.8;">Successfully completed 10 writing tasks.</p>
-                </div>
-            </div>
-
-            <div class="achievement-section-title">🔒 Not Earned Yet</div>
-            <div class="achievements-grid">
-                <div class="achievement-card locked">
-                    <span class="status-badge status-locked">Locked</span>
-                    <div class="achievement-header">
-                        <span class="achievement-icon">📚</span>
-                        <div class="achievement-info"><h6>Grammar Guru</h6></div>
-                    </div>
-                    <div class="how-to-earn"><strong>Task:</strong> Complete 5 Grammar Quizzes with a score over 90%.</div>
-                </div>
-
-                <div class="achievement-card locked">
-                    <span class="status-badge status-locked">Locked</span>
-                    <div class="achievement-header">
-                        <span class="achievement-icon">👑</span>
-                        <div class="achievement-info"><h6>Vocabulary King</h6></div>
-                    </div>
-                    <div class="how-to-earn"><strong>Task:</strong> Use 100 new words in your writing submissions.</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="glass-card personal-info-card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h4 style="font-weight: 800;">Personal Information</h4>
-            <button onclick="openModal('infoEditModal')" class="btn-secondary" style="font-size: 0.75rem; padding: 5px 15px;">Edit Info</button>
-        </div>
-        
         <div class="info-table">
+            {% if user.role == 'Student' %}
             <div class="info-row">
-                <div class="row-label"><span>🏛️</span> University</div>
-                <span class="row-value">{{ user.university if user.university else 'Middle East Technical University' }}</span>
+                <div class="row-label">
+                    <span>🏛️</span>
+                    <span>University</span>
+                </div>
+                <span class="row-value">{{ user.university if user.university else 'Not specified' }}</span>
             </div>
             <div class="info-row">
-                <div class="row-label"><span>🎓</span> Grade / Year</div>
-                <span class="row-value">{{ user.grade if user.grade else '3rd Year' }}</span>
+                <div class="row-label">
+                    <span>🎓</span>
+                    <span>Grade / Year</span>
+                </div>
+                <span class="row-value">{{ user.grade if user.grade else 'Not specified' }}</span>
             </div>
             <div class="info-row">
-                <div class="row-label"><span>👨‍🏫</span> Teacher</div>
-                <span class="row-value">{{ user.teacher if user.teacher else 'Dr. Alan Smith' }}</span>
+                <div class="row-label">
+                    <span>👨‍🏫</span>
+                    <span>Teacher</span>
+                </div>
+                <span class="row-value">{{ user.teacher if user.teacher else 'Not assigned' }}</span>
             </div>
             <div class="info-row">
-                <div class="row-label"><span>📞</span> Phone Number</div>
-                <span class="row-value">{{ user.phone if user.phone else '+90 5XX XXX XX XX' }}</span>
+                <div class="row-label">
+                    <span>📞</span>
+                    <span>Phone Number</span>
+                </div>
+                <span class="row-value">{{ user.phone if user.phone else 'Not provided' }}</span>
             </div>
             <div class="info-row">
-                <div class="row-label"><span>🛡️</span> Education Status</div>
+                <div class="row-label">
+                    <span>🛡️</span>
+                    <span>Education Status</span>
+                </div>
                 <span class="status-badge-ui">{{ user.education_status if user.education_status else 'Active Student' }}</span>
             </div>
+            {% elif user.role == 'Instructor' %}
+            <div class="info-row">
+                <div class="row-label">
+                    <span>📧</span>
+                    <span>Email</span>
+                </div>
+                <span class="row-value">{{ user.email }}</span>
+            </div>
+            <div class="info-row">
+                <div class="row-label">
+                    <span>🏛️</span>
+                    <span>Institution</span>
+                </div>
+                <span class="row-value">{{ user.university if user.university else 'Not specified' }}</span>
+            </div>
+            <div class="info-row">
+                <div class="row-label">
+                    <span>📞</span>
+                    <span>Phone Number</span>
+                </div>
+                <span class="row-value">{{ user.phone if user.phone else 'Not provided' }}</span>
+            </div>
+            <div class="info-row">
+                <div class="row-label">
+                    <span>📚</span>
+                    <span>Courses Taught</span>
+                </div>
+                <span class="status-badge-ui">{{ stats.courses_taught or 0 }} Courses</span>
+            </div>
+            <div class="info-row">
+                <div class="row-label">
+                    <span>👥</span>
+                    <span>Students</span>
+                </div>
+                <span class="status-badge-ui">{{ stats.students_taught or 0 }} Students</span>
+            </div>
+            {% elif user.role == 'Admin' %}
+            <div class="info-row">
+                <div class="row-label">
+                    <span>📧</span>
+                    <span>Email</span>
+                </div>
+                <span class="row-value">{{ user.email }}</span>
+            </div>
+            <div class="info-row">
+                <div class="row-label">
+                    <span>📞</span>
+                    <span>Phone Number</span>
+                </div>
+                <span class="row-value">{{ user.phone if user.phone else 'Not provided' }}</span>
+            </div>
+            <div class="info-row">
+                <div class="row-label">
+                    <span>📅</span>
+                    <span>Account Created</span>
+                </div>
+                <span class="row-value">
+                    {% if user.created_at %}
+                        {{ user.created_at.strftime('%B %d, %Y') }}
+                    {% else %}
+                        Not available
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <div class="row-label">
+                    <span>✅</span>
+                    <span>Account Status</span>
+                </div>
+                <span class="status-badge-ui">Active Admin</span>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
+<!-- Photo Upload Modal -->
 <div id="photoModal" class="modal-overlay" onclick="closeModal('photoModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
         <h3>Change Profile Photo</h3>
-        <form id="photo-form" enctype="multipart/form-data" style="margin-top: 20px;">
-            <input type="file" name="profile_image" accept="image/*" required style="margin-bottom: 20px; display: block; width: 100%;">
+        <form id="photo-form" enctype="multipart/form-data">
+            <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Select Image</label>
+            <input type="file" name="profile_image" accept="image/*" required style="margin-bottom: 16px; display: block; width: 100%; padding: 10px; border: 1.5px solid var(--border-color); border-radius: 8px; background: var(--card-bg); color: var(--text-main); box-sizing: border-box;">
             <button type="submit" class="btn-primary" style="width: 100%;">Upload Photo</button>
         </form>
     </div>
 </div>
 
+<!-- Personal Info Edit Modal -->
 <div id="infoEditModal" class="modal-overlay" onclick="closeModal('infoEditModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
         <h3>Edit Personal Information</h3>
-        <form action="/update_personal_info" method="POST" style="margin-top: 20px; text-align: left;">
-            <label style="font-size: 0.8rem; font-weight: 700;">University</label>
-            <input type="text" name="university" class="edit-input" value="{{ user.university }}">
-            <label style="font-size: 0.8rem; font-weight: 700; margin-top: 10px; display: block;">Grade / Year</label>
-            <input type="text" name="grade" class="edit-input" value="{{ user.grade }}">
-            <label style="font-size: 0.8rem; font-weight: 700; margin-top: 10px; display: block;">Teacher</label>
-            <input type="text" name="teacher" class="edit-input" value="{{ user.teacher }}">
-            <label style="font-size: 0.8rem; font-weight: 700; margin-top: 10px; display: block;">Phone Number</label>
-            <input type="text" name="phone" class="edit-input" value="{{ user.phone }}">
-            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 20px;">Save All Information</button>
+        <form action="/update_personal_info" method="POST">
+            {% if user.role == 'Student' %}
+            <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">University</label>
+            <input type="text" name="university" class="edit-input" value="{{ user.university if user.university else '' }}">
+
+            <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Grade / Year</label>
+            <input type="text" name="grade" class="edit-input" value="{{ user.grade if user.grade else '' }}">
+
+            <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Teacher</label>
+            <input type="text" name="teacher" class="edit-input" value="{{ user.teacher if user.teacher else '' }}">
+
+            <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Phone Number</label>
+            <input type="text" name="phone" class="edit-input" value="{{ user.phone if user.phone else '' }}">
+
+            <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Education Status</label>
+            <input type="text" name="education_status" class="edit-input" value="{{ user.education_status if user.education_status else '' }}">
+
+            {% elif user.role == 'Instructor' %}
+            <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Institution</label>
+            <input type="text" name="university" class="edit-input" value="{{ user.university if user.university else '' }}">
+
+            <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Phone Number</label>
+            <input type="text" name="phone" class="edit-input" value="{{ user.phone if user.phone else '' }}">
+
+            {% elif user.role == 'Admin' %}
+            <label style="display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">Phone Number</label>
+            <input type="text" name="phone" class="edit-input" value="{{ user.phone if user.phone else '' }}" placeholder="Enter your phone number">
+
+            {% endif %}
+
+            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 8px;">Save All Information</button>
         </form>
     </div>
 </div>
 
+<!-- Info Modal -->
 <div id="infoModal" class="modal-overlay" onclick="closeModal('infoModal')">
     <div class="modal-card" onclick="event.stopPropagation()">
         <h3 id="modalTitle"></h3>
-        <p id="modalDescription" style="margin-top: 15px; color: var(--text-secondary);"></p>
+        <p id="modalDescription" style="margin-top: 12px; color: var(--text-secondary); font-size: 0.875rem; line-height: 1.6;"></p>
         <button class="btn-primary" onclick="closeModal('infoModal')" style="width: 100%; margin-top: 20px;">Got it!</button>
     </div>
 </div>
@@ -337,19 +1181,50 @@
 {% block extra_js %}
 <script>
     function toggleBioEdit() {
-        const d = document.getElementById('bio-display-area');
-        const e = document.getElementById('bio-edit-area');
-        d.style.display = d.style.display === 'none' ? 'block' : 'none';
-        e.style.display = e.style.display === 'none' ? 'block' : 'none';
+        const displayArea = document.getElementById('bio-display-area');
+        const editArea = document.getElementById('bio-edit-area');
+        
+        // Toggle edit area visibility
+        if (editArea.classList.contains('show')) {
+            // Close edit area - show display area
+            editArea.classList.remove('show');
+            displayArea.style.display = 'block';
+        } else {
+            // Open edit area - hide display area
+            editArea.classList.add('show');
+            displayArea.style.display = 'none';
+        }
     }
 
-    function openModal(id) { document.getElementById(id).classList.add('active'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    // Ensure proper initial state on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const editArea = document.getElementById('bio-edit-area');
+        const displayArea = document.getElementById('bio-display-area');
+        
+        // If edit area is not showing, ensure display area is visible
+        if (editArea && !editArea.classList.contains('show')) {
+            displayArea.style.display = 'block';
+        }
+    });
 
+    function openModal(id) {
+        document.getElementById(id).classList.add('active');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    const coursesDesc = {% if user.role == "Instructor" %}'Total courses you are teaching.'{% else %}'Total courses available on the platform.'{% endif %};
     const infoData = {
         'tasks': { title: 'Tasks Completed', desc: 'Total Speaking and Writing submissions tracked by AI.' },
         'score': { title: 'Average Score', desc: 'Your current proficiency level based on your performance.' },
-        'streak': { title: 'Learning Streak', desc: 'Consecutive days of active learning on the platform.' }
+        'streak': { title: 'Learning Streak', desc: 'Consecutive days of active learning on the platform.' },
+        'courses': { title: 'Courses', desc: coursesDesc },
+        'students': { title: 'Students Taught', desc: 'Total number of unique students enrolled in your courses.' },
+        'assignments': { title: 'Assignments Created', desc: 'Total assignments and activities you have created for students.' },
+        'users': { title: 'Total Users', desc: 'Total number of registered users on the platform.' },
+        'enrollments': { title: 'Active Enrollments', desc: 'Total number of active course enrollments on the platform.' }
     };
 
     function showInfo(type) {
@@ -364,8 +1239,11 @@
         fetch('/upload_profile_picture', { method: 'POST', body: formData })
         .then(res => res.json())
         .then(data => {
-            if(data.success) { location.reload(); }
-            else { alert(data.message); }
+            if(data.success) {
+                location.reload();
+            } else {
+                alert(data.message);
+            }
         });
     };
 </script>

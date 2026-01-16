@@ -9,7 +9,7 @@ class AdminRepository:
     
     @staticmethod
     def get_user_by_id(user_id):
-        return User.query.get(user_id)
+        return User.query.filter_by(id=user_id).first()
     
     @staticmethod
     def get_users_by_role(role):
@@ -25,7 +25,8 @@ class AdminRepository:
     
     @staticmethod
     def update_user(user_id, username=None, email=None, password=None, role=None):
-        user = User.query.get(user_id)
+        # Use filter_by with explicit ID to ensure we get the correct user
+        user = User.query.filter_by(id=user_id).first()
         if not user:
             return None
         
@@ -40,17 +41,84 @@ class AdminRepository:
         if role is not None:
             user.role = role.strip() if isinstance(role, str) else role
         
+        # Only commit the specific user object, not the entire session
+        db.session.add(user)
         db.session.commit()
+        # Refresh to ensure we have the latest data
+        db.session.refresh(user)
         return user
     
     @staticmethod
     def delete_user(user_id):
+        from models.entities import Submission, Grade, LearningGoal, Quiz, QuizDetail, Enrollment, LearningActivity, Course, AdaptiveInsight
+        
         user = User.query.get(user_id)
-        if user:
+        if not user:
+            return False
+        
+        try:
+            # 1. Delete user's submissions and their grades (as student)
+            submissions = Submission.query.filter_by(student_id=user_id).all()
+            for submission in submissions:
+                if submission.grade:
+                    db.session.delete(submission.grade)
+                db.session.delete(submission)
+            
+            # 2. Delete activities created by user (as instructor)
+            # Must delete before submissions that reference them
+            activities_as_instructor = LearningActivity.query.filter_by(instructor_id=user_id).all()
+            for activity in activities_as_instructor:
+                # Delete all submissions and grades for these activities (from all students)
+                activity_submissions = Submission.query.filter_by(activity_id=activity.id).all()
+                for sub in activity_submissions:
+                    if sub.grade:
+                        db.session.delete(sub.grade)
+                    db.session.delete(sub)
+                db.session.delete(activity)
+            
+            # 3. Delete activities assigned to user (as student) - set student_id to NULL
+            activities_as_student = LearningActivity.query.filter_by(student_id=user_id).all()
+            for activity in activities_as_student:
+                activity.student_id = None
+            
+            # 4. Delete user's learning goals
+            goals = LearningGoal.query.filter_by(user_id=user_id).all()
+            for goal in goals:
+                db.session.delete(goal)
+            
+            # 5. Delete user's quizzes and their details
+            quizzes = Quiz.query.filter_by(user_id=user_id).all()
+            for quiz in quizzes:
+                quiz_details = QuizDetail.query.filter_by(quiz_id=quiz.id).all()
+                for detail in quiz_details:
+                    db.session.delete(detail)
+                db.session.delete(quiz)
+            
+            # 6. Delete user's enrollments
+            enrollments = Enrollment.query.filter_by(student_id=user_id).all()
+            for enrollment in enrollments:
+                db.session.delete(enrollment)
+            
+            # 7. Update courses taught by user (as instructor) - set instructor_id to NULL
+            courses = Course.query.filter_by(instructor_id=user_id).all()
+            for course in courses:
+                course.instructor_id = None
+            
+            # 8. Delete adaptive insights
+            insights = AdaptiveInsight.query.filter_by(user_id=user_id).all()
+            for insight in insights:
+                db.session.delete(insight)
+            
+            # Note: PlatformSettings, AIIntegration, LMSIntegration have updated_by as nullable,
+            # so we don't need to update them - they can keep the user_id even after deletion
+            
+            # 9. Finally delete the user
             db.session.delete(user)
             db.session.commit()
             return True
-        return False
+        except Exception as e:
+            db.session.rollback()
+            raise e
     
     @staticmethod
     def get_all_courses():
@@ -58,7 +126,7 @@ class AdminRepository:
     
     @staticmethod
     def get_course_by_id(course_id):
-        return Course.query.get(course_id)
+        return Course.query.filter_by(id=course_id).first()
     
     @staticmethod
     def create_course(name, code, description=None, instructor_id=None, is_active=True):
@@ -75,22 +143,28 @@ class AdminRepository:
     
     @staticmethod
     def update_course(course_id, name=None, code=None, description=None, instructor_id=None, is_active=None):
-        course = Course.query.get(course_id)
+        # Use filter_by with explicit ID to ensure we get the correct course
+        course = Course.query.filter_by(id=course_id).first()
         if not course:
             return None
         
-        if name:
-            course.name = name
-        if code:
-            course.code = code
+        # Always update if provided (not None) - name and code are required fields from form
+        if name is not None:
+            course.name = name.strip() if isinstance(name, str) else name
+        if code is not None:
+            course.code = code.strip() if isinstance(code, str) else code
+        # Description can be empty string, so check for None explicitly
         if description is not None:
-            course.description = description
+            course.description = description.strip() if isinstance(description, str) else description
         if instructor_id is not None:
             course.instructor_id = instructor_id
         if is_active is not None:
             course.is_active = is_active
         
+        # Commit changes (course is already in session, no need to add)
         db.session.commit()
+        # Refresh to ensure we have the latest data
+        db.session.refresh(course)
         return course
     
     @staticmethod
