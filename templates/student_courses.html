@@ -262,19 +262,19 @@
             <!-- Stats Row -->
             <div class="course-stats">
                 <div class="course-stat-item">
-                    <div class="course-stat-value">-</div>
+                    <div class="course-stat-value">{{ item.total_assignments }}</div>
                     <div class="course-stat-label">Assignments</div>
                 </div>
                 <div class="course-stat-item">
-                    <div class="course-stat-value">-</div>
+                    <div class="course-stat-value">{{ item.completed_count }}</div>
                     <div class="course-stat-label">Completed</div>
                 </div>
                 <div class="course-stat-item">
-                    <div class="course-stat-value">-</div>
+                    <div class="course-stat-value">{{ item.pending_count }}</div>
                     <div class="course-stat-label">Pending</div>
                 </div>
                 <div class="course-stat-item">
-                    <div class="course-stat-value">-</div>
+                    <div class="course-stat-value">{{ "%.1f"|format(item.avg_score) if item.avg_score > 0 else "0.0" }}</div>
                     <div class="course-stat-label">Avg Score</div>
                 </div>
             </div>

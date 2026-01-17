@@ -139,6 +139,17 @@
             51%, 100% { opacity: 0; }
         }
 
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* Right Panel - Tabbed Authentication */
         .right-panel {
             flex: 1;
@@ -793,13 +804,22 @@
                 {% if messages %}
                     <div style="margin-bottom: 20px;">
                         {% for category, message in messages %}
-                            <div class="flash-message flash-{{ category }}" style="padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; font-size: 0.875rem; font-weight: 500; background: #0d1117; border: 1px solid {% if category == 'danger' %}#f85149{% elif category == 'success' %}#3fb950{% else %}#30363d{% endif %};">
-                                {% if category == 'danger' %}
-                                    <span style="color: #f85149;">{{ message }}</span>
-                                {% elif category == 'success' %}
-                                    <span style="color: #3fb950;">{{ message }}</span>
+                            <div class="flash-message flash-{{ category }}" style="padding: 14px 18px; border-radius: 10px; margin-bottom: 12px; font-size: 0.9375rem; font-weight: 600; background: {% if category == 'danger' %}rgba(248, 81, 73, 0.1){% elif category == 'success' %}rgba(63, 185, 80, 0.1){% else %}#0d1117{% endif %}; border: 2px solid {% if category == 'danger' %}#f85149{% elif category == 'success' %}#3fb950{% else %}#30363d{% endif %}; display: flex; align-items: center; gap: 10px; animation: slideDown 0.3s ease-out;">
+                                {% if category == 'success' %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; color: #3fb950; flex-shrink: 0;">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                    <span style="color: #3fb950; flex: 1;">{{ message }}</span>
+                                {% elif category == 'danger' %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; color: #f85149; flex-shrink: 0;">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    <span style="color: #f85149; flex: 1;">{{ message }}</span>
                                 {% else %}
-                                    <span style="color: #8b949e;">{{ message }}</span>
+                                    <span style="color: #8b949e; flex: 1;">{{ message }}</span>
                                 {% endif %}
                             </div>
                         {% endfor %}

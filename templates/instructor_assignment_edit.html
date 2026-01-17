@@ -199,6 +199,109 @@
         line-height: 1.5;
     }
 
+    /* Course Checkbox List */
+    .course-checkbox-list {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
+    }
+
+    .course-checkbox-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .course-checkbox-list::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .course-checkbox-list::-webkit-scrollbar-thumb {
+        background-color: rgba(99, 102, 241, 0.3);
+        border-radius: 3px;
+    }
+
+    .course-checkbox-item:hover {
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .course-checkbox-item input[type="checkbox"]:checked + span {
+        font-weight: 600;
+        color: #6366f1;
+    }
+
+    /* Settings Items */
+    .settings-item {
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .settings-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .settings-item-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 12px;
+    }
+
+    .settings-item-label svg {
+        width: 16px;
+        height: 16px;
+        color: #6366f1;
+        stroke-width: 2;
+        flex-shrink: 0;
+    }
+
+    /* Button Group Style */
+    .button-group {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+    }
+
+    .button-group-btn {
+        flex: 1;
+        padding: 10px 16px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 10px;
+        background: var(--bg-primary);
+        color: var(--text-main);
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+        min-width: 100px;
+    }
+
+    .button-group-btn:hover {
+        border-color: #6366f1;
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .button-group-btn input[type="radio"] {
+        display: none;
+    }
+
+    .button-group-btn.active {
+        background: #6366f1;
+        color: white;
+        border-color: #6366f1;
+        box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    }
+
+    [data-theme="dark"] .button-group-btn {
+        background: var(--bg-dark);
+        border-color: var(--border-dark);
+    }
+
     @media (max-width: 768px) {
         .edit-page {
             padding: 20px 16px;
@@ -237,7 +340,7 @@
             <h1>Edit Assignment</h1>
         </div>
 
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="title">Assignment Title *</label>
                 <input type="text" id="title" name="title" value="{{ activity.title }}" required placeholder="Enter assignment title">
@@ -278,6 +381,160 @@
                 <div class="help-text">Provide detailed instructions or description for students (optional).</div>
             </div>
 
+            <!-- Attachments / Resources -->
+            <div class="form-group" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+                <label>Attachments / Resources</label>
+                {% if activity.attachment_path and activity.attachment_filename %}
+                <div style="margin-bottom: 12px; padding: 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px; color: #6366f1;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <span style="font-weight: 500; color: var(--text-main);">{{ activity.attachment_filename }}</span>
+                        </div>
+                        <a href="{{ url_for('static', filename='uploads/' + activity.attachment_path) }}" target="_blank" style="color: #6366f1; text-decoration: none; font-size: 0.875rem;">
+                            View
+                        </a>
+                    </div>
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 8px 0;">Upload a new file to replace the existing attachment.</p>
+                {% endif %}
+                <div class="file-upload-wrapper">
+                    <label class="file-upload-label" for="attachment">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span>{% if activity.attachment_path %}Replace File{% else %}Upload File (PDF, DOCX, etc.){% endif %}</span>
+                    </label>
+                    <input type="file" id="attachment" name="attachment" accept=".pdf,.doc,.docx,.txt">
+                    <div id="selected_file" class="selected-file" style="display: none;"></div>
+                </div>
+                <div class="help-text">Upload resources or materials for students (optional, max 10MB).</div>
+            </div>
+
+            <div class="form-group">
+                <label for="course_ids">Courses *</label>
+                <div class="course-checkbox-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; background: var(--bg-primary);">
+                    {% if courses %}
+                        {% for course in courses %}
+                        <label class="course-checkbox-item" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; margin-bottom: 6px;">
+                            <input type="checkbox" name="course_ids" value="{{ course.id }}" {% if course in activity.courses %}checked{% endif %} style="width: 18px; height: 18px; cursor: pointer; accent-color: #6366f1;">
+                            <span style="flex: 1; font-size: 0.875rem; color: var(--text-main);">{{ course.name }} ({{ course.code }})</span>
+                        </label>
+                        {% endfor %}
+                    {% else %}
+                        <div style="padding: 12px; text-align: center; color: var(--text-secondary); font-size: 0.875rem;">No courses available</div>
+                    {% endif %}
+                </div>
+                <div class="help-text">Select one or more courses for this assignment</div>
+            </div>
+
+            <!-- Assign To -->
+            <div class="settings-item">
+                <label class="settings-item-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Assign To *
+                </label>
+                <div class="button-group">
+                    <label class="button-group-btn {% if not activity.student_id %}active{% endif %}" onclick="document.getElementById('assign_all').checked = true; toggleStudentSelect(); updateButtonGroup(document.getElementById('assign_all'), 'assign_to');">
+                        <input type="radio" id="assign_all" name="assign_to" value="all" {% if not activity.student_id %}checked{% endif %} onchange="toggleStudentSelect(); updateButtonGroup(this, 'assign_to');">
+                        All Students
+                    </label>
+                    <label class="button-group-btn {% if activity.student_id %}active{% endif %}" onclick="document.getElementById('assign_specific').checked = true; toggleStudentSelect(); updateButtonGroup(document.getElementById('assign_specific'), 'assign_to');">
+                        <input type="radio" id="assign_specific" name="assign_to" value="specific" {% if activity.student_id %}checked{% endif %} onchange="toggleStudentSelect(); updateButtonGroup(this, 'assign_to');">
+                        Select Student
+                    </label>
+                </div>
+                <div class="form-group" id="student_select_group" style="display: {% if activity.student_id %}block{% else %}none{% endif %}; margin-top: 12px;">
+                    <select id="student_id" name="student_id">
+                        <option value="">Choose a student...</option>
+                        {% if students %}
+                            {% for student in students %}
+                            <option value="{{ student.id }}" {% if activity.student_id == student.id %}selected{% endif %}>{{ student.username }}</option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="" disabled>No students available</option>
+                        {% endif %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Visibility Status -->
+            <div class="settings-item">
+                <label class="settings-item-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    Visibility Status *
+                </label>
+                <div class="button-group">
+                    <label class="button-group-btn" onclick="document.getElementById('status_draft').checked = true; updateButtonGroup(document.getElementById('status_draft'), 'visibility_status');">
+                        <input type="radio" id="status_draft" name="visibility_status" value="draft" onchange="updateButtonGroup(this, 'visibility_status');">
+                        Draft
+                    </label>
+                    <label class="button-group-btn active" onclick="document.getElementById('status_published').checked = true; updateButtonGroup(document.getElementById('status_published'), 'visibility_status');">
+                        <input type="radio" id="status_published" name="visibility_status" value="published" checked onchange="updateButtonGroup(this, 'visibility_status');">
+                        Published
+                    </label>
+                </div>
+            </div>
+
+            <!-- Grading Mode -->
+            <div class="settings-item">
+                <label class="settings-item-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    Grading Mode *
+                </label>
+                <div class="button-group">
+                    <label class="button-group-btn active" onclick="document.getElementById('grading_auto').checked = true; updateButtonGroup(document.getElementById('grading_auto'), 'grading_mode');">
+                        <input type="radio" id="grading_auto" name="grading_mode" value="auto" checked onchange="updateButtonGroup(this, 'grading_mode');">
+                        Auto (AI)
+                    </label>
+                    <label class="button-group-btn" onclick="document.getElementById('grading_manual').checked = true; updateButtonGroup(document.getElementById('grading_manual'), 'grading_mode');">
+                        <input type="radio" id="grading_manual" name="grading_mode" value="manual" onchange="updateButtonGroup(this, 'grading_mode');">
+                        Manual
+                    </label>
+                </div>
+            </div>
+
+            <!-- Submission Attempts -->
+            <div class="settings-item">
+                <label class="settings-item-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    Attempts *
+                </label>
+                <div class="button-group">
+                    <label class="button-group-btn active" onclick="document.getElementById('attempts_1').checked = true; toggleAttemptsInput(); updateButtonGroup(document.getElementById('attempts_1'), 'attempts_type');">
+                        <input type="radio" id="attempts_1" name="attempts_type" value="1" checked onchange="toggleAttemptsInput(); updateButtonGroup(this, 'attempts_type');">
+                        1
+                    </label>
+                    <label class="button-group-btn" onclick="document.getElementById('attempts_unlimited').checked = true; toggleAttemptsInput(); updateButtonGroup(document.getElementById('attempts_unlimited'), 'attempts_type');">
+                        <input type="radio" id="attempts_unlimited" name="attempts_type" value="unlimited" onchange="toggleAttemptsInput(); updateButtonGroup(this, 'attempts_type');">
+                        Unlimited
+                    </label>
+                    <label class="button-group-btn" onclick="document.getElementById('attempts_custom').checked = true; toggleAttemptsInput(); updateButtonGroup(document.getElementById('attempts_custom'), 'attempts_type');">
+                        <input type="radio" id="attempts_custom" name="attempts_type" value="custom" onchange="toggleAttemptsInput(); updateButtonGroup(this, 'attempts_type');">
+                        Custom
+                    </label>
+                </div>
+                <div class="form-group" id="custom_attempts_group" style="display: none; margin-top: 12px;">
+                    <input type="number" id="max_attempts" name="max_attempts" min="2" max="10" placeholder="e.g., 3">
+                </div>
+            </div>
+
             <div class="form-actions">
                 <button type="submit" class="btn-save">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -309,5 +566,95 @@ function toggleCategory() {
         categoryGroup.style.display = 'none';
     }
 }
+
+// Update button group active state
+function updateButtonGroup(radio, name) {
+    const group = radio.closest('.button-group');
+    if (group) {
+        group.querySelectorAll('.button-group-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        radio.closest('.button-group-btn').classList.add('active');
+    }
+}
+
+// Toggle student select dropdown based on assign_to radio
+function toggleStudentSelect() {
+    const assignAll = document.getElementById('assign_all');
+    const studentSelectGroup = document.getElementById('student_select_group');
+    const studentSelect = document.getElementById('student_id');
+
+    if (assignAll && assignAll.checked) {
+        studentSelectGroup.style.display = 'none';
+        studentSelect.removeAttribute('required');
+        studentSelect.value = '';
+    } else {
+        studentSelectGroup.style.display = 'block';
+        studentSelect.setAttribute('required', 'required');
+    }
+}
+
+// Toggle custom attempts input
+function toggleAttemptsInput() {
+    const attemptsCustom = document.getElementById('attempts_custom');
+    const customAttemptsGroup = document.getElementById('custom_attempts_group');
+    const maxAttemptsInput = document.getElementById('max_attempts');
+
+    if (attemptsCustom && attemptsCustom.checked) {
+        customAttemptsGroup.style.display = 'block';
+        maxAttemptsInput.setAttribute('required', 'required');
+    } else {
+        customAttemptsGroup.style.display = 'none';
+        maxAttemptsInput.removeAttribute('required');
+        maxAttemptsInput.value = '';
+    }
+}
+
+// File upload handler
+function setupFileUpload() {
+    const fileInput = document.getElementById('attachment');
+    const selectedFileDiv = document.getElementById('selected_file');
+
+    if (fileInput && selectedFileDiv) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const fileName = file.name;
+                const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+                
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('File size must be less than 10MB.');
+                    fileInput.value = '';
+                    selectedFileDiv.style.display = 'none';
+                    return;
+                }
+
+                selectedFileDiv.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <span>${fileName} (${fileSize} MB)</span>
+                `;
+                selectedFileDiv.style.display = 'flex';
+            } else {
+                selectedFileDiv.style.display = 'none';
+            }
+        });
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    toggleCategory();
+    toggleStudentSelect();
+    toggleAttemptsInput();
+    setupFileUpload();
+
+    // Initialize button group active states
+    document.querySelectorAll('input[type="radio"]:checked').forEach(radio => {
+        updateButtonGroup(radio, radio.name);
+    });
+});
 </script>
 {% endblock %}

@@ -1,0 +1,505 @@
+{% extends "base.html" %}
+
+{% block title %}Assignment Details - AAFS AI{% endblock %}
+
+{% block extra_css %}
+<style>
+    .assignment-detail-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .assignment-detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+        gap: 16px;
+    }
+
+    .assignment-detail-title-section {
+        flex: 1;
+    }
+
+    .assignment-detail-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 0 8px 0;
+    }
+
+    .assignment-detail-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 12px;
+    }
+
+    .badge-writing {
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+        border: 1px solid #6366f1;
+    }
+
+    .badge-speaking {
+        background: rgba(236, 72, 153, 0.1);
+        color: #ec4899;
+        border: 1px solid #ec4899;
+    }
+
+    .badge-quiz {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border: 1px solid #10b981;
+    }
+
+    .badge-handwritten {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        border: 1px solid #f59e0b;
+    }
+
+    .assignment-detail-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-top: 12px;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .meta-item svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .assignment-detail-content {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .detail-section {
+        margin-bottom: 24px;
+    }
+
+    .detail-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .detail-section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-main);
+        margin: 0 0 12px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .detail-section-title svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .detail-section-content {
+        color: var(--text-secondary);
+        line-height: 1.6;
+        font-size: 0.9375rem;
+    }
+
+    .detail-section-content p {
+        margin: 0 0 12px 0;
+    }
+
+    .detail-section-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 12px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .info-value {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .courses-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .course-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+        border: 1px solid #6366f1;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .course-badge svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .assignment-detail-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .btn-action {
+        flex: 1;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        text-align: center;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: #ffffff;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-secondary {
+        background: var(--card-bg);
+        color: var(--text-main);
+        border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+        background: var(--bg-secondary);
+        border-color: #6366f1;
+    }
+
+    .btn-action svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--text-secondary);
+    }
+
+    .empty-state svg {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 16px;
+        opacity: 0.5;
+    }
+
+    .attachment-link:hover {
+        background: var(--hover-bg);
+        border-color: #6366f1;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="assignment-detail-container">
+        {% if assignment %}
+        <!-- Header -->
+        <div class="assignment-detail-header">
+            <div class="assignment-detail-title-section">
+                <h1 class="assignment-detail-title">{{ assignment.title }}</h1>
+                <span class="assignment-detail-badge badge-{{ assignment.activity_type.lower() }}">
+                    {{ assignment.activity_type }}
+                </span>
+                <div class="assignment-detail-meta">
+                    {% if assignment.due_date %}
+                    <div class="meta-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>Due: {{ assignment.due_date.strftime('%B %d, %Y') }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="meta-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>Instructor: {{ assignment.instructor.username }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="assignment-detail-content">
+            <!-- Description -->
+            {% if assignment.description %}
+            <div class="detail-section">
+                <h3 class="detail-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    Description
+                </h3>
+                <div class="detail-section-content">
+                    <p>{{ assignment.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Type-Specific Information -->
+            {% if assignment.activity_type == 'WRITING' %}
+            <div class="detail-section">
+                <h3 class="detail-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    Writing Task Details
+                </h3>
+                <div class="info-grid">
+                    {% if writing_prompt %}
+                    <div class="info-item">
+                        <span class="info-label">Task Prompt</span>
+                        <div class="info-value">{{ writing_prompt }}</div>
+                    </div>
+                    {% endif %}
+                    {% if word_limit %}
+                    <div class="info-item">
+                        <span class="info-label">Word Limit</span>
+                        <div class="info-value">{{ word_limit }} words</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% elif assignment.activity_type == 'SPEAKING' %}
+            <div class="detail-section">
+                <h3 class="detail-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" y1="19" x2="12" y2="23"></line>
+                        <line x1="8" y1="23" x2="16" y2="23"></line>
+                    </svg>
+                    Speaking Task Details
+                </h3>
+                <div class="info-grid">
+                    {% if speaking_prompt %}
+                    <div class="info-item">
+                        <span class="info-label">Task Prompt</span>
+                        <div class="info-value">{{ speaking_prompt }}</div>
+                    </div>
+                    {% endif %}
+                    {% if min_duration %}
+                    <div class="info-item">
+                        <span class="info-label">Minimum Duration</span>
+                        <div class="info-value">{{ min_duration }} seconds</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% elif assignment.activity_type == 'QUIZ' %}
+            <div class="detail-section">
+                <h3 class="detail-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Quiz Details
+                </h3>
+                <div class="info-grid">
+                    {% if assignment.quiz_category %}
+                    <div class="info-item">
+                        <span class="info-label">Category</span>
+                        <div class="info-value">{{ assignment.quiz_category|title }}</div>
+                    </div>
+                    {% endif %}
+                    {% if question_count %}
+                    <div class="info-item">
+                        <span class="info-label">Number of Questions</span>
+                        <div class="info-value">{{ question_count }}</div>
+                    </div>
+                    {% endif %}
+                    {% if passage_text %}
+                    <div class="info-item" style="grid-column: 1 / -1;">
+                        <span class="info-label">Reading Passage</span>
+                        <div class="info-value" style="white-space: pre-wrap; font-weight: normal;">{{ passage_text }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% elif assignment.activity_type == 'HANDWRITTEN' %}
+            <div class="detail-section">
+                <h3 class="detail-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    Handwritten Recognition Details
+                </h3>
+                {% if reference_image %}
+                <div class="info-item" style="margin-top: 12px;">
+                    <span class="info-label">Reference Image</span>
+                    <div style="margin-top: 8px;">
+                        <img src="{{ reference_image }}" alt="Reference Image" style="max-width: 100%; border-radius: 8px; border: 1px solid var(--border-color);">
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Attachments / Resources -->
+            {% if assignment.attachment_path and assignment.attachment_filename %}
+            <div class="detail-section">
+                <h3 class="detail-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Attachments / Resources
+                </h3>
+                <div class="detail-section-content">
+                    {% set attachment_url = ('uploads/' + assignment.attachment_path).replace('\\', '/') %}
+                    <a href="{{ url_for('static', filename=attachment_url) }}" 
+                       target="_blank" 
+                       download="{{ assignment.attachment_filename }}"
+                       class="attachment-link"
+                       style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; text-decoration: none; color: var(--text-main); font-weight: 500; transition: all 0.2s ease; margin-top: 8px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        <span>{{ assignment.attachment_filename }}</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; margin-left: auto;">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Courses -->
+            {% if assignment.courses %}
+            <div class="detail-section">
+                <h3 class="detail-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                    Assigned Courses
+                </h3>
+                <div class="courses-list">
+                    {% for course in assignment.courses %}
+                    <span class="course-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        {{ course.code }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="assignment-detail-actions">
+            <a href="{% if assignment.activity_type == 'QUIZ' %}{{ url_for('start_quiz', activity_id=assignment.id) }}{% elif assignment.activity_type == 'WRITING' %}{{ url_for('submit_writing', activity_id=assignment.id) }}{% elif assignment.activity_type == 'SPEAKING' %}{{ url_for('speaking', activity_id=assignment.id) }}{% elif assignment.activity_type == 'HANDWRITTEN' %}{{ url_for('submit_handwritten', activity_id=assignment.id) }}{% else %}#{% endif %}" class="btn-action btn-primary">
+                <span>Start Assignment</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </a>
+            <a href="{{ url_for('view_assignments') }}" class="btn-action btn-secondary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+                <span>Back to Assignments</span>
+            </a>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <h3>Assignment not found</h3>
+            <p>This assignment may have been removed or you don't have access to it.</p>
+            <a href="{{ url_for('view_assignments') }}" class="btn-action btn-secondary" style="margin-top: 16px; max-width: 200px;">
+                Back to Assignments
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

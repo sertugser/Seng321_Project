@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Evaluation Report - AAFS AI{% endblock %}
 
@@ -373,6 +373,7 @@
         padding: 20px;
         display: flex;
         flex-direction: column;
+        align-items: flex-start;
     }
 
     .card-tag {
@@ -409,53 +410,8 @@
         font-size: 0.9375rem;
         line-height: 1.6;
         color: var(--text-main);
-        flex: 1;
     }
 
-    /* Quick Actions Card */
-    .quick-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .action-btn {
-        padding: 12px 16px;
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        color: var(--text-main);
-        text-decoration: none;
-    }
-
-    .action-btn:hover {
-        border-color: var(--accent);
-        color: var(--accent);
-    }
-
-    .action-btn svg {
-        width: 18px;
-        height: 18px;
-        stroke: currentColor;
-    }
-
-    .action-btn.primary {
-        background: var(--accent);
-        color: var(--white);
-        border-color: var(--accent);
-    }
-
-    .action-btn.primary:hover {
-        background: var(--accent-hover);
-    }
 
     /* OCR Results Section */
     .ocr-section {
@@ -828,38 +784,6 @@
                     {% endif %}
                 </div>
             </div>
-            {% else %}
-            <!-- Box 4: Quick Actions (if not assignment) -->
-            <div class="analysis-card">
-                <span class="card-tag">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
-                    Actions
-                </span>
-                <h3 class="card-title">Quick Actions</h3>
-                <div class="quick-actions">
-                    <button class="action-btn primary" onclick="downloadPDF()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        Download PDF
-                    </button>
-                    <button class="action-btn" onclick="shareReport()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="18" cy="5" r="3"></circle>
-                            <circle cx="6" cy="12" r="3"></circle>
-                            <circle cx="18" cy="19" r="3"></circle>
-                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                        </svg>
-                        Share
-                    </button>
-                </div>
-            </div>
             {% endif %}
         </div>
 
@@ -918,10 +842,6 @@
                 btn.innerHTML = originalText;
             }, 2000);
         });
-    }
-
-    function downloadPDF() {
-        alert('PDF download functionality will be implemented soon.');
     }
 
     function shareReport() {

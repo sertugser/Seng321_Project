@@ -30,6 +30,45 @@ An intelligent, full-stack English learning ecosystem designed to enhance studen
 | **AI/ML** | Google Gemini API |
 | **OCR** | Pytesseract & Pillow |
 | **Frontend** | HTML5, CSS3, Jinja2 |
+| **PDF Generation** | ReportLab |
+| **Document Processing** | python-docx, PyMuPDF |
+
+## 📦 Required Libraries
+
+The project uses the following key Python packages (see `requirements.txt` for complete list):
+
+### Core Framework
+- **Flask** (3.1.2) - Web framework
+- **Flask-Login** (0.6.3) - User session management
+- **Flask-SQLAlchemy** (3.1.1) - Database ORM
+- **Werkzeug** (3.1.4) - WSGI utilities
+
+### Database
+- **SQLAlchemy** (2.0.44) - Database toolkit and ORM
+
+### AI & Machine Learning
+- **google-generativeai** (0.8.5) - Google Gemini AI integration
+- **google-ai-generativelanguage** (0.6.15) - Gemini API client
+
+### OCR & Image Processing
+- **pytesseract** (0.3.13) - Tesseract OCR wrapper
+- **Pillow** (12.0.0) - Image processing library
+- **PyMuPDF** (1.24.10) - PDF processing
+
+### Document Processing
+- **python-docx** (1.2.0) - Microsoft Word document processing
+
+### PDF Generation
+- **reportlab** (4.2.5) - PDF generation library
+
+### Utilities
+- **python-dotenv** (1.2.1) - Environment variable management
+- **requests** (2.32.5) - HTTP library
+
+### Other Dependencies
+- **Jinja2** (3.1.6) - Template engine
+- **click** (8.3.1) - CLI framework
+- **blinker** (1.9.0) - Signal support
 
 ---
 

@@ -553,6 +553,34 @@
         border-color: rgba(99, 102, 241, 0.3);
     }
 
+    /* Course Checkbox List */
+    .course-checkbox-list {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
+    }
+
+    .course-checkbox-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .course-checkbox-list::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .course-checkbox-list::-webkit-scrollbar-thumb {
+        background-color: rgba(99, 102, 241, 0.3);
+        border-radius: 3px;
+    }
+
+    .course-checkbox-item:hover {
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .course-checkbox-item input[type="checkbox"]:checked + span {
+        font-weight: 600;
+        color: #6366f1;
+    }
+
     @media (max-width: 1024px) {
         .form-layout {
             grid-template-columns: 1fr;
@@ -639,7 +667,7 @@
         </div>
     </div>
 
-    <form method="POST" id="assignment-form">
+    <form method="POST" id="assignment-form" enctype="multipart/form-data">
         <div class="form-layout">
             <!-- Left Column: Main Info -->
             <div class="main-info-column">
@@ -785,6 +813,32 @@
                     <h3>Settings</h3>
                 </div>
 
+                <!-- Course Selection -->
+                <div class="settings-item">
+                    <label class="settings-item-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        Courses *
+                    </label>
+                    <div class="form-group" style="margin-top: 0;">
+                        <div class="course-checkbox-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; background: var(--bg-primary);">
+                            {% if courses %}
+                                {% for course in courses %}
+                                <label class="course-checkbox-item" style="display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; margin-bottom: 6px;">
+                                    <input type="checkbox" name="course_ids" value="{{ course.id }}" style="width: 18px; height: 18px; cursor: pointer; accent-color: #6366f1;">
+                                    <span style="flex: 1; font-size: 0.875rem; color: var(--text-main);">{{ course.name }} ({{ course.code }})</span>
+                                </label>
+                                {% endfor %}
+                            {% else %}
+                                <div style="padding: 12px; text-align: center; color: var(--text-secondary); font-size: 0.875rem;">No courses available</div>
+                            {% endif %}
+                        </div>
+                        <div class="help-text" style="margin-top: 6px;">Select one or more courses for this assignment</div>
+                    </div>
+                </div>
+
                 <!-- Assign To -->
                 <div class="settings-item">
                     <label class="settings-item-label">
@@ -807,13 +861,7 @@
                     <div class="form-group" id="student_select_group" style="display: none; margin-top: 12px;">
                         <select id="student_id" name="student_id">
                             <option value="">Choose a student...</option>
-                            {% if students %}
-                                {% for student in students %}
-                                <option value="{{ student.id }}">{{ student.username }} ({{ student.email }})</option>
-                                {% endfor %}
-                            {% else %}
-                                <option value="" disabled>No students available</option>
-                            {% endif %}
+                            <!-- Students will be populated dynamically based on selected courses -->
                         </select>
                     </div>
                 </div>
@@ -1146,6 +1194,13 @@
             }
         }
 
+        // Validate course selection
+        const courseCheckboxes = document.querySelectorAll('input[name="course_ids"]:checked');
+        if (courseCheckboxes.length === 0) {
+            alert('Please select at least one course.');
+            return false;
+        }
+
         return true;
     }
 
@@ -1183,6 +1238,55 @@
         }
     }
 
+    // Course-student mapping from backend
+    const courseStudentMap = {{ course_student_map | tojson }};
+    
+    // Update student list based on selected courses
+    function updateStudentList() {
+        const courseCheckboxes = document.querySelectorAll('input[name="course_ids"]:checked');
+        const studentSelect = document.getElementById('student_id');
+        
+        if (!studentSelect) return;
+        
+        // Clear existing options except the first one
+        studentSelect.innerHTML = '<option value="">Choose a student...</option>';
+        
+        if (courseCheckboxes.length === 0) {
+            studentSelect.innerHTML += '<option value="" disabled>Please select at least one course</option>';
+            return;
+        }
+        
+        // Collect all unique students from selected courses
+        const selectedCourseIds = Array.from(courseCheckboxes).map(cb => parseInt(cb.value));
+        const studentMap = new Map(); // Use Map to avoid duplicates
+        
+        selectedCourseIds.forEach(courseId => {
+            if (courseStudentMap[courseId]) {
+                courseStudentMap[courseId].forEach(student => {
+                    if (!studentMap.has(student.id)) {
+                        studentMap.set(student.id, student);
+                    }
+                });
+            }
+        });
+        
+        // Sort students by username and add to select
+        const sortedStudents = Array.from(studentMap.values()).sort((a, b) => 
+            a.username.localeCompare(b.username)
+        );
+        
+        if (sortedStudents.length === 0) {
+            studentSelect.innerHTML += '<option value="" disabled>No students enrolled in selected courses</option>';
+        } else {
+            sortedStudents.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.id;
+                option.textContent = student.username;
+                studentSelect.appendChild(option);
+            });
+        }
+    }
+    
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         updateFormForType();
@@ -1206,6 +1310,17 @@
             const todayStr = `${year}-${month}-${day}`;
             dueDateInput.setAttribute('min', todayStr);
         }
+        
+        // Add event listeners to course checkboxes
+        const courseCheckboxes = document.querySelectorAll('input[name="course_ids"]');
+        courseCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateStudentList();
+            });
+        });
+        
+        // Initial update of student list
+        updateStudentList();
 
         // Add form submit validation
         const form = document.getElementById('assignment-form');

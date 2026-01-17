@@ -312,12 +312,12 @@ def create_app():
         
         # Username kontrolü
         if User.query.filter_by(username=username).first():
-            flash("This username is already taken!", "danger")
+            flash("❌ Bu kullanıcı adı zaten kullanılıyor! Lütfen farklı bir kullanıcı adı seçin.", "danger")
             return redirect(url_for('login', mode='register'))
         
         # Email kontrolü
         if User.query.filter_by(email=email).first():
-            flash("This email address is already in use!", "danger")
+            flash("❌ Bu e-posta adresi zaten kayıtlı! Lütfen farklı bir e-posta adresi kullanın.", "danger")
             return redirect(url_for('login', mode='register'))
         
         try:
@@ -325,11 +325,11 @@ def create_app():
             new_user = User(username=username, email=email, password=hashed_pw, role=role)
             db.session.add(new_user)
             db.session.commit()
-            flash("Registration is successful, you can now log in.", "success")
+            flash("✅ Kayıt başarılı! Hesabınız oluşturuldu. Şimdi giriş yapabilirsiniz.", "success")
             return redirect(url_for('login'))
         except Exception as e:
             db.session.rollback()
-            flash("An error occurred during registration. Please try again.", "danger")
+            flash("❌ Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin.", "danger")
             return redirect(url_for('login', mode='register'))
 
     @app.route('/login', methods=['GET', 'POST'])
@@ -621,6 +621,17 @@ def create_app():
             # Count activities not yet submitted
             pending_activities = [a for a in student_activities if a.id not in submitted_activity_ids]
             pending_count = len(pending_activities)
+            
+            # Get upcoming deadlines - activities with due_date in the future
+            now = datetime.utcnow()
+            upcoming_deadlines = [
+                a for a in student_activities 
+                if a.due_date and a.due_date >= now and a.id not in submitted_activity_ids
+            ]
+            # Sort by due_date (earliest first)
+            upcoming_deadlines.sort(key=lambda x: x.due_date)
+            # Limit to 5 most upcoming
+            upcoming_deadlines = upcoming_deadlines[:5]
         else:
             # For instructors/admins, count all upcoming activities (for class performance monitoring - FR14)
             # Filter activities with due dates in the future or no due date (ongoing activities)
@@ -631,6 +642,7 @@ def create_app():
                 )
             ).order_by(LearningActivity.due_date.asc()).all()
             pending_count = len(pending_activities)
+            upcoming_deadlines = []
         
         # Calculate total submissions
         total_submissions = len(submissions)
@@ -666,28 +678,67 @@ def create_app():
                                weakest_area=weakest_area,
                                weakest_score=weakest_score,
                                recommendations=recommendations,
-                               adaptive_insights=adaptive_insights)
+                               adaptive_insights=adaptive_insights,
+                               upcoming_deadlines=upcoming_deadlines)
 
     @app.route('/courses')
     @login_required
     def student_courses():
-        from models.entities import Enrollment, Course
+        from models.entities import Enrollment, Course, LearningActivity, Submission, Grade
         # Get courses where this student is enrolled
         enrollments = Enrollment.query.filter_by(student_id=current_user.id, status='active').all()
         enrolled_courses = []
+        
+        # Get all student submissions for this student
+        user_subs = Submission.query.filter_by(student_id=current_user.id).all()
+        submitted_activity_ids = set(s.activity_id for s in user_subs if s.activity_id)
+        submissions_with_grades = {s.activity_id: s for s in user_subs if s.activity_id and s.grade}
+        
         for enrollment in enrollments:
             course = Course.query.get(enrollment.course_id)
             if course and course.is_active:
+                # Get assignments for this course
+                course_assignments = LearningActivity.query.filter(
+                    LearningActivity.courses.any(id=course.id)
+                ).all()
+                
+                # Calculate statistics
+                total_assignments = len(course_assignments)
+                
+                # Completed: assignments with submitted and graded submissions
+                completed_count = 0
+                pending_count = 0
+                scores = []
+                
+                for assignment in course_assignments:
+                    if assignment.id in submitted_activity_ids:
+                        submission = submissions_with_grades.get(assignment.id)
+                        if submission and submission.grade and submission.grade.instructor_approved:
+                            completed_count += 1
+                            scores.append(submission.grade.score)
+                        else:
+                            pending_count += 1
+                    else:
+                        pending_count += 1
+                
+                # Calculate average score
+                avg_score = round(sum(scores) / len(scores), 1) if scores else 0.0
+                
                 enrolled_courses.append({
                     'course': course,
-                    'enrolled_at': enrollment.enrolled_at
+                    'enrolled_at': enrollment.enrolled_at,
+                    'total_assignments': total_assignments,
+                    'completed_count': completed_count,
+                    'pending_count': pending_count,
+                    'avg_score': avg_score
                 })
+        
         return render_template('student_courses.html', enrolled_courses=enrolled_courses)
 
     @app.route('/courses/<int:course_id>')
     @login_required
     def student_course_detail(course_id):
-        from models.entities import Course, Enrollment
+        from models.entities import Course, Enrollment, LearningActivity, Submission
         # Get course
         course = Course.query.get_or_404(course_id)
         if not course.is_active:
@@ -705,9 +756,110 @@ def create_app():
             flash('You are not enrolled in this course.', 'danger')
             return redirect(url_for('student_courses'))
         
+        # Get assignments for this course
+        course_assignments = LearningActivity.query.filter(
+            LearningActivity.courses.any(id=course_id)
+        ).order_by(LearningActivity.due_date.asc(), LearningActivity.created_at.desc()).all()
+        
+        # Get student submissions to check completion status
+        user_subs = Submission.query.filter_by(student_id=current_user.id).all()
+        submitted_ids = set(s.activity_id for s in user_subs if s.activity_id and s.activity_id is not None)
+        submissions_with_grades = {s.activity_id: s for s in user_subs if s.activity_id and s.grade}
+        
+        # Prepare assignment data with status
+        assignments_data = []
+        now = datetime.utcnow()
+        for assignment in course_assignments:
+            status = 'pending'
+            if assignment.id in submitted_ids:
+                if assignment.id in submissions_with_grades:
+                    status = 'graded'
+                else:
+                    status = 'submitted'
+            
+            # Check if overdue
+            is_overdue = False
+            if assignment.due_date and assignment.due_date < now and status == 'pending':
+                is_overdue = True
+            
+            assignments_data.append({
+                'assignment': assignment,
+                'status': status,
+                'is_overdue': is_overdue,
+                'submission': submissions_with_grades.get(assignment.id)
+            })
+        
         return render_template('student_course_detail.html', 
                              course=course, 
-                             enrolled_at=enrollment.enrolled_at)
+                             enrolled_at=enrollment.enrolled_at,
+                             assignments_data=assignments_data)
+
+    @app.route('/assignments/<int:activity_id>/view')
+    @login_required
+    def student_assignment_detail(activity_id):
+        """Student view of assignment details before starting"""
+        from models.entities import LearningActivity, Question, Enrollment
+        from sqlalchemy import func
+        
+        # Get assignment
+        assignment = LearningActivity.query.get_or_404(activity_id)
+        
+        # Verify student has access (enrolled in at least one course with this assignment)
+        if current_user.role == 'Student':
+            # Check if student is enrolled in any course that has this assignment
+            student_enrollments = Enrollment.query.filter_by(
+                student_id=current_user.id,
+                status='active'
+            ).all()
+            enrolled_course_ids = [e.course_id for e in student_enrollments]
+            
+            assignment_course_ids = [c.id for c in assignment.courses] if assignment.courses else []
+            
+            # Assignment must have at least one course
+            if not assignment_course_ids:
+                flash('This assignment is not assigned to any course.', 'danger')
+                return redirect(url_for('view_assignments'))
+            
+            # Check if there's any overlap between student's enrolled courses and assignment's courses
+            has_access = False
+            if assignment.student_id is None:  # Assigned to all students in the courses
+                has_access = any(cid in enrolled_course_ids for cid in assignment_course_ids)
+            else:  # Assigned to specific student
+                has_access = (assignment.student_id == current_user.id and 
+                             any(cid in enrolled_course_ids for cid in assignment_course_ids))
+            
+            if not has_access:
+                flash('You do not have access to this assignment.', 'danger')
+                return redirect(url_for('view_assignments'))
+        
+        # Prepare type-specific data
+        writing_prompt = None
+        word_limit = None
+        speaking_prompt = None
+        min_duration = None
+        reference_image = None
+        passage_text = None
+        question_count = None
+        
+        # For quiz, get question count
+        if assignment.activity_type == 'QUIZ' and assignment.quiz_category:
+            question_count = Question.query.filter(
+                func.lower(Question.category) == func.lower(assignment.quiz_category)
+            ).count()
+        
+        # Note: writing_prompt, word_limit, speaking_prompt, min_duration, reference_image, passage_text
+        # are not currently stored in the database. They would need to be added to LearningActivity model.
+        # For now, we'll show what's available (description, quiz_category, etc.)
+        
+        return render_template('student_assignment_detail.html',
+                             assignment=assignment,
+                             writing_prompt=writing_prompt,
+                             word_limit=word_limit,
+                             speaking_prompt=speaking_prompt,
+                             min_duration=min_duration,
+                             reference_image=reference_image,
+                             passage_text=passage_text,
+                             question_count=question_count)
 
     @app.route('/assignments')
     @login_required
@@ -807,11 +959,16 @@ def create_app():
             # Pending = Total - Graded (submissions without grade or with NULL score)
             pending_submissions = total_submissions - graded_submissions
             
+            # Get courses for this activity
+            # activity.courses is already a list (InstrumentedList), no need for .all()
+            activity_courses = list(activity.courses) if hasattr(activity, 'courses') and activity.courses else []
+            
             activity_stats.append({
                 'activity': activity,
                 'total_submissions': total_submissions,
                 'graded_submissions': graded_submissions,
-                'pending_submissions': pending_submissions
+                'pending_submissions': pending_submissions,
+                'courses': activity_courses
             })
         
         return render_template('instructor_assignments.html', 
@@ -845,6 +1002,23 @@ def create_app():
         # Use enrolled students, fallback to all students if no courses assigned
         all_students = enrolled_students if enrolled_students else User.query.filter_by(role='Student').order_by(User.username.asc()).all()
         
+        # Build course-student mapping for JavaScript
+        course_student_map = {}
+        for course in instructor_courses:
+            enrollments = Enrollment.query.filter_by(
+                course_id=course.id,
+                status='active'
+            ).all()
+            student_ids = [e.student_id for e in enrollments]
+            students = User.query.filter(
+                User.id.in_(student_ids),
+                User.role == 'Student'
+            ).order_by(User.username.asc()).all()
+            course_student_map[course.id] = [
+                {'id': s.id, 'username': s.username, 'email': s.email}
+                for s in students
+            ]
+        
         if request.method == 'POST':
             title = request.form.get('title')
             activity_type = request.form.get('activity_type')
@@ -853,23 +1027,70 @@ def create_app():
             quiz_category = request.form.get('quiz_category') if activity_type == 'QUIZ' else None
             student_id_str = request.form.get('student_id', '').strip()
             
+            # Get course IDs from form (multiple selection)
+            course_ids_list = request.form.getlist('course_ids')
+            course_ids_list = [int(cid) for cid in course_ids_list if cid and cid.strip()]
+            
+            # Validate that at least one course is selected
+            if not course_ids_list:
+                flash('Please select at least one course.', 'danger')
+                return render_template('instructor_assignment_create.html', 
+                                     students=all_students, 
+                                     courses=instructor_courses,
+                                     course_student_map=course_student_map)
+            
+            # Verify all selected courses belong to this instructor
+            valid_courses = Course.query.filter(
+                Course.id.in_(course_ids_list),
+                Course.instructor_id == current_user.id,
+                Course.is_active == True
+            ).all()
+            if len(valid_courses) != len(course_ids_list):
+                flash('Invalid course selection.', 'danger')
+                return render_template('instructor_assignment_create.html', 
+                                     students=all_students, 
+                                     courses=instructor_courses,
+                                     course_student_map=course_student_map)
+            
             # Parse student_id - empty string means assign to all students
             student_id = None
             if student_id_str and student_id_str != '':
                 try:
                     student_id = int(student_id_str)
-                    # Verify student exists
+                    # Verify student exists and is enrolled in selected courses
                     student = User.query.get(student_id)
                     if not student or student.role != 'Student':
                         flash('Invalid student selected.', 'danger')
-                        return render_template('instructor_assignment_create.html', students=all_students)
+                        return render_template('instructor_assignment_create.html', 
+                                             students=all_students, 
+                                             courses=instructor_courses,
+                                             course_student_map=course_student_map)
+                    
+                    # Verify student is enrolled in at least one selected course
+                    student_enrollments = Enrollment.query.filter(
+                        Enrollment.student_id == student_id,
+                        Enrollment.course_id.in_(course_ids_list),
+                        Enrollment.status == 'active'
+                    ).first()
+                    if not student_enrollments:
+                        flash('Selected student is not enrolled in any of the selected courses.', 'danger')
+                        return render_template('instructor_assignment_create.html', 
+                                             students=all_students, 
+                                             courses=instructor_courses,
+                                             course_student_map=course_student_map)
                 except ValueError:
                     flash('Invalid student ID format.', 'danger')
-                    return render_template('instructor_assignment_create.html', students=all_students)
+                    return render_template('instructor_assignment_create.html', 
+                                         students=all_students, 
+                                         courses=instructor_courses,
+                                         course_student_map=course_student_map)
 
             if not title or not activity_type:
                 flash('Title and type are required.', 'danger')
-                return render_template('instructor_assignment_create.html', students=all_students)
+                return render_template('instructor_assignment_create.html', 
+                                     students=all_students, 
+                                     courses=instructor_courses,
+                                     course_student_map=course_student_map)
 
             due_date = None
             if due_date_str:
@@ -877,7 +1098,36 @@ def create_app():
                     due_date = datetime.strptime(due_date_str, '%Y-%m-%d')
                 except ValueError:
                     flash('Invalid date format. Use YYYY-MM-DD.', 'danger')
-                    return render_template('instructor_assignment_create.html', students=all_students)
+                    return render_template('instructor_assignment_create.html', 
+                                         students=all_students, 
+                                         courses=instructor_courses,
+                                         course_student_map=course_student_map)
+
+            # Handle attachment file upload
+            attachment_path = None
+            attachment_filename = None
+            if 'attachment' in request.files:
+                attachment_file = request.files['attachment']
+                if attachment_file and attachment_file.filename:
+                    # Validate file size (max 10MB)
+                    if attachment_file.content_length and attachment_file.content_length > 10 * 1024 * 1024:
+                        flash('Attachment file size must be less than 10MB.', 'danger')
+                        return render_template('instructor_assignment_create.html', 
+                                             students=all_students, 
+                                             courses=instructor_courses,
+                                             course_student_map=course_student_map)
+                    
+                    # Save attachment file
+                    filename = secure_filename(attachment_file.filename)
+                    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                    filename = f"{timestamp}_{filename}"
+                    attachment_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'assignments')
+                    os.makedirs(attachment_dir, exist_ok=True)
+                    file_path = os.path.join(attachment_dir, filename)
+                    attachment_file.save(file_path)
+                    # Use forward slash for web URLs (works on all platforms)
+                    attachment_path = 'assignments/' + filename
+                    attachment_filename = attachment_file.filename
 
             # Use ActivityService to create activity
             from services.activity_service import ActivityService
@@ -888,14 +1138,21 @@ def create_app():
                 description=description,
                 quiz_category=quiz_category,
                 due_date=due_date,
-                student_id=student_id
+                student_id=student_id,
+                course_ids=course_ids_list,
+                attachment_path=attachment_path,
+                attachment_filename=attachment_filename
             )
             
             student_name = "all students" if student_id is None else User.query.get(student_id).username
-            flash(f'Assignment created successfully for {student_name}.', 'success')
+            course_names = ", ".join([c.name for c in valid_courses])
+            flash(f'Assignment created successfully for {student_name} in {course_names}.', 'success')
             return redirect(url_for('instructor_assignments'))
 
-        return render_template('instructor_assignment_create.html', students=all_students)
+        return render_template('instructor_assignment_create.html', 
+                             students=all_students, 
+                             courses=instructor_courses,
+                             course_student_map=course_student_map)
 
     @app.route('/speaking', methods=['GET', 'POST'])
     @role_required('Student')
@@ -2207,7 +2464,7 @@ def create_app():
                 # Ensure buffer is ready for reading
                 buffer.seek(0)
             
-            # Generate filename with GMT+3 date
+            # Generate filename with GMT+3 date (safe ASCII only)
             filename = f"academic_report_{current_user.id}_{get_gmt3_now().strftime('%Y%m%d')}.pdf"
             
             # Get PDF bytes
@@ -2217,8 +2474,12 @@ def create_app():
             # Create response with PDF data
             response = make_response(pdf_bytes)
             response.headers['Content-Type'] = 'application/pdf'
-            response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+            # Use both filename and filename* for better browser compatibility
+            response.headers['Content-Disposition'] = f'attachment; filename="{filename}"; filename*=UTF-8\'\'{filename}'
             response.headers['Content-Length'] = str(len(pdf_bytes))
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
             
             return response
             
@@ -2226,8 +2487,10 @@ def create_app():
             import traceback
             error_msg = str(e)
             traceback.print_exc()
-            # Return error as text instead of redirecting
-            return f"Error generating PDF: {error_msg}", 500
+            # Log the error and return a proper error response
+            app.logger.error(f"PDF export error: {error_msg}")
+            flash(f"Error generating PDF: {error_msg}. Please check if reportlab is installed.", "danger")
+            return redirect(url_for('view_assignments') if current_user.role == 'Student' else url_for('instructor_student_detail', student_id=current_user.id))
 
     @app.route('/export/csv')
     @login_required
@@ -2608,8 +2871,8 @@ def create_app():
                 # Ensure buffer is ready for reading
                 buffer.seek(0)
             
-            # Generate filename with GMT+3 date
-            filename = f"academic_report_{student.username}_{get_gmt3_now().strftime('%Y%m%d')}.pdf"
+            # Generate filename with GMT+3 date (safe ASCII only, use student ID instead of username)
+            filename = f"academic_report_{student.id}_{get_gmt3_now().strftime('%Y%m%d')}.pdf"
             
             # Get PDF bytes
             pdf_bytes = buffer.getvalue()
@@ -2618,8 +2881,12 @@ def create_app():
             # Create response with PDF data
             response = make_response(pdf_bytes)
             response.headers['Content-Type'] = 'application/pdf'
-            response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+            # Use both filename and filename* for better browser compatibility
+            response.headers['Content-Disposition'] = f'attachment; filename="{filename}"; filename*=UTF-8\'\'{filename}'
             response.headers['Content-Length'] = str(len(pdf_bytes))
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
             
             return response
             
@@ -2627,8 +2894,10 @@ def create_app():
             import traceback
             error_msg = str(e)
             traceback.print_exc()
-            # Return error as text instead of redirecting
-            return f"Error generating PDF: {error_msg}", 500
+            # Log the error and return a proper error response
+            app.logger.error(f"Instructor PDF export error: {error_msg}")
+            flash(f"Error generating PDF: {error_msg}. Please check if reportlab is installed.", "danger")
+            return redirect(url_for('instructor_student_detail', student_id=student_id))
 
     @app.route('/instructor/export/csv/<int:student_id>')
     @role_required('Instructor')
@@ -2812,11 +3081,31 @@ def create_app():
     @app.route('/instructor/assignments/<int:activity_id>/edit', methods=['GET', 'POST'])
     @role_required('Instructor')
     def instructor_edit_assignment(activity_id):
+        from models.entities import Course, User, Enrollment
         activity = LearningActivity.query.get_or_404(activity_id)
         
         if activity.instructor_id != current_user.id:
             flash("You don't have permission to edit this assignment.", "danger")
             return redirect(url_for('instructor_assignments'))
+        
+        # Get courses where this instructor teaches
+        instructor_courses = Course.query.filter_by(instructor_id=current_user.id, is_active=True).all()
+        course_ids = [c.id for c in instructor_courses]
+        
+        # Get students enrolled in these courses
+        enrolled_students = []
+        if course_ids:
+            enrollments = Enrollment.query.filter(
+                Enrollment.course_id.in_(course_ids),
+                Enrollment.status == 'active'
+            ).all()
+            student_ids = list(set([e.student_id for e in enrollments]))
+            enrolled_students = User.query.filter(
+                User.id.in_(student_ids),
+                User.role == 'Student'
+            ).order_by(User.username.asc()).all()
+        
+        all_students = enrolled_students if enrolled_students else User.query.filter_by(role='Student').order_by(User.username.asc()).all()
         
         if request.method == 'POST':
             title = request.form.get('title')
@@ -2825,14 +3114,51 @@ def create_app():
             description = request.form.get('description')
             quiz_category = request.form.get('quiz_category') if activity_type == 'QUIZ' else None
             
+            # Get assign_to setting
+            assign_to = request.form.get('assign_to', 'all')
+            student_id_str = request.form.get('student_id', '').strip()
+            
+            # Parse student_id
+            student_id = None
+            if assign_to == 'specific' and student_id_str:
+                try:
+                    student_id = int(student_id_str)
+                    student = User.query.get(student_id)
+                    if not student or student.role != 'Student':
+                        flash('Invalid student selected.', 'danger')
+                        return render_template('instructor_assignment_edit.html', activity=activity, courses=instructor_courses, students=all_students)
+                except ValueError:
+                    flash('Invalid student ID format.', 'danger')
+                    return render_template('instructor_assignment_edit.html', activity=activity, courses=instructor_courses, students=all_students)
+            
+            # Get course IDs from form (multiple selection)
+            course_ids_list = request.form.getlist('course_ids')
+            course_ids_list = [int(cid) for cid in course_ids_list if cid and cid.strip()]
+            
+            # Validate that at least one course is selected
+            if not course_ids_list:
+                flash('Please select at least one course.', 'danger')
+                return render_template('instructor_assignment_edit.html', activity=activity, courses=instructor_courses, students=all_students)
+            
+            # Verify all selected courses belong to this instructor
+            valid_courses = Course.query.filter(
+                Course.id.in_(course_ids_list),
+                Course.instructor_id == current_user.id,
+                Course.is_active == True
+            ).all()
+            if len(valid_courses) != len(course_ids_list):
+                flash('Invalid course selection.', 'danger')
+                return render_template('instructor_assignment_edit.html', activity=activity, courses=instructor_courses, students=all_students)
+            
             if not title or not activity_type:
                 flash('Title and type are required.', 'danger')
-                return redirect(url_for('instructor_edit_assignment', activity_id=activity_id))
+                return render_template('instructor_assignment_edit.html', activity=activity, courses=instructor_courses, students=all_students)
             
             activity.title = title
             activity.activity_type = activity_type
             activity.description = description
             activity.quiz_category = quiz_category
+            activity.student_id = student_id  # Update student assignment
             
             due_date = None
             if due_date_str:
@@ -2840,14 +3166,48 @@ def create_app():
                     due_date = datetime.strptime(due_date_str, '%Y-%m-%d')
                 except ValueError:
                     flash('Invalid date format. Use YYYY-MM-DD.', 'danger')
-                    return redirect(url_for('instructor_edit_assignment', activity_id=activity_id))
+                    return render_template('instructor_assignment_edit.html', activity=activity, courses=instructor_courses, students=all_students)
             activity.due_date = due_date
+            
+            # Handle attachment file upload (update if new file is provided)
+            if 'attachment' in request.files:
+                attachment_file = request.files['attachment']
+                if attachment_file and attachment_file.filename:
+                    # Validate file size (max 10MB)
+                    if attachment_file.content_length and attachment_file.content_length > 10 * 1024 * 1024:
+                        flash('Attachment file size must be less than 10MB.', 'danger')
+                        return render_template('instructor_assignment_edit.html', activity=activity, courses=instructor_courses, students=all_students)
+                    
+                    # Delete old attachment if exists
+                    if activity.attachment_path:
+                        old_file_path = os.path.join(app.config['UPLOAD_FOLDER'], activity.attachment_path)
+                        if os.path.exists(old_file_path):
+                            try:
+                                os.remove(old_file_path)
+                            except Exception as e:
+                                app.logger.warning(f"Could not delete old attachment: {e}")
+                    
+                    # Save new attachment file
+                    filename = secure_filename(attachment_file.filename)
+                    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+                    filename = f"{timestamp}_{filename}"
+                    attachment_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'assignments')
+                    os.makedirs(attachment_dir, exist_ok=True)
+                    file_path = os.path.join(attachment_dir, filename)
+                    attachment_file.save(file_path)
+                    # Use forward slash for web URLs (works on all platforms)
+                    activity.attachment_path = 'assignments/' + filename
+                    activity.attachment_filename = attachment_file.filename
+            
+            # Update course assignments
+            from services.activity_service import ActivityService
+            ActivityService.update_activity_courses(activity_id, course_ids_list)
             
             db.session.commit()
             flash('Assignment updated successfully!', 'success')
             return redirect(url_for('instructor_assignment_detail', activity_id=activity_id))
         
-        return render_template('instructor_assignment_edit.html', activity=activity)
+        return render_template('instructor_assignment_edit.html', activity=activity, courses=instructor_courses, students=all_students)
     
     @app.route('/instructor/assignments/<int:activity_id>/delete', methods=['POST'])
     @role_required('Instructor')
@@ -2939,7 +3299,7 @@ def create_app():
     @app.route('/submit/writing', methods=['GET', 'POST'])
     @role_required('Student')
     def submit_writing():
-        activity_id = request.args.get('activity_id')
+        activity_id = request.args.get('activity_id') or request.form.get('activity_id')
         if request.method == 'POST':
             text_content = request.form.get('text_content', '').strip()
             file = request.files.get('file')
@@ -2966,9 +3326,28 @@ def create_app():
                         with open(file_path, 'r', encoding='latin-1') as f: 
                             text_content = f.read()
             
-            # Check if we have text content
+            # If no text content but file is provided, extract text from file
+            if not text_content and file and file.filename != '':
+                # File processing is already done above, text_content should be set
+                # But if it's still empty, try to extract again
+                if not text_content:
+                    filename = secure_filename(file.filename)
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    if os.path.exists(file_path):
+                        if filename.endswith('.docx'):
+                            doc = docx.Document(file_path)
+                            text_content = "\n".join([p.text for p in doc.paragraphs])
+                        else:
+                            try:
+                                with open(file_path, 'r', encoding='utf-8') as f:
+                                    text_content = f.read()
+                            except:
+                                with open(file_path, 'r', encoding='latin-1') as f:
+                                    text_content = f.read()
+            
+            # Check if we have text content (either from input or file)
             if not text_content:
-                flash("Please provide some text to analyze.", "danger")
+                flash("Please provide some text or upload a file to analyze.", "danger")
                 return redirect(url_for('submit_writing'))
             
             # Create submission using SubmissionService
@@ -3006,7 +3385,9 @@ def create_app():
                     return render_template('submit_writing.html', 
                                          grade=new_sub.grade,
                                          submitted_text=text_content,
-                                         analysis_results=ai_res)
+                                         analysis_results=ai_res,
+                                         submission_id=new_sub.id,
+                                         activity_id=activity_id)
                 else:
                     flash("Failed to save grade.", "danger")
             else:
@@ -3019,14 +3400,40 @@ def create_app():
         submission_id = request.args.get('submission_id', type=int)
         grade = None
         submitted_text = None
+        submission_activity_id = None
         
         if submission_id:
             submission = Submission.query.filter_by(id=submission_id, student_id=current_user.id).first()
             if submission:
                 grade = submission.grade
                 submitted_text = submission.text_content
+                submission_activity_id = submission.activity_id
         
-        return render_template('submit_writing.html', grade=grade, submitted_text=submitted_text)
+        return render_template('submit_writing.html', 
+                              grade=grade, 
+                              submitted_text=submitted_text,
+                              submission_id=submission_id,
+                              activity_id=submission_activity_id or activity_id)
+
+    @app.route('/submit/writing/<int:submission_id>/finalize', methods=['POST'])
+    @role_required('Student')
+    def finalize_writing_submission(submission_id):
+        """Finalize a writing submission after analysis"""
+        submission = Submission.query.filter_by(
+            id=submission_id,
+            student_id=current_user.id
+        ).first()
+        
+        if not submission:
+            flash("Submission not found.", "danger")
+            return redirect(url_for('submit_writing'))
+        
+        # Mark submission as completed
+        submission.status = 'COMPLETED'
+        db.session.commit()
+        
+        flash("Assignment submitted successfully! ✅", "success")
+        return redirect(url_for('view_feedback', submission_id=submission_id))
 
     @app.route('/submit/handwritten', methods=['GET', 'POST'])
     @role_required('Student')

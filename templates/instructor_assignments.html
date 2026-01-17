@@ -502,6 +502,19 @@
                     </svg>
                     <span>{{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No Due Date' }}</span>
                 </div>
+                {% if stat.courses %}
+                <div class="meta-item" style="display: flex; align-items: center; gap: 4px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                    <span style="font-size: 0.75rem; color: var(--text-secondary);">
+                        {% for course in stat.courses %}
+                            {{ course.code }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </span>
+                </div>
+                {% endif %}
                 <span class="status-chip {{ 'expired' if is_expired else 'active' }}">
                     {{ 'Expired' if is_expired else 'Active' }}
                 </span>

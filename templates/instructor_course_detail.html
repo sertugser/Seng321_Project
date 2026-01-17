@@ -613,7 +613,6 @@
                         <thead>
                             <tr>
                                 <th>Student</th>
-                                <th>Email</th>
                                 <th>Submissions</th>
                                 <th>Actions</th>
                             </tr>
@@ -627,7 +626,6 @@
                                         <span style="font-weight: 600;">{{ student.username }}</span>
                                     </div>
                                 </td>
-                                <td>{{ student.email }}</td>
                                 <td>{{ student.submissions|length if student.submissions else 0 }}</td>
                                 <td>
                                     <a href="{{ url_for('instructor_student_detail', student_id=student.id) }}" onclick="event.stopPropagation();" style="color: #6366f1; text-decoration: none; font-weight: 500; font-size: 0.8125rem;">View</a>

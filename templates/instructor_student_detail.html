@@ -1027,7 +1027,6 @@
                 <div class="student-info-header-content">
                     <div class="student-info-left">
                         <span class="student-info-name">{{ student.username }}</span>
-                        <span class="student-info-email">{{ student.email }}</span>
                         {% if student_courses %}
                         <div class="student-info-courses">
                             {% for course in student_courses %}
@@ -1199,7 +1198,7 @@
                 <div class="academic-reports-content">
                     <p class="academic-reports-description">Export {{ student.username }}'s full academic history to PDF or CSV files.</p>
                     <div class="academic-reports-buttons">
-                        <a href="{{ url_for('instructor_export_pdf', student_id=student.id) }}" download class="export-btn export-btn-pdf">
+                        <a href="{{ url_for('instructor_export_pdf', student_id=student.id) }}" class="export-btn export-btn-pdf" target="_blank">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                 <polyline points="14 2 14 8 20 8"></polyline>

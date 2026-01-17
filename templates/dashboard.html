@@ -935,9 +935,10 @@
     .deadlines-list {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
         flex: 1;
         min-height: 0;
+        padding: 4px 0;
     }
 
     /* Empty State for Deadlines - Centered like Recent Activity */
@@ -971,56 +972,50 @@
     }
 
     .deadline-item {
+        padding: 6px 10px;
+        border-radius: 6px;
+        background: var(--hover-bg);
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        transition: all 0.2s ease;
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 8px 0;
+        justify-content: space-between;
+        gap: 10px;
     }
 
-    .deadline-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(99, 102, 241, 0.1);
-        color: var(--accent);
-        flex-shrink: 0;
-    }
-
-    .deadline-icon svg {
-        width: 18px;
-        height: 18px;
-        stroke-width: 2;
+    .deadline-item:hover {
+        background: var(--active-bg);
+        border-color: var(--accent);
+        transform: translateX(2px);
     }
 
     .deadline-content {
         flex: 1;
         min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
     }
 
     .deadline-title {
-        font-size: 0.875rem; /* Match empty-state-title */
+        font-size: 0.6875rem;
         font-weight: 600;
         color: var(--text-main);
-        margin-bottom: 4px; /* Match empty-state gap */
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        line-height: 1.2;
     }
 
     .deadline-date {
-        font-size: 0.8125rem; /* Match empty-state-text */
+        font-size: 0.625rem;
         color: var(--text-secondary);
-        line-height: 1.5;
+        line-height: 1.2;
     }
 
     /* Dark Mode - Deadlines */
     [data-theme="dark"] .deadlines-card {
         background: #1e293b; /* Slate 800 */
-    }
-
-    [data-theme="dark"] .deadline-icon {
-        background: rgba(129, 140, 248, 0.15);
-        color: #818cf8; /* Indigo 400 */
     }
 
     /* Previous Submissions Content - Compact */
@@ -1535,19 +1530,30 @@
                         <h3 class="card-title">Upcoming Deadlines</h3>
                     </div>
                     <div class="deadlines-list">
-                        <!-- Empty State - Centered like Recent Activity -->
-                        <div class="deadlines-empty-state">
-                            <div class="deadline-empty-icon">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
+                        {% if upcoming_deadlines and upcoming_deadlines|length > 0 %}
+                            {% for activity in upcoming_deadlines %}
+                            <div class="deadline-item" onclick="window.location.href='/assignments/{{ activity.id }}/view'">
+                                <div class="deadline-content">
+                                    <div class="deadline-title">{{ activity.title }}</div>
+                                    <div class="deadline-date">{{ activity.due_date.strftime('%b %d, %Y') if activity.due_date else 'No deadline' }}</div>
+                                </div>
                             </div>
-                            <div class="deadline-title">No upcoming deadlines</div>
-                            <div class="deadline-date">All assignments completed</div>
-                        </div>
+                            {% endfor %}
+                        {% else %}
+                            <!-- Empty State - Centered like Recent Activity -->
+                            <div class="deadlines-empty-state">
+                                <div class="deadline-empty-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                </div>
+                                <div class="deadline-title">No upcoming deadlines</div>
+                                <div class="deadline-date">All assignments completed</div>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

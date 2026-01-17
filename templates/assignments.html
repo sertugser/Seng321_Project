@@ -244,11 +244,12 @@
         display: flex;
         flex-direction: column;
         gap: 12px;
-        cursor: pointer;
+        cursor: default;
         max-width: 340px;
         width: 100%;
         margin: 0 auto;
         min-width: 320px;
+        position: relative;
     }
 
     .assignment-card:hover {
@@ -351,6 +352,9 @@
         box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
         margin-top: auto;
         flex-shrink: 0;
+        position: relative;
+        z-index: 10;
+        pointer-events: auto;
     }
 
     .btn-start-task:hover {
@@ -605,23 +609,13 @@
                         </div>
                     </div>
 
-                    {% if activity.activity_type == 'QUIZ' %}
-                    <a href="{{ url_for('start_quiz', activity_id=activity.id) }}" class="btn-start-task">
-                        <span>Start Quiz</span>
+                    <a href="{{ url_for('student_assignment_detail', activity_id=activity.id) }}" class="btn-start-task" onclick="event.stopPropagation(); return true;">
+                        <span>View Details</span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                     </a>
-                    {% else %}
-                    <a href="{% if activity.activity_type == 'WRITING' %}{{ url_for('submit_writing', activity_id=activity.id) }}{% elif activity.activity_type == 'SPEAKING' %}{{ url_for('speaking', activity_id=activity.id) }}{% else %}{{ url_for('submit_writing', activity_id=activity.id) }}{% endif %}" class="btn-start-task">
-                        <span>Start Task</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </a>
-                    {% endif %}
                 </div>
                 {% endfor %}
                 

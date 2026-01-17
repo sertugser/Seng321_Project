@@ -25,6 +25,12 @@ class User(db.Model, UserMixin):
         return f'<User {self.username}>'
 
 # --- 2. LearningActivity Entity ---
+# Association table for many-to-many relationship between LearningActivity and Course
+assignment_courses = db.Table('assignment_courses',
+    db.Column('activity_id', db.Integer, db.ForeignKey('learning_activity.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('course_id', db.Integer, db.ForeignKey('courses.id', ondelete='CASCADE'), primary_key=True)
+)
+
 class LearningActivity(db.Model):
     __tablename__ = 'learning_activity'
     id = db.Column(db.Integer, primary_key=True)
@@ -36,8 +42,12 @@ class LearningActivity(db.Model):
     quiz_category = db.Column(db.String(50), nullable=True)  # grammar, vocabulary, reading, etc.
     due_date = db.Column(db.DateTime, nullable=True) 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    attachment_path = db.Column(db.String(500), nullable=True)  # Path to uploaded attachment/resource file
+    attachment_filename = db.Column(db.String(200), nullable=True)  # Original filename
     instructor = db.relationship('User', foreign_keys=[instructor_id], backref=db.backref('created_activities', lazy=True))
     student = db.relationship('User', foreign_keys=[student_id], backref=db.backref('assigned_activities', lazy=True))
+    # Many-to-many relationship with Course
+    courses = db.relationship('Course', secondary=assignment_courses, backref=db.backref('assignments', lazy='dynamic'))
 
 # --- 3. Submission Entity ---
 class Submission(db.Model):
@@ -48,6 +58,7 @@ class Submission(db.Model):
     submission_type = db.Column(db.String(20), nullable=False) 
     file_path = db.Column(db.String(200), nullable=True) 
     text_content = db.Column(db.Text, nullable=True) 
+    status = db.Column(db.String(20), default='PENDING', nullable=False)  # PENDING, COMPLETED
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     grade = db.relationship('Grade', backref='submission', uselist=False, cascade="all, delete-orphan")
 

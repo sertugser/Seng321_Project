@@ -89,6 +89,16 @@
         transform: none;
     }
 
+    .btn-submit-assignment:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-submit-assignment:active {
+        transform: translateY(0);
+    }
+
+
     .loading-overlay {
         display: none;
         position: fixed;
@@ -195,6 +205,8 @@
     /* Right Pane: Results */
     .results-pane {
         padding: 32px;
+        display: flex;
+        flex-direction: column;
     }
 
     .results-tabs {
@@ -441,6 +453,15 @@
                 </div>
             </div>
             {% endif %}
+
+            <!-- Submit Button (shown after analysis) - Right Bottom -->
+            {% if grade %}
+            <div style="margin-top: auto; padding-top: 24px; border-top: 2px solid var(--border-color);">
+                <button class="btn-submit-assignment" onclick="submitAssignment()" style="width: 100%; padding: 14px 24px; background: #3b82f6; color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>Submit</span>
+                </button>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -487,8 +508,12 @@
     // Analyze Text
     function analyzeText() {
         const text = textInput.value.trim();
-        if (!text) {
-            alert('Please enter some text to analyze.');
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+        
+        // If no text and no file, show error
+        if (!text && !file) {
+            alert('Please enter some text or upload a file to analyze.');
             return;
         }
 
@@ -503,18 +528,84 @@
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '/submit/writing';
+        form.enctype = 'multipart/form-data';
         
-        const textField = document.createElement('input');
-        textField.type = 'hidden';
-        textField.name = 'text_content';
-        textField.value = text;
+        // Add text content if available
+        if (text) {
+            const textField = document.createElement('input');
+            textField.type = 'hidden';
+            textField.name = 'text_content';
+            textField.value = text;
+            form.appendChild(textField);
+        }
         
-        form.appendChild(textField);
+        // Add file if available and no text in textbox
+        // (If file was uploaded, it should already be in textbox, but if not, send file)
+        if (file && !text) {
+            // Use FormData for file upload
+            const formData = new FormData();
+            if (text) {
+                formData.append('text_content', text);
+            }
+            formData.append('file', file);
+            {% if activity_id %}
+            formData.append('activity_id', '{{ activity_id }}');
+            {% endif %}
+            
+            fetch('/submit/writing', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    return response.text().then(html => {
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                analyzeBtn.disabled = false;
+                loadingOverlay.classList.remove('show');
+                alert('An error occurred while analyzing. Please try again.');
+            });
+            return;
+        }
+        
+        {% if activity_id %}
+        const activityField = document.createElement('input');
+        activityField.type = 'hidden';
+        activityField.name = 'activity_id';
+        activityField.value = '{{ activity_id }}';
+        form.appendChild(activityField);
+        {% endif %}
+        
         document.body.appendChild(form);
         form.submit();
     }
 
-    // Handle File Upload
+    // Submit Assignment (Finalize)
+    function submitAssignment() {
+        {% if grade %}
+        const submissionId = {{ grade.submission_id }};
+        if (!confirm('Are you sure you want to submit this assignment? This action cannot be undone.')) {
+            return;
+        }
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/submit/writing/' + submissionId + '/finalize';
+        
+        document.body.appendChild(form);
+        form.submit();
+        {% endif %}
+    }
+
+    // Handle File Upload - Extract text to textbox, don't analyze
     function handleFileUpload(event) {
         const file = event.target.files[0];
         if (file) {
@@ -522,24 +613,51 @@
             const uploadedFileInfo = document.getElementById('uploadedFileInfo');
             const uploadedFileName = document.getElementById('uploadedFileName');
             const uploadedFileSize = document.getElementById('uploadedFileSize');
+            const textInput = document.getElementById('textInput');
             
             uploadedFileName.textContent = '📎 ' + file.name;
             uploadedFileSize.textContent = 'Dosya boyutu: ' + (file.size / 1024).toFixed(2) + ' KB';
             uploadedFileInfo.classList.add('show');
 
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/submit/writing';
-            form.enctype = 'multipart/form-data';
-            
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.name = 'file';
-            fileInput.files = event.target.files;
-            
-            form.appendChild(fileInput);
-            document.body.appendChild(form);
-            form.submit();
+            // Read .txt files directly
+            if (file.name.endsWith('.txt')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    textInput.value = e.target.result;
+                    // Update word count
+                    const text = textInput.value.trim();
+                    const wordCount = text ? text.split(/\s+/).length : 0;
+                    document.getElementById('wordCount').textContent = wordCount;
+                };
+                reader.readAsText(file, 'UTF-8');
+            } else if (file.name.endsWith('.docx')) {
+                // For .docx, extract text via server but don't analyze
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('extract_only', 'true');
+                
+                fetch('/submit/writing', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.text) {
+                        textInput.value = data.text;
+                        const text = textInput.value.trim();
+                        const wordCount = text ? text.split(/\s+/).length : 0;
+                        document.getElementById('wordCount').textContent = wordCount;
+                    } else {
+                        alert('Dosyadan metin çıkarılamadı.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Dosyadan metin çıkarılırken hata oluştu. Lütfen içeriği manuel olarak yapıştırın.');
+                });
+            } else {
+                alert('Desteklenmeyen dosya formatı. Lütfen .txt veya .docx dosyası yükleyin.');
+            }
         }
     }
 </script>
