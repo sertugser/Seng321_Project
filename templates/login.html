@@ -1329,6 +1329,20 @@
             if (urlParams.get('mode') === 'register' || urlParams.get('mode') === 'signup') {
                 switchTab('signup');
             }
+            
+            // Handle successful registration - show message and switch to login tab after 3 seconds
+            if (urlParams.get('registered') === '1') {
+                // Switch to login tab immediately to show the success message
+                switchTab('signin');
+                
+                // After 3 seconds, clean URL parameter
+                setTimeout(function() {
+                    // Remove the registered parameter from URL
+                    urlParams.delete('registered');
+                    const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                    window.history.replaceState({}, '', newUrl);
+                }, 3000);
+            }
         });
     </script>
 </body>
